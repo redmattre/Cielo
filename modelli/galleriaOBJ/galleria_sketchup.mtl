@@ -1,0 +1,40 @@
+#
+## Alias OBJ Material File
+# Exported from SketchUp, (c) 2000-2012 Trimble Navigation Limited
+
+newmtl Polished_Concrete_New
+Ka 0.000000 0.000000 0.000000
+Kd 0.784314 0.784314 0.796078
+Ks 0.330000 0.330000 0.330000
+
+newmtl Brick_Antique_01
+Ka 0.000000 0.000000 0.000000
+Kd 0.576471 0.411765 0.278431
+Ks 0.330000 0.330000 0.330000
+map_Kd Primo Floor Plan/Brick_Antique_01.jpg
+
+newmtl Polished_Concrete_Old
+Ka 0.000000 0.000000 0.000000
+Kd 0.898039 0.898039 0.898039
+Ks 0.330000 0.330000 0.330000
+map_Kd Primo Floor Plan/Polished_Concrete_Old.jpg
+
+newmtl Translucent_Glass_Safety
+Ka 0.000000 0.000000 0.000000
+Kd 0.800000 0.921569 0.956863
+Ks 0.330000 0.330000 0.330000
+d 0.498039
+map_Kd Primo Floor Plan/Translucent_Glass_Safety.jpg
+
+newmtl Metal_Silver
+Ka 0.000000 0.000000 0.000000
+Kd 0.917647 0.913725 0.933333
+Ks 0.330000 0.330000 0.330000
+map_Kd Primo Floor Plan/Metal_Silver.jpg
+
+newmtl Red_Head_Floor_Plan_1500_px_2022
+Ka 0.000000 0.000000 0.000000
+Kd 0.945098 0.937255 0.941176
+Ks 0.330000 0.330000 0.330000
+map_Kd Primo Floor Plan/Red_Head_Floor_Plan_1500_px_2022.jpg
+

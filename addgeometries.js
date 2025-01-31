@@ -28,7 +28,7 @@ let howManyHalos = 0;
 addHalo.addEventListener('click', () => {
     howManyHalos++;
     let nome = `Aureola-${howManyHalos}`
-    loadObj('halo2_lowpoly.obj', nome, goochMaterialSp, 0.15, 0., 0, 1.2);
+    loadObj('./modelli/galleriaOBJ/halo2_lowpoly.obj', nome, goochMaterialSp, 0.15, 0., 0, 1.2);
     // createMenu();
 });
 
@@ -37,7 +37,7 @@ let howManyArrows = 0;
 addArrow.addEventListener('click', () => {
     howManyArrows++;
     const nome = `Orifonte ${howManyArrows}`;
-    loadObj('arrow.obj', nome, goochMaterialArrow, 0.045, 0., 0., 1.2)
+    loadObj('./modelli/galleriaOBJ/arrow.obj', nome, goochMaterialArrow, 0.045, 0., 0., 1.2)
     // createMenu();
 });
 
@@ -47,7 +47,7 @@ addCloudClient.addEventListener('click', () => {
     howManyCloudClients++;
     const nome = `Nuvola:client ${howManyCloudClients}`;
     // loadObj('bunnySpeaker.obj', nome, goochMaterialSp, 0.025, 0., 0, 0.5);
-    loadObj('cloudDec.obj', nome, goochMaterialSp, 0.035, 0., 0, 1.2);
+    loadObj('./modelli/galleriaOBJ/cloudDec.obj', nome, goochMaterialSp, 0.035, 0., 0, 1.2);
 });
 
 let howManySpheres = 0;

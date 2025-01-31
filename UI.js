@@ -232,14 +232,14 @@ document.getElementById('seeItemsList').addEventListener('click', (event) => {
         menuList.style.opacity = 0;
         menuList.style.width = "0vw";
         menuList.style.color = "var(--fondale)";
-        menu.style.pointerEvents = "none";
+        menuList.style.pointerEvents = "none";
         event.target.setAttribute('data-active', 'false');
     } else {
         // Attiva
         menuList.style.opacity = 1;
         menuList.style.width = "23vw";
         menuList.style.color = "var(--testo)";
-        menu.style.pointerEvents = "all";
+        menuList.style.pointerEvents = "all";
         event.target.setAttribute('data-active', 'true');
     }
 });

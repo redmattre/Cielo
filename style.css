@@ -44,10 +44,10 @@ button {
   align-items: center;
   width: 4rem;
   height: 3.7rem;
-  font-size: 2rem;
+  font-size: 1.7rem;
   background-color: transparent;
   /* background-color: var(--fondale); */
-  border: solid var(--testo) 2px;
+  border: solid var(--testo) 1px;
   border-radius: 10px;
   color: var(--testo);
   padding: 0.5rem 1rem;
@@ -335,7 +335,7 @@ input[type='number'] {
 .visualizzazione {
     height: 3rem;
     width: 7rem;
-    border: var(--dettaglio) solid 2px;
+    border: var(--dettaglio) solid 1px;
     color: var(--dettaglio);
     border-radius: 10px;
     text-align: center; /* Allinea il testo orizzontalmente */

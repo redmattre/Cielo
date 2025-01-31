@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Archisound</title>
+    <script type="module" crossorigin src="/cielo/assets/index-B3ZpXpJO.js"></script>
+    <link rel="stylesheet" crossorigin href="/cielo/assets/index-CiFvAlJJ.css">
+  </head>
+  <body>
+
+    <div class="bottonieraSotto" id="bottonieraSotto">
+      <div class="visualizzazione" id="visualizzazione">
+        Prospettiva
+      </div>
+    </div>
+
+    <div class="bottonieraDestra">
+      <div id="nav-icon3">
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <button id="addHalo">❍</button>
+      <button id="addCloudElement">☁</button>
+      <button id="addCone">⊚</button>
+      <button id="addZone">⛶</button>
+      <!-- <button id="addCube">C</button> -->
+      <!-- <button id="addArrow">⇨</button> -->
+       <button id="addArrow">➞</button>
+      <button id="addSphere">⬤</button>
+      <button id="seeItemsList">▤</button>
+      <button id="chiudiMenuSotto">⸓</button>
+    </div>
+
+    <div class="bottonieraSopra">
+      <button id="chiudiMenuSopra">꜏</button>
+      <button id="makeGroup" class="topButtons">⧉</button>
+      <button id="moveButton" class="topButtons">&#10021;</button>
+      <button id="rotateButton" class="topButtons">R</button>
+      <button id="scaleButton" class="topButtons">S</button>
+      <button id="toggleTransButton" class="topButtons">⏚</button>
+    </div>
+    
+    <div id="black-panel">
+
+			<div class="container">
+        <!-- <div id="titoloImpostazioni">Impostazioni</div> -->
+        <div>Generali</div>
+        <div class="switch-wrapper">
+					<label class="switch">
+						<input type="checkbox" data-id="theme"/>
+						<div></div>
+					</label>
+					<span class="switch-label">Tema Eco</span>
+				</div>
+
+        <div class="switch-wrapper">
+					<label class="switch">
+						<input type="checkbox" data-id="gridSnapState" checked/>
+						<div></div>
+					</label>
+					<span class="switch-label">Aggancio Griglia</span>
+				</div>
+
+        <div class="input-wrapper">
+          <label class="multitoggle">
+            <input type='range' min='1' max='3' value='2' step='1' class="n n3" data-id="snapDefinition"/>
+          </label>
+        </div>
+
+        <div class="switch-wrapper">
+					<label class="switch">
+						<input type="checkbox" data-id="lock"/>
+						<div></div>
+					</label>
+					<span class="switch-label">Diorama</span>
+				</div>
+
+        <div class="switch-wrapper">
+					<label class="switch">
+						<input type="checkbox" data-id="grid" checked/>
+						<div></div>
+					</label>
+					<span class="switch-label">Super Superficie</span>
+				</div>
+        <div class="input-wrapper">
+          <label class="multitoggle">
+            <input type='range' min='1' max='4' value='2' step='1' class="n n4" data-id="gridsize"/>
+          </label>
+        </div>
+      
+        <div>Architettura</div>
+        <!-- <button id="addArch">A</button> -->
+        <div class="switch-wrapper">
+					<label class="switch">
+						<input type="checkbox" data-id="archVisibility"/>
+						<div></div>
+					</label>
+					<span class="switch-label">⏿</span>
+				</div>
+
+        <div class="switch-wrapper">
+					<label class="switch">
+						<input type="checkbox" data-id="wireframeVisibility"/>
+						<div></div>
+					</label>
+					<span class="switch-label">Wireframe</span>
+				</div>
+
+        <div class="switch-wrapper">
+					<label class="switch">
+						<input type="checkbox" data-id="serioso"/>
+						<div></div>
+					</label>
+					<span class="switch-label">Tema Muto</span>
+				</div>
+
+				<div class="switch-wrapper">
+          <label class="switch">
+            <input type="checkbox" data-id="transparencyA"/>
+            <div></div>
+          </label>
+          <span class="switch-label">Trasparenza</span>
+				</div>
+
+        <label class="multitoggle">
+          <div class="input-wrapper">
+            <input type='range' min='1' max='4' value='4' step='1' class="n n4" data-id="transArchVal"/>
+          </div>
+        </label>
+
+        <div>Zone</div>
+				<div class="switch-wrapper">
+					<label class="switch">
+						<input type="checkbox" data-id="zoneVisibility" checked/>
+						<div></div>
+					</label>
+					<span class="switch-label">⏿</span>
+				</div>
+
+        <div>Altoparlanti</div>
+				<div class="switch-wrapper">
+					<label class="switch">
+						<input type="checkbox" data-id="speakersVisibility" checked/>
+						<div></div>
+					</label>
+					<span class="switch-label">⏿</span>
+				</div>
+
+        <div>Corone</div>
+				<div class="switch-wrapper">
+					<label class="switch">
+						<input type="checkbox" data-id="speakersVisibility" checked/>
+						<div></div>
+					</label>
+					<span class="switch-label">⏿</span>
+				</div>
+      
+				<!-- <button id="helper">
+					?
+					<div id="helperCard">
+						<div id="info">
+							"G" translate | "R" rotate | "S" scale <br />
+							"Q" toggle world/local space |  "Shift" snap to grid<br />
+							"Backspace" or "X" deletes hovered object <br> "esc" to shut controls <br>
+							"Double Click" to restore camera position | <br>
+							"Shift + Click" on hovered objects creates a group
+						</div>
+					</div>
+				</button> -->
+				
+			</div>
+		</div>
+
+    <button id="helper">
+      <a href="https://github.com/redmattre/Archisound/blob/main/README.md" target="_blank">⁈</a>
+    </button>
+
+    <div id="infoDivTopLeft">---</div>
+
+    <div id="infoDivBottomLeft">---</div>
+    <div id="transTriangle"></div>
+
+    <div id="infoDivCenter">
+      <button id="addZoneCube" class="centeredButton">⬚</button>
+      <button id="addZoneSphere" class="centeredButton">◌</button>
+      <button id="closeInfoDivCenter">X</button>
+    </div>
+
+    <div id="menuList"></div>
+    <div id="ghostButton"></div>
+
+    <script src="navbar.js"></script>
+  </body>
+</html>

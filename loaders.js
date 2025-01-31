@@ -8,33 +8,37 @@ import * as THREE from 'three';
 import { goochMaterial, goochMaterialAlpha, normalMat, phongMat, standardMat } from './materials.js';
 import { createMenu } from './objmenu.js';
 
+//questa è la funzione utilizzata per caricare tutti gli obj
 export function loadObj(filename, name, material, scaleFactor, x, y, z) {
     const loader = new OBJLoader();
 
+    // Ensure the path is correct in both dev and production (GitHub Pages)
+    const fullPath = import.meta.env.BASE_URL + filename;
+
     loader.load(
-        filename,
+        fullPath,
         function (object) {
-            // Crea un gruppo per gestire le trasformazioni
+            // Create a group to handle transformations
             const group = new THREE.Group();
-            group.name = name; // Assegna un nome al gruppo
+            group.name = name; // Assign a name to the group
 
             object.traverse(function (child) {
                 if (child.isMesh) {
-                    child.material = material; // Applica il materiale
+                    child.material = material; // Apply the material
                     child.name = name;
-                    group.add(child); // Aggiungi i figli al gruppo
+                    group.add(child); // Add children to the group
                 }
             });
 
-            // Applica trasformazioni al gruppo
+            // Apply transformations to the group
             group.scale.multiplyScalar(scaleFactor);
             group.position.set(x, z, y);
 
-            // Aggiungi il gruppo alla scena e agli oggetti da rilevare
+            // Add the group to the scene and the objects to detect
             scene.add(group);
             objToBeDetected.push(group);
 
-            console.log(`Loaded ${filename} successfully.`);
+            console.log(`Loaded ${fullPath} successfully.`);
             createMenu();
         },
         function (xhr) {

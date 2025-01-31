@@ -11,23 +11,23 @@ const wireframeObjects = {};
 export function loadGltfModel(filepath) {
     const loader = new GLTFLoader();
 
+    // Ensure the path works in both dev and production (GitHub Pages)
+    const fullPath = import.meta.env.BASE_URL + filepath;
+
     loader.load(
-        filepath,
+        fullPath,
         function (gltf) {
             const model = gltf.scene;
 
-            // Posizionamento e scala del modello (adatta secondo necessità)
+            // Position and scale adjustments (modify as needed)
             model.position.set(0, 0, 0);
-            // model.position.set(3, 0, 3);
-            // model.scale.set(0.025, 0.025, 0.025);
             model.name = 'architettura';
             model.visible = false;
 
-            // Aggiungi il modello alla scena
+            // Add the model to the scene
             scene.add(model);
 
-            // addWireframe('architettura', solidMaterial);
-            console.log(`Loaded GLTF model: ${filepath}`);
+            console.log(`Loaded GLTF model: ${fullPath}`);
         },
         function (xhr) {
             console.log(`${Math.round((xhr.loaded / xhr.total) * 100)}% loaded`);

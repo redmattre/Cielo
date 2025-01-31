@@ -19,7 +19,7 @@ let howManySpeakers = 0;
 addSpeaker.addEventListener('click', () => {
     howManySpeakers++;
     let nome = `Altoparlante ${howManySpeakers}`
-    loadObj('speaker3dec.obj', nome, goochMaterialSp, 0.045, 0., 0, 1.2);
+    loadObj('./modelli/galleriaOBJ/speaker3dec.obj', nome, goochMaterialSp, 0.045, 0., 0, 1.2);
     // createMenu(); //qui non fa perchè deve caricare il modello sec me
 });
 

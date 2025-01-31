@@ -1,0 +1,393 @@
+:root {
+  --fondaleBianco: #d6d6d6;
+  --fondaleNero: black;
+  --grigio: grey;
+  --grigino: rgb(161, 161, 161);
+  --dettaglioBianco: #e0e0e0;
+
+  --testo: black;
+  --dettaglio: var(--grigio);
+  --fondale: var(--fondaleBianco);
+  font-size: 14px; /*default è 16, da qui decidi grandezza interfaccia in pratica*/
+}
+
+@media only screen and (orientation: portrait) {
+  :root {
+    font-size: 8px;
+  }
+}
+
+a{
+    all: unset;
+}
+
+hr{
+  border: solid 0.5px var(--dettaglio);
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--fondale);
+}
+
+canvas{
+  position: absolute;
+  z-index: 0;
+}
+
+button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 4rem;
+  height: 3.7rem;
+  font-size: 2rem;
+  background-color: transparent;
+  /* background-color: var(--fondale); */
+  border: solid var(--testo) 2px;
+  border-radius: 10px;
+  color: var(--testo);
+  padding: 0.5rem 1rem;
+  margin-top: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  user-select: none;
+  /* box-shadow: 0 0 0.5rem var(--fondale); */
+}
+
+/* #helper {
+  background-image: url("modelli/Logo_TempoReale.webp");
+  background-position: center;
+  background-size: 80%;
+  background-repeat: no-repeat;
+  border: none;
+} */
+
+#addArrow {
+    overflow: hidden;
+    height: 3.6rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#addSphere {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* #addHalo {
+    background-image: url('halo_render_back.png');
+    background-size: 120%;
+    background-position: center;
+    background-repeat: no-repeat;
+} */
+
+#closeInfoDivCenter {
+    position: absolute;
+    height: 1rem;
+    width: 1rem;
+    font-size: x-small;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--fondale);
+    margin: 0;
+    /* top: calc(50% - 0.5rem); */
+    bottom: -.7rem;
+    left: calc(50% - 1.15rem);
+    border: solid 1px var(--dettaglio);
+}
+
+button:active {
+  background-color: var(--dettaglio);
+}
+
+/* button:hover {
+  box-shadow: 0 0 0.5rem var(--grigino);
+} */
+
+#infoDivTopLeft {
+    position: absolute;
+    color: var(--testo);
+    top: 1rem;
+    left: 1rem;
+    pointer-events: none;
+    user-select: none;
+    z-index: 500;
+    text-shadow: 2px 0 var(--fondale), -2px 0 var(--fondale), 0 2px var(--fondale), 0 -2px var(--fondale),
+             1px 1px var(--fondale), -1px -1px var(--fondale), 1px -1px var(--fondale), -1px 1px var(--fondale);
+}
+
+#infoDivBottomLeft {
+    position: absolute;
+    color: var(--testo);
+    bottom: 1rem;
+    left: 1rem;
+    pointer-events: none;
+    user-select: none;
+    z-index: 500;
+    text-shadow: 2px 0 var(--fondale), -2px 0 var(--fondale), 0 2px var(--fondale), 0 -2px var(--fondale),
+             1px 1px var(--fondale), -1px -1px var(--fondale), 1px -1px var(--fondale), -1px 1px var(--fondale);
+}
+
+#transTriangle {
+  position: absolute;
+  /* top: 50%;
+  left: 50%; */
+  top: 0;
+  left: 0;
+  z-index: 9999;
+  width: 2rem;
+  height: 2rem;
+  /* aspect-ratio: 1; */
+  /* clip-path: polygon(0 0,100% 100%,0 100%); */
+  clip-path: polygon(0 100%,0 0,100% 0);
+  /* background: linear-gradient(90deg,red, violet); */
+  background-color: var(--testo);
+  display: none;
+}
+
+#infoDivCenter {
+    position: absolute;
+    margin: 0;
+    padding: 0;
+    width: calc(10rem + 1rem);
+    height: calc(4rem + 1rem);
+    z-index: 500;
+    border: solid 1px var(--dettaglio);
+    background-color: var(--fondale);
+    border-radius: 10px;
+    top: calc(50vh - 2.5rem);
+    left: calc(50vw - 5.5rem);
+    text-shadow: 2px 0 var(--fondale), -2px 0 var(--fondale), 0 2px var(--fondale), 0 -2px var(--fondale),
+             1px 1px var(--fondale), -1px -1px var(--fondale), 1px -1px var(--fondale), -1px 1px var(--fondale);
+    /* display: flex; */
+    display: flex;
+    opacity: 0;
+    pointer-events: none;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.centeredButton {
+    margin: 0;
+    margin-right: 0.5rem;
+    margin-left: 0.5rem;
+    border: 1px solid var(--testo);
+}
+
+.bottonieraDestra {
+    padding: 0;
+    margin: 0;
+    position: absolute;
+    /* background-color: red; */
+    height: 85vh;
+    width: 4rem;
+    top: 1rem;
+    right: 1rem;
+    z-index: 9999;
+}
+
+.bottonieraSopra {
+  padding: 0;
+  margin: 0;
+  position: absolute;
+  /* pointer-events: none; */
+  /* background-color: red; */
+  /* border: var(--dettaglio) solid 2px;
+  border-radius: 10px; */
+  height: 3rem;
+  width: auto;
+  top: 1rem;
+  right: 6rem;
+  left: 1rem;
+  z-index: 600;
+  text-align: center; /* Allinea il testo orizzontalmente */
+  display: flex; /* Attiva flexbox */
+  justify-content: right; /* Centra orizzontalmente */
+  align-items: center;
+}
+
+.topButtons {
+  margin-left: 1rem;
+}
+
+#ghostButton {
+  position: absolute;
+  display: none;
+  width:3rem;
+  height: 3rem;
+  background-color: var(--grigino);
+  opacity: .5;
+  border-radius: 10px;
+  top: 1.5rem;
+  z-index: 200;
+  user-select: none;
+  pointer-events: none;
+  transition: all 0.15s ease;
+}
+
+#chiudiMenuSopra, #chiudiMenuSotto {
+  display: none;
+  /* background-color: var(--testo); */
+  /* color: var(--dettaglio); */
+  transition: all 0.5s ease;
+  border: 2px solid var(--testo)
+
+}
+
+#chiudiMenuSotto {
+  height: 2rem;
+}
+
+#chiudiMenuSopra {
+  width: 2rem;
+}
+
+.bottonieraSotto {
+    padding: 0;
+    margin: 0;
+    position: absolute;
+    pointer-events: none;
+    /* background-color: red; */
+    /* border: var(--dettaglio) solid 2px;
+    border-radius: 10px; */
+    height: 3rem;
+    width: auto;
+    bottom: 1rem;
+    right: 1rem;
+    left: 1rem;
+    z-index: 200;
+    text-align: center; /* Allinea il testo orizzontalmente */
+    display: flex; /* Attiva flexbox */
+    justify-content: center; /* Centra orizzontalmente */
+    align-items: center; /* Centra verticalmente */
+}
+
+#menuList {
+  position: absolute;
+  /* pointer-events: none; */
+  color: var(--fondale);
+  z-index: 999;
+  background-color: var(--fondale);
+  border: 2px solid var(--dettaglio);
+  border-radius: 10px;
+  padding: 1rem;
+  top: 3rem;
+  bottom: 3rem;
+  left: 1rem;
+  height: auto;
+  /* width: 23vw; */
+  width: 0;
+  overflow: scroll;
+  opacity: 0;
+  transition: all 0.25s ease;
+}
+
+.itemList {
+  background-color: var(--fondale);
+  border: 1px solid var(--dettaglio);
+  padding: 1rem;
+  border-radius: 10px;
+  margin-bottom: 1rem;
+}
+
+.itemList:last-child {
+  margin-bottom: auto;
+}
+
+input[type='number'] {
+  border: 1px solid var(--dettaglio);
+  border-radius: 5px;
+  padding: 0.2rem;
+  margin: 0 0.2rem;
+  text-align: center;
+  background-color: transparent;
+  color: var(--testo);
+}
+
+.itemListTitle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  /* font-weight: bold; */
+  height: 100%;
+  margin-bottom: 0.5rem;
+}
+
+.itemListTitle div {
+  display: flex;
+  align-items: center;
+}
+
+.itemList hr {
+  border: none;
+  border-top: 1px solid var(--dettaglio);
+  margin: 0.5rem 0;
+}
+
+.visualizzazione {
+    height: 3rem;
+    width: 7rem;
+    border: var(--dettaglio) solid 2px;
+    color: var(--dettaglio);
+    border-radius: 10px;
+    text-align: center; /* Allinea il testo orizzontalmente */
+    display: flex; /* Attiva flexbox */
+    justify-content: center; /* Centra orizzontalmente */
+    align-items: center; /* Centra verticalmente */
+    user-select: none;
+}
+
+#helper {
+    z-index: 9999;
+    bottom: 1rem;
+    right: 1rem;
+    position: absolute;
+}
+
+/* #helper {
+  background-color: transparent;
+  border: solid var(--dettaglio) 2px;
+  border-radius: 10px;
+  color: var(--dettaglio);
+  padding: 0.5rem 1rem;
+
+  position: absolute;
+  bottom: 1rem;
+  right: 1rem;
+
+  transition: all 0.25s ease;
+  cursor: pointer;
+}
+
+#helperCard {
+  background-color: var(--fondale);
+  border: solid var(--dettaglio) 2px;
+  border-radius: 8px;
+  color: var(--dettaglio);
+  padding: 0.5rem 1rem;
+  opacity: 0;
+  font-size: large;
+
+  position: absolute;
+  bottom: 1rem;
+  right: 1rem;
+  height: 23vh;
+  width: 42vw;
+  overflow: scroll;
+  pointer-events: none;
+
+  transition: all 0.25s ease;
+}
+
+/* Qui il contenuto diventa visibile quando l'hover è sul #helper 
+#helper:hover #helperCard {
+  opacity: 1;
+} */

@@ -1,0 +1,120 @@
+.input-wrapper {
+    width: 16vw;
+    height: auto;
+    /* background-color: red; */
+    margin: 0;
+    padding: 0;
+}
+
+input[type='range'].n {
+  display: block;
+  margin: 1em auto;
+  padding: 0;
+  background: transparent;
+  font-size: 1em;
+  cursor: pointer;
+  width: 100%;
+  position: relative;
+}
+input[type='range'].n, input[type='range'].n::-webkit-slider-runnable-track, input[type='range'].n::-webkit-slider-thumb {
+  -webkit-appearance: none;
+}
+input[type='range'].n:after {
+  content: "";
+  width: 1em;
+  height: 1em;
+  border-radius: 8px;
+  background: var(--dettaglio);
+  position: absolute;
+  right: 0;
+}
+input[type='range'].n:before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  left: 0;
+  right: 0.8em;
+  height: 1em;
+  background: radial-gradient(circle at 0.5em 50%, var(--dettaglio) 0.3125em, var(--dettaglio) 0.3125em, var(--dettaglio) 0.5em, transparent 0.5em), linear-gradient(90deg, transparent 0, var(--dettaglio) 0) repeat-x 0 50%;
+  box-sizing: border-box;
+}
+input[type='range'].n::-ms-track {
+  border: none;
+  color: transparent;
+}
+input[type='range'].n::-webkit-slider-thumb {
+  border: solid var(--dettaglio) 2px;
+  border-radius: 8px;
+  box-shadow: 0 0.1em 0.3em rgba(0, 0, 0, 0.4);
+  box-sizing: border-box;
+  /* border: solid 0.35em transparent solid 0.25em transparent; */
+  width: 1.3em;
+  height: 1.3em;
+  background: var(--fondale);
+  background-clip: content-box;
+  position: relative;
+  z-index: 10;
+  margin-top: -0.1em;
+  margin-left: 0.05em;
+}
+input[type='range'].n::-moz-range-thumb {
+  border: none;
+  border-radius: 8px;
+  box-sizing: border-box;
+  border: solid 0.35em transparent solid 0.25em transparent;
+  width: 1.3em;
+  height: 1.3em;
+  background: var(--fondale);
+  background-clip: content-box;
+  position: relative;
+  z-index: 10;
+  margin-top: -0.1em;
+  margin-left: 0.05em;
+}
+input[type='range'].n::-ms-thumb {
+  border: none;
+  border-radius: 8px;
+  box-sizing: border-box;
+  border: solid 0.35em transparent solid 0.25em transparent;
+  width: 1.3em;
+  height: 1.3em;
+  background: var(--fondale);
+  background-clip: content-box;
+  position: relative;
+  z-index: 10;
+  margin-top: -0.1em;
+  margin-left: 0.05em;
+}
+input[type='range'].n::-ms-tooltip {
+  display: none;
+}
+input[type='range'].n:focus {
+  outline: none;
+}
+input[type='range'].n.n2:before {
+  background-size: 100% 1em, 100% 0.25em;
+}
+input[type='range'].n.n3:before {
+  background-size: 50% 1em, 100% 0.25em;
+}
+input[type='range'].n.n4:before {
+  background-size: 33.3333333333% 1em, 100% 0.25em;
+}
+input[type='range'].n.n5:before {
+  background-size: 25% 1em, 100% 0.25em;
+}
+input[type='range'].n.n6:before {
+  background-size: 20% 1em, 100% 0.25em;
+}
+input[type='range'].n.n7:before {
+  background-size: 16.6666666667% 1em, 100% 0.25em;
+}
+input[type='range'].n.n8:before {
+  background-size: 14.2857142857% 1em, 100% 0.25em;
+}
+input[type='range'].n.n9:before {
+  background-size: 12.5% 1em, 100% 0.25em;
+}
+input[type='range'].n.n10:before {
+  background-size: 11.1111111111% 1em, 100% 0.25em;
+}

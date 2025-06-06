@@ -20,6 +20,16 @@ export function getRaycasterActive() {
 let outlinePass;
 let composer;
 
+// Permette al menu di attivare/disattivare outline sugli oggetti
+window.setMenuOutline = function(object, enable) {
+    if (!outlinePass) return;
+    if (enable) {
+        outlinePass.selectedObjects = [object];
+    } else {
+        outlinePass.selectedObjects = [];
+    }
+};
+
 // Variabile per tracciare l'oggetto attualmente con l'outline
 let outlineObject = null;
 
@@ -117,6 +127,7 @@ renderer.domElement.addEventListener('mousemove', (event) => {
             outlineObject = firstNonDashedObject;
             outlinePass.selectedObjects = [outlineObject];
             currentSelectedObject = firstNonDashedObject; // Aggiorna l'oggetto selezionato
+            highlightMenuItemByObject(firstNonDashedObject);
         } else {
             const dashedObject = intersects[0].object;
             const parentGroup = dashedObject.parent;
@@ -126,6 +137,7 @@ renderer.domElement.addEventListener('mousemove', (event) => {
                 currentSelectedObject = invisibleMesh || parentGroup; // Seleziona il gruppo o il mesh
                 outlineObject = currentSelectedObject;
                 outlinePass.selectedObjects = [outlineObject];
+                highlightMenuItemByObject(currentSelectedObject);
             }
 
             const newText = dashedObject.name || 'Oggetto trattato';
@@ -138,6 +150,7 @@ renderer.domElement.addEventListener('mousemove', (event) => {
         // Non resettare currentSelectedObject quando non c'è hover
         outlineObject = null;
         outlinePass.selectedObjects = [];
+        highlightMenuItemByObject(null);
     }
 });
 
@@ -195,6 +208,20 @@ function updateInfoText(text) {
     infoDiv.textContent = text || '---';
 }
 
+
+// Quando il raycaster seleziona un oggetto, evidenzia anche il bordo del relativo elemento menu
+function highlightMenuItemByObject(object) {
+    const menuList = document.getElementById('menuList');
+    if (!menuList) return;
+    const items = menuList.querySelectorAll('.itemList');
+    objToBeDetected.forEach((obj, idx) => {
+        if (obj === object) {
+            items[idx]?.classList.add('itemList-hover');
+        } else {
+            items[idx]?.classList.remove('itemList-hover');
+        }
+    });
+}
 
 // Inizializza post-processing e avvia il rendering
 initPostProcessing();

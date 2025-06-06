@@ -80,6 +80,22 @@ export function createMenu() {
         itemList.appendChild(collapsibleContainer);
 
         menuList.appendChild(itemList);
+
+        // --- HOVER EFFETTO BORDO E OUTLINE ---
+        itemList.addEventListener('mouseenter', () => {
+            itemList.classList.add('itemList-hover');
+            // Attiva outline sull'oggetto corrispondente
+            if (window.setMenuOutline) {
+                window.setMenuOutline(object, true);
+            }
+        });
+        itemList.addEventListener('mouseleave', () => {
+            itemList.classList.remove('itemList-hover');
+            // Disattiva outline sull'oggetto corrispondente
+            if (window.setMenuOutline) {
+                window.setMenuOutline(object, false);
+            }
+        });
     });
 }
 

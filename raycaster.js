@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { renderer, objToBeDetected, currentCamera, scene, control } from './setup';
+import { renderer, objToBeDetected, currentCamera, scene, control, updateStato3 } from './setup';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { OutlinePass } from 'three/addons/postprocessing/OutlinePass.js';
@@ -200,6 +200,27 @@ function updateInfoText(text) {
 initPostProcessing();
 animate();
 
+// --- INVIO A MAX/MSP DEL MOVIMENTO MANUALE ---
+if (control) {
+    control.addEventListener('change', function () {
+        if (control.object) {
+            const obj = control.object;
+            const fullName = obj.name || '';
+            // Estrai nome e index (es: "Omnifonte 1" -> nome: "Omnifonte", index: 1)
+            const match = fullName.match(/^(.*?)[\s_-]?(\d+)$/);
+            let name = fullName;
+            let index = 1;
+            if (match) {
+                name = match[1].trim();
+                index = parseInt(match[2], 10);
+            }
+            if (window.max && window.max.outlet) {
+                window.max.outlet(name, index, obj.position.x, obj.position.y, obj.position.z);
+            }
+        }
+    });
+}
+
 window.addEventListener('keydown', (event) => {
     switch (event.key) {
         case '1': // Tasto 1: Camera prospettica
@@ -233,3 +254,46 @@ window.addEventListener('keydown', (event) => {
     // Forza il renderer a utilizzare la nuova camera
     renderer.render(scene, currentCamera);
 });
+
+// Disattiva i TransformControls quando si clicca il bottone toggleTransButton
+const toggleTransButton = document.getElementById('toggleTransButton');
+if (toggleTransButton) {
+    toggleTransButton.addEventListener('click', () => {
+        if (control) {
+            control.detach();
+        }
+        if (typeof orbit !== 'undefined') {
+            orbit.enabled = true;
+        }
+        // Aggiorna stato UI come fa ESC
+        if (typeof updateStato3 === 'function') {
+            updateStato3();
+        }
+        // Nascondi ghostButton
+        const ghostButton = document.getElementById('ghostButton');
+        if (ghostButton) ghostButton.style.display = 'none';
+        // Nascondi infoDivBottomLeft e infoDivTopLeft
+        const infoDivDown = document.getElementById('infoDivBottomLeft');
+        if (infoDivDown) infoDivDown.textContent = '---';
+        // const infoDivTop = document.getElementById('infoDivTopLeft');
+        // if (infoDivTop) infoDivTop.textContent = '---';
+        // Nascondi anche il triangolino nero
+        const transTriangle = document.getElementById('transTriangle');
+        if (transTriangle) transTriangle.style.display = 'none';
+        // Reset variabile di stato per infoDiv
+        // if (typeof lastHoveredObject !== 'undefined') {
+        //     lastHoveredObject = null;
+        // }
+        // Chiama updateStato3 per resettare anche lo stato in basso a sinistra
+        if (typeof updateStato3 === 'function') {
+            updateStato3();
+        }
+        // Riattiva raycaster
+        if (typeof isRaycasterActive !== 'undefined') {
+            isRaycasterActive = true;
+        }
+        if (typeof updateMenu === 'function') {
+            updateMenu();
+        }
+    });
+}

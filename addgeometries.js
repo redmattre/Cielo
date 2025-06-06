@@ -4,21 +4,36 @@ import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js
 import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
 import { dashedMaterial, dashedMaterialB, dashedMaterialC, dashedMaterialD, goochMaterialArrow, goochMaterialSp, standardMat } from './materials.js';
 import { objToBeDetected, scene } from './setup.js';
-import { color } from 'three/tsl';
-import { bool } from 'three/tsl';
+// import { color } from 'three/tsl';
+// import { bool } from 'three/tsl';
 import { createMenu } from './objmenu.js';
+import { loadGenericGltf } from './loadersFIX.js';
 
 const addSpeaker = document.getElementById('addCone');
 const addHalo = document.getElementById('addHalo');
 const addSphere = document.getElementById('addSphere');
 const addArrow = document.getElementById('addArrow');
 const addCloudClient = document.getElementById('addCloudElement');
+const addGenericModel = document.getElementById('loadGenericGltf');
 
-let howManySpeakers = 0;
+let howManyGenericModels = 0;
+
+addGenericModel.addEventListener('click', () => {
+    howManyGenericModels++;
+    let nome = `Modello custom ${howManyGenericModels}`
+    loadGenericGltf('./modelli/galleriaGLTF/scultura.glb', nome, 0.045, -3.5, -0.7, 0.5);
+    // createMenu(); //qui non fa perchè deve caricare il modello sec me
+});
 
 addSpeaker.addEventListener('click', () => {
-    howManySpeakers++;
-    let nome = `Altoparlante ${howManySpeakers}`
+    // Conta solo gli speaker di primo livello nella scena
+    let howManySpeakers = 0;
+    scene.children.forEach((obj) => {
+        if (obj.name && obj.name.startsWith("Altoparlante ")) {
+            howManySpeakers++;
+        }
+    });
+    let nome = `Altoparlante ${howManySpeakers + 1}`;
     loadObj('./modelli/galleriaOBJ/speaker3dec.obj', nome, goochMaterialSp, 0.045, 0., 0, 1.2);
     // createMenu(); //qui non fa perchè deve caricare il modello sec me
 });
@@ -50,12 +65,25 @@ addCloudClient.addEventListener('click', () => {
     loadObj('./modelli/galleriaOBJ/cloudDec.obj', nome, goochMaterialSp, 0.035, 0., 0, 1.2);
 });
 
-let howManySpheres = 0;
-
 addSphere.addEventListener('click', (event) => {
-    howManySpheres++;
-    let nome = `Omnifonte ${howManySpheres}`;
-    newShape(true, nome, goochMaterialArrow, 0., 0., 1.2);
+    // Conta solo le sfere di primo livello nella scena
+    let howManySpheres = 0;
+    scene.children.forEach((obj) => {
+        if (obj.name && obj.name.startsWith("Omnifonte ")) {
+            howManySpheres++;
+        }
+    });
+    let nome = `Omnifonte ${howManySpheres + 1}`;
+    const geometry = new THREE.SphereGeometry(0.3, 40, 40);
+    const material = goochMaterialArrow;
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.scale.set(0.25, 0.24, 0.25);
+    mesh.name = nome;
+    mesh.isDashed = false;
+    mesh.position.set(0., 1.2, 0.);
+    scene.add(mesh);
+    objToBeDetected.push(mesh);
+    createMenu();
 });
 
 //zones

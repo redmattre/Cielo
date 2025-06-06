@@ -38,6 +38,38 @@ export function loadGltfModel(filepath) {
     );
 }
 
+export function loadGenericGltf(filename, name, scaleFactor, x, y, z) {
+    const loader = new GLTFLoader();
+
+    // Ensure the path is correct in both dev and production (GitHub Pages)
+    const fullPath = import.meta.env.BASE_URL + filename;
+
+    loader.load(
+        fullPath,
+        function (gltf) {
+            const model = gltf.scene;
+            model.name = name;
+            
+            // Apply transformations
+            model.scale.setScalar(scaleFactor);
+            model.position.set(x, z, y);
+
+            // Add the model to the scene and detection array
+            scene.add(model);
+            objToBeDetected.push(model);
+
+            console.log(`Loaded ${fullPath} successfully.`);
+            createMenu();
+        },
+        function (xhr) {
+            console.log(`${Math.round((xhr.loaded / xhr.total) * 100)}% loaded`);
+        },
+        function (error) {
+            console.error('An error happened', error);
+        }
+    );
+}
+
 export let nativeMaterialsTransparency = 0.7
 
 export function toggleTransparency(modelName, isTransparent) {

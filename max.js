@@ -1,5 +1,8 @@
 import * as THREE from 'three';
 import { objToBeDetected, scene } from "./setup";
+import { loadObj } from './loaders.js';
+import { goochMaterialSp, goochMaterialArrow } from './materials.js';
+import { createMenu } from './objmenu.js';
 
 window.max.bindInlet("hello", function(){
 	max.outlet("from the other side!");
@@ -42,37 +45,121 @@ function sendMeshesToMax() {
     });
 }
 
-window.max.bindInlet("moveHalo", function(index, x, y, z) {
-    // Construct the target object's name based on the index
-    max.outlet("move halo");
+window.max.bindInlet("moveHalo", function(index, x, z, y) {
     const targetName = `Aureola-${index}`;
-    
-    // Find the object in the scene by its name
     const targetObject = scene.getObjectByName(targetName);
-    // If the object exists, move it to the specified position
     if (targetObject) {
         targetObject.position.set(x, y, z);
+        max.outlet("halo", index, x, y, z);
+    } else {
+        max.outlet("halo", index, "not found");
     }
 });
 
-window.max.bindInlet("rotateHalo", function(index, x, y, z) {
-
-    // Map 0-1 range to 0-2π radians (360 degrees)
-    const xRotation = x * Math.PI * 2; // 0-1 mapped to 0-360° in radians
+window.max.bindInlet("rotateHalo", function(index, x, z, y) {
+    const xRotation = x * Math.PI * 2;
     const yRotation = y * Math.PI * 2;
     const zRotation = z * Math.PI * 2;
-
-    // Construct the target object's name based on the index
     const targetName = `Aureola-${index}`;
-
-    // Find the object in the scene by its name
     const targetObject = scene.getObjectByName(targetName);
-
-    // If the object exists, set its rotation
     if (targetObject) {
         targetObject.rotation.set(xRotation, yRotation, zRotation);
-        console.log(`Rotated ${targetName} to rotation (${xRotation}, ${yRotation}, ${zRotation})`);
+        max.outlet("halo", index, xRotation, yRotation, zRotation);
     } else {
-        console.error(`Object with name ${targetName} not found in the scene.`);
+        max.outlet("halo", index, "not found");
     }
 });
+
+window.max.bindInlet("addSpeaker", function(x, y, z, rx = 0, ry = 0, rz = 0) {
+    // Conta solo gli speaker di primo livello nella scena
+    let howManySpeakers = 0;
+    scene.children.forEach((obj) => {
+        if (obj.name && obj.name.startsWith("Altoparlante ")) {
+            howManySpeakers++;
+        }
+    });
+    let nome = `Altoparlante ${howManySpeakers + 1}`;
+    loadObj('./modelli/galleriaOBJ/speaker3dec.obj', nome, goochMaterialSp, 0.045, x, y, z);
+    // Dopo il caricamento, imposta la rotazione se specificata
+    // Serve un piccolo timeout per assicurarsi che l'oggetto sia stato aggiunto
+    setTimeout(() => {
+        const targetObject = scene.getObjectByName(nome);
+        if (targetObject) {
+            // Se i valori non sono specificati, saranno 0 (default)
+            const xRotation = rx * Math.PI * 2;
+            const yRotation = ry * Math.PI * 2;
+            const zRotation = rz * Math.PI * 2;
+            targetObject.rotation.set(xRotation, yRotation, zRotation);
+        }
+    }, 100);
+    max.outlet(`Speaker ${nome}, ${x}, ${y}, ${z}, rot: ${rx}, ${ry}, ${rz}`);
+});
+
+window.max.bindInlet("moveSpeaker", function(index, x, z, y) {
+    const targetName = `Altoparlante ${index}`;
+    const targetObject = scene.getObjectByName(targetName);
+    if (targetObject) {
+        targetObject.position.set(x, y, z);
+        max.outlet("speaker", index, x, y, z);
+    } else {
+        max.outlet("speaker", index, "not found");
+    }
+});
+
+window.max.bindInlet("rotateSpeaker", function(index, x, z, y) {
+    const xRotation = x * Math.PI * 2;
+    const yRotation = y * Math.PI * 2;
+    const zRotation = z * Math.PI * 2;
+    const targetName = `Altoparlante ${index}`;
+    const targetObject = scene.getObjectByName(targetName);
+    if (targetObject) {
+        targetObject.rotation.set(xRotation, yRotation, zRotation);
+        max.outlet("speaker", index, xRotation, yRotation, zRotation);
+    } else {
+        max.outlet("speaker", index, "not found");
+    }
+});
+
+window.max.bindInlet("addSphere", function(x, y, z) {
+    // Conta solo le sfere di primo livello nella scena
+    let howManySpheres = 0;
+    scene.children.forEach((obj) => {
+        if (obj.name && obj.name.startsWith("Omnifonte ")) {
+            howManySpheres++;
+        }
+    });
+    let nome = `Omnifonte ${howManySpheres + 1}`;
+    // Crea la sfera come in addgeometries.js
+    const geometry = new THREE.SphereGeometry(0.3, 40, 40);
+    const material = goochMaterialArrow;
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.scale.set(0.25, 0.24, 0.25);
+    mesh.name = nome;
+    mesh.isDashed = false;
+    mesh.position.set(x, y, z);
+    scene.add(mesh);
+    objToBeDetected.push(mesh);
+    createMenu(); // Aggiorna il menu dopo aver aggiunto la sfera
+    max.outlet(`Sfera aggiunta: ${nome} in posizione (${x}, ${y}, ${z})`);
+});
+
+window.max.bindInlet("moveSphere", function(index, x, z, y) {
+    const targetName = `Omnifonte ${index}`;
+    const targetObject = scene.getObjectByName(targetName);
+    if (targetObject) {
+        targetObject.position.set(x, y, z);
+        max.outlet("omnifonte", index, x, y, z);
+    } else {
+        max.outlet("omnifonte", index, "not found");
+    }
+});
+
+window.max.bindInlet("setSphere", function(index, x, z, y) {
+    const targetName = `Omnifonte ${index}`;
+    const targetObject = scene.getObjectByName(targetName);
+    if (targetObject) {
+        targetObject.position.set(x, y, z);
+        // Nessun output sugli outlet
+    }
+});
+

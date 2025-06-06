@@ -55,7 +55,7 @@ export function init() {
     directionalLight.castShadow = true;
     scene.add(directionalLight);
 
-	const directionalLight2 = new THREE.DirectionalLight(0xffffff, 1.6);
+    const directionalLight2 = new THREE.DirectionalLight(0xffffff, 1.6);
     directionalLight2.position.set(-5, 10, -7.5);
     directionalLight2.castShadow = true;
     scene.add(directionalLight2);
@@ -215,6 +215,21 @@ export function init() {
 	});
 
     window.addEventListener('resize', onWindowResize);
+
+    // --- CICLO VISUALIZZAZIONI CON CLICK SUL DIV ---
+    const views = [
+        { key: '1', label: 'Prospettiva' },
+        { key: '2', label: 'Pianta' },
+        { key: '3', label: 'Fronte' },
+        { key: '4', label: 'Lato' }
+    ];
+    let currentViewIndex = 0;
+    visualizzazione.addEventListener('click', () => {
+        currentViewIndex = (currentViewIndex + 1) % views.length;
+        // Simula la pressione del tasto corrispondente
+        const event = new KeyboardEvent('keydown', { key: views[currentViewIndex].key });
+        window.dispatchEvent(event);
+    });
 }
 
 let miao;
@@ -336,18 +351,42 @@ export function render() {
 function initTransformControls() {
     control = new TransformControls( cameraPersp, renderer.domElement );
 
-	control.setTranslationSnap(0.05);
-	control.setRotationSnap(THREE.MathUtils.degToRad(15));
-	control.setScaleSnap(0.05);
+    control.setTranslationSnap(0.05);
+    control.setRotationSnap(THREE.MathUtils.degToRad(15));
+    control.setScaleSnap(0.05);
 
-	control.addEventListener( 'dragging-changed', function ( event ) {
+    control.addEventListener( 'dragging-changed', function ( event ) {
+        orbit.enabled = ! event.value;
+    } );
 
-		orbit.enabled = ! event.value;
+    // Personalizza i colori dei gizmo degli assi (pastello RGB)
+    function setGizmoColors() {
+        const axisColors = {
+            X: 0xfc4e4e, // rosso pastello
+            Y: 0x82e346, // verde pastello
+            Z: 0x46a2e3  // blu pastello
+        };
+        function colorize(object3D) {
+            if (object3D.isMesh && object3D.material && object3D.name) {
+                if (object3D.name.includes('X')) object3D.material.color.setHex(axisColors.X);
+                if (object3D.name.includes('Y')) object3D.material.color.setHex(axisColors.Y);
+                if (object3D.name.includes('Z')) object3D.material.color.setHex(axisColors.Z);
+            }
+            if (object3D.children && object3D.children.length) {
+                object3D.children.forEach(child => colorize(child));
+            }
+        }
+        if (Array.isArray(control.children) && control.children.length > 0) {
+            control.children.forEach(child => colorize(child));
+        } else if (control._gizmo) {
+            colorize(control._gizmo);
+        }
+    }
+    setGizmoColors();
+    control.addEventListener('objectChange', setGizmoColors); // Aggiorna i colori ogni volta che cambia oggetto
 
-	} );
-
-	const gizmo = control.getHelper();
-	scene.add( gizmo );
+    const helper = control.getHelper();
+    scene.add(helper);
 }
 
 export function onWindowResize() {

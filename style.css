@@ -1,5 +1,6 @@
 :root {
   --fondaleBianco: #d6d6d6;
+  --fondaleBianco: #d6d6d6;
   --fondaleNero: black;
   --grigio: grey;
   --grigino: rgb(161, 161, 161);
@@ -57,6 +58,27 @@ button {
   user-select: none;
   /* box-shadow: 0 0 0.5rem var(--fondale); */
 }
+
+.menuButton {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: auto;
+  margin-top: 0;
+  width: 5rem;
+  height: auto;
+  font-size: 1rem;
+  background-color: transparent;
+  border: solid var(--dettaglio) 2px;
+  border-radius: 10px;
+  color: var(--testo);
+  cursor: pointer;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* .menubutton:active {
+  background-color: var(--dettaglio);
+} */
 
 /* #helper {
   background-image: url("modelli/Logo_TempoReale.webp");
@@ -254,7 +276,8 @@ button:active {
     padding: 0;
     margin: 0;
     position: absolute;
-    pointer-events: none;
+    /* pointer-events: none; */
+    /* user-select: none; */
     /* background-color: red; */
     /* border: var(--dettaglio) solid 2px;
     border-radius: 10px; */
@@ -343,6 +366,8 @@ input[type='number'] {
     justify-content: center; /* Centra orizzontalmente */
     align-items: center; /* Centra verticalmente */
     user-select: none;
+    pointer-events: auto;
+    cursor: pointer;
 }
 
 #helper {

@@ -17,19 +17,19 @@
     </div>
 
     <div class="bottonieraDestra">
+
       <div id="nav-icon3">
         <span></span>
         <span></span>
         <span></span>
         <span></span>
       </div>
+
       <button id="addHalo">❍</button>
-      <button id="addCloudElement">☁</button>
+      <button id="addCloudElement" style="display: none;">☁</button>
       <button id="addCone">⊚</button>
-      <button id="addZone">⛶</button>
-      <!-- <button id="addCube">C</button> -->
-      <!-- <button id="addArrow">⇨</button> -->
-       <button id="addArrow">➞</button>
+      <button id="addZone" style="display: none;">⛶</button>
+      <button id="addArrow">➞</button>
       <button id="addSphere">⬤</button>
       <button id="seeItemsList">▤</button>
       <button id="chiudiMenuSotto">⸓</button>
@@ -47,7 +47,6 @@
     <div id="black-panel">
 
 			<div class="container">
-        <!-- <div id="titoloImpostazioni">Impostazioni</div> -->
         <div>Generali</div>
         <div class="switch-wrapper">
 					<label class="switch">
@@ -92,8 +91,8 @@
           </label>
         </div>
       
-        <div>Architettura</div>
-        <!-- <button id="addArch">A</button> -->
+        <div>Plastico</div>
+        <button class="menuButton" id="loadPlastico">Carica</button>
         <div class="switch-wrapper">
 					<label class="switch">
 						<input type="checkbox" data-id="archVisibility"/>
@@ -132,6 +131,16 @@
           </div>
         </label>
 
+        <div>Carica modello</div>
+        <button class="button menuButton" id="loadGenericGltf">Carica</button>
+				<div class="switch-wrapper">
+					<label class="switch">
+						<input type="checkbox" data-id="zoneVisibility" checked/>
+						<div></div>
+					</label>
+					<span class="switch-label">⏿</span>
+				</div>
+
         <div>Zone</div>
 				<div class="switch-wrapper">
 					<label class="switch">
@@ -158,19 +167,6 @@
 					</label>
 					<span class="switch-label">⏿</span>
 				</div>
-      
-				<!-- <button id="helper">
-					?
-					<div id="helperCard">
-						<div id="info">
-							"G" translate | "R" rotate | "S" scale <br />
-							"Q" toggle world/local space |  "Shift" snap to grid<br />
-							"Backspace" or "X" deletes hovered object <br> "esc" to shut controls <br>
-							"Double Click" to restore camera position | <br>
-							"Shift + Click" on hovered objects creates a group
-						</div>
-					</div>
-				</button> -->
 				
 			</div>
 		</div>
@@ -193,7 +189,6 @@
     <div id="menuList"></div>
     <div id="ghostButton"></div>
 
-    <!-- <script src="navbar.js"></script> -->
     <script type="module" src="main.js"></script>
     <script type="module" src="setup.js"></script>
     <script type="module" src="materials.js"></script>

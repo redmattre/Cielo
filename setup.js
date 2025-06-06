@@ -7,10 +7,16 @@ import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
 import { standardMat, phongMat, dashedLineMat, dashedMaterial, solidMaterial, goochMaterial, goochMaterialArrow } from './materials.js';
 import { loadObj } from './loaders.js';
 import { updateMenu } from './objmenu.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { GridHelperAA } from './InfiniteGridHelper.js';
 
 export let scene, ssuper, renderer, control, orbit, orbitOrtho;
 export let objToBeDetected = [];
 export let cameraPersp, cameraOrtho, currentCamera, camera;
+export let composer, fxaaPass;
 let rendererBackgoundColor = 0xd6d6d6; //inizia bianco
 // let rendererBackgoundColor = 0x000000; //inizia nero
 let ghostButton = document.getElementById('ghostButton');
@@ -20,14 +26,14 @@ const stato = document.getElementById("infoDivBottomLeft");
 export let transfo = false;
 
 export function changeGrid(size, divisions) {
-	scene.remove(ssuper);
-	ssuper = new THREE.GridHelper(size, divisions, 0x888888, 0x888888)
-	scene.add(ssuper);
+    scene.remove(ssuper);
+    ssuper = new GridHelperAA(size, divisions, new THREE.Color(0x888888), new THREE.Color(0x444444), 0.85);
+    scene.add(ssuper);
 }
 
 export function init() {
     // Scene setup
-	ssuper = new THREE.GridHelper(10, 16, 0x888888, 0x888888)
+    ssuper = new GridHelperAA(10, 16, new THREE.Color(0x888888), new THREE.Color(0x444444), 0.85);
     scene = new THREE.Scene();
     scene.add(ssuper);
 
@@ -71,6 +77,35 @@ export function init() {
     renderer.autoClear = false;
     renderer.setClearColor(rendererBackgoundColor);
     document.body.appendChild(renderer.domElement);
+
+    // --- POSTPROCESSING FXAA ---
+    composer = new EffectComposer(renderer);
+    const renderPass = new RenderPass(scene, currentCamera);
+    composer.addPass(renderPass);
+    fxaaPass = new ShaderPass(FXAAShader);
+    const pixelRatio = renderer.getPixelRatio();
+    fxaaPass.material.uniforms['resolution'].value.x = 1 / (window.innerWidth * pixelRatio);
+    fxaaPass.material.uniforms['resolution'].value.y = 1 / (window.innerHeight * pixelRatio);
+    composer.addPass(fxaaPass);
+
+    window.addEventListener('resize', () => {
+        const aspect = window.innerWidth / window.innerHeight;
+
+        cameraPersp.aspect = aspect;
+        cameraPersp.updateProjectionMatrix();
+
+        cameraOrtho.left = cameraOrtho.bottom * aspect;
+        cameraOrtho.right = cameraOrtho.top * aspect;
+        cameraOrtho.updateProjectionMatrix();
+
+        renderer.setSize( window.innerWidth, window.innerHeight );
+
+        if (fxaaPass) {
+            const pixelRatio = renderer.getPixelRatio();
+            fxaaPass.material.uniforms['resolution'].value.x = 1 / (window.innerWidth * pixelRatio);
+            fxaaPass.material.uniforms['resolution'].value.y = 1 / (window.innerHeight * pixelRatio);
+        }
+    });
 
     // Controlli scena prospettiva
     orbit = new OrbitControls(cameraPersp, renderer.domElement);
@@ -293,7 +328,11 @@ export function changeTheme(state) {
 }
 
 export function render() {
-    renderer.render(scene, currentCamera);
+    if (composer) {
+        composer.render();
+    } else {
+        renderer.render(scene, currentCamera);
+    }
 	requestAnimationFrame(render);
 }
 
@@ -362,7 +401,7 @@ function initTransformControls() {
     // Personalizza i colori dei gizmo degli assi (pastello RGB)
     function setGizmoColors() {
         const axisColors = {
-            X: 0xfc4e4e, // rosso pastello
+            X: 0xfc5861, // rosso pastello
             Y: 0x82e346, // verde pastello
             Z: 0x46a2e3  // blu pastello
         };

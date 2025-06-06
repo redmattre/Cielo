@@ -3,10 +3,13 @@ import { init, render, scene, control } from './setup.js';
 import { standardMat, phongMat, normalMat, dashedMaterial, solidMaterial, goochMaterial, goochMaterialSp, goochMaterialAlpha, goochMaterialArrow } from './materials.js';
 import { loadObj, loadObjWithDashedEdges } from './loaders.js';
 import { loadGltfModel, loadObjWithMaterials, toggleTransparency } from './loadersFIX.js';
+import { addMetroButton } from './metro.js';
 
 
 init();
 render();
+
+addMetroButton();
 
 loadGltfModel('./modelli/galleriaGLTF/GenericGallery.glb');
 // loadGltfModel('./modelli/galleriaGLTF/ChiesaSuffragio.glb');

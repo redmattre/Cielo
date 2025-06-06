@@ -424,3 +424,12 @@ input[type='number'] {
   box-shadow: 0 4px 16px 0 #fff, 0 0 0 2px #fff;
   transition: border 0.15s cubic-bezier(0.4,0,0.2,1), box-shadow 0.15s cubic-bezier(0.4,0,0.2,1);
 }
+
+.metro-label {
+  z-index: 99999;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: bold;
+  pointer-events: none;
+  user-select: none;
+  box-shadow: 0 2px 8px #00bcd488;
+}

@@ -14,6 +14,30 @@
 		"gridsize" : [ 15.0, 15.0 ],
 		"boxes" : [ 			{
 				"box" : 				{
+					"id" : "obj-140",
+					"linecount" : 10,
+					"maxclass" : "comment",
+					"numinlets" : 1,
+					"numoutlets" : 0,
+					"patching_rect" : [ 968.5, 562.0, 150.0, 141.0 ],
+					"text" : "forse potrebbe aver senso pensare ad una versione che manda i messaggi con node tramite localhost. Così da avere anche un interfaccia utilizzabile col touch. Che in performance mode potrebbe essere interessante."
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-138",
+					"maxclass" : "message",
+					"numinlets" : 2,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 299.0, 13.0, 123.0, 22.0 ],
+					"text" : "read monitor_cielo.txt"
+				}
+
+			}
+, 			{
+				"box" : 				{
 					"id" : "obj-137",
 					"linecount" : 4,
 					"maxclass" : "comment",
@@ -67,20 +91,7 @@
 						"classnamespace" : "box",
 						"rect" : [ 100.0, 106.0, 1000.0, 780.0 ],
 						"gridsize" : [ 15.0, 15.0 ],
-						"visible" : 1,
 						"boxes" : [ 							{
-								"box" : 								{
-									"id" : "obj-4",
-									"maxclass" : "newobj",
-									"numinlets" : 2,
-									"numoutlets" : 1,
-									"outlettype" : [ "int" ],
-									"patching_rect" : [ 170.0, 137.0, 29.5, 22.0 ],
-									"text" : "- 1"
-								}
-
-							}
-, 							{
 								"box" : 								{
 									"comment" : "for old onda",
 									"id" : "obj-3",
@@ -195,6 +206,14 @@
 							}
 , 							{
 								"patchline" : 								{
+									"destination" : [ "obj-1", 0 ],
+									"order" : 0,
+									"source" : [ "obj-124", 0 ]
+								}
+
+							}
+, 							{
+								"patchline" : 								{
 									"destination" : [ "obj-125", 0 ],
 									"order" : 1,
 									"source" : [ "obj-124", 2 ]
@@ -234,14 +253,6 @@
 							}
 , 							{
 								"patchline" : 								{
-									"destination" : [ "obj-4", 0 ],
-									"order" : 0,
-									"source" : [ "obj-124", 0 ]
-								}
-
-							}
-, 							{
-								"patchline" : 								{
 									"destination" : [ "obj-126", 2 ],
 									"source" : [ "obj-125", 0 ]
 								}
@@ -265,13 +276,6 @@
 								"patchline" : 								{
 									"destination" : [ "obj-1", 2 ],
 									"source" : [ "obj-2", 0 ]
-								}
-
-							}
-, 							{
-								"patchline" : 								{
-									"destination" : [ "obj-1", 0 ],
-									"source" : [ "obj-4", 0 ]
 								}
 
 							}
@@ -1287,7 +1291,7 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
 					"parameter_enable" : 0,
-					"patching_rect" : [ 407.0, 381.0, 162.0, 30.5 ],
+					"patching_rect" : [ 450.0, 731.0, 162.0, 30.5 ],
 					"thickness" : 74.0
 				}
 
@@ -2192,6 +2196,13 @@
 					"destination" : [ "obj-133", 0 ],
 					"order" : 1,
 					"source" : [ "obj-132", 1 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-103", 0 ],
+					"source" : [ "obj-138", 0 ]
 				}
 
 			}

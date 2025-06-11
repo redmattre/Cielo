@@ -96,6 +96,7 @@ window.addEventListener('keydown', function(event) {
 
 renderer.domElement.addEventListener('mousemove', (event) => {
     if (!isRaycasterActive) return;
+    if (isGroupCreationBlinking) return; // Blocca l'aggiornamento outline durante il lampeggio
 
     const now = Date.now();
     if (now - lastUpdateTime < updateInterval) return;
@@ -108,47 +109,32 @@ renderer.domElement.addEventListener('mousemove', (event) => {
     const intersects = raycaster.intersectObjects(objToBeDetected, true);
 
     if (intersects.length > 0) {
-        let firstNonDashedObject = null;
-
-        for (let i = 0; i < intersects.length; i++) {
-            const intersectedObject = intersects[i].object;
-            if (!intersectedObject.isDashed) {
-                firstNonDashedObject = intersectedObject;
-                break;
-            }
-        }
-
-        if (firstNonDashedObject) {
-            const newText = firstNonDashedObject.name || 'Oggetto non trattato';
-            if (newText !== lastHoveredObject) {
-                updateInfoText(newText);
-                lastHoveredObject = newText;
-            }
-            outlineObject = firstNonDashedObject;
-            outlinePass.selectedObjects = [outlineObject];
-            currentSelectedObject = firstNonDashedObject; // Aggiorna l'oggetto selezionato
-            highlightMenuItemByObject(firstNonDashedObject);
+        let hovered = intersects[0].object;
+        // Se hover su gruppo, outline su tutti i membri
+        if (hovered.parent && hovered.parent.name === 'Gruppo di trasformazione') {
+            const group = hovered.parent;
+            // Prendi tutti i figli mesh del gruppo
+            const groupMembers = group.children.filter(child => child.isMesh || child.type === 'Group' || child.type === 'Object3D');
+            outlinePass.selectedObjects = groupMembers;
+            currentSelectedObject = group;
+            updateInfoText(group.name || 'Gruppo di trasformazione');
+            highlightMenuItemByObject(group);
+        } else if (hovered.name === 'Gruppo di trasformazione') {
+            // Hover diretto sul gruppo
+            const groupMembers = hovered.children.filter(child => child.isMesh || child.type === 'Group' || child.type === 'Object3D');
+            outlinePass.selectedObjects = groupMembers;
+            currentSelectedObject = hovered;
+            updateInfoText(hovered.name || 'Gruppo di trasformazione');
+            highlightMenuItemByObject(hovered);
         } else {
-            const dashedObject = intersects[0].object;
-            const parentGroup = dashedObject.parent;
-
-            if (parentGroup) {
-                const invisibleMesh = parentGroup.children.find(child => child.isMesh);
-                currentSelectedObject = invisibleMesh || parentGroup; // Seleziona il gruppo o il mesh
-                outlineObject = currentSelectedObject;
-                outlinePass.selectedObjects = [outlineObject];
-                highlightMenuItemByObject(currentSelectedObject);
-            }
-
-            const newText = dashedObject.name || 'Oggetto trattato';
-            if (newText !== lastHoveredObject) {
-                updateInfoText(newText);
-                lastHoveredObject = newText;
-            }
+            // Oggetto singolo
+            outlinePass.selectedObjects = [hovered];
+            currentSelectedObject = hovered;
+            updateInfoText(hovered.name || 'Oggetto non trattato');
+            highlightMenuItemByObject(hovered);
         }
     } else {
         // Non resettare currentSelectedObject quando non c'è hover
-        outlineObject = null;
         outlinePass.selectedObjects = [];
         highlightMenuItemByObject(null);
     }
@@ -222,6 +208,124 @@ function highlightMenuItemByObject(object) {
         }
     });
 }
+
+// --- SELEZIONE MULTIPLA E GRUPPO TEMPORANEO ---
+let tempGroup = null;
+let multiSelectedObjects = [];
+let groupCreationBlinkInterval = null;
+let isGroupCreationBlinking = false;
+
+function startGroupBlinking() {
+    if (groupCreationBlinkInterval) return;
+    isGroupCreationBlinking = true;
+    let visible = true;
+    groupCreationBlinkInterval = setInterval(() => {
+        if (!isGroupCreationBlinking) return;
+        if (multiSelectedObjects.length > 0) {
+            outlinePass.selectedObjects = visible ? multiSelectedObjects.slice() : [];
+        }
+        visible = !visible;
+    }, 300);
+    // Messaggio in basso a sinistra
+    const infoDivDown = document.getElementById('infoDivBottomLeft');
+    if (infoDivDown) infoDivDown.textContent = 'Creazione gruppo, clicca enter per confermare';
+    // Mostra triangolino nero
+    const transTriangle = document.getElementById('transTriangle');
+    if (transTriangle) transTriangle.style.display = 'block';
+}
+
+function stopGroupBlinking() {
+    isGroupCreationBlinking = false;
+    if (groupCreationBlinkInterval) {
+        clearInterval(groupCreationBlinkInterval);
+        groupCreationBlinkInterval = null;
+    }
+    outlinePass.selectedObjects = [];
+    // Ripristina messaggio
+    const infoDivDown = document.getElementById('infoDivBottomLeft');
+    if (infoDivDown) infoDivDown.textContent = '---';
+    // Nascondi triangolino nero
+    const transTriangle = document.getElementById('transTriangle');
+    if (transTriangle) transTriangle.style.display = 'none';
+}
+
+renderer.domElement.addEventListener('mousedown', (event) => {
+    if (!isRaycasterActive) return;
+    if (event.button !== 0) return;
+    const isShift = event.shiftKey;
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    raycaster.setFromCamera(mouse, currentCamera);
+    const intersects = raycaster.intersectObjects(objToBeDetected, true);
+    if (isShift) {
+        if (intersects.length > 0) {
+            const obj = intersects[0].object;
+            // Se il gruppo esiste, sgroupa e resetta tutto
+            if (tempGroup) {
+                tempGroup.updateMatrixWorld(true);
+                multiSelectedObjects.forEach(o => {
+                    o.applyMatrix4(tempGroup.matrixWorld);
+                    scene.add(o);
+                    objToBeDetected.push(o);
+                });
+                scene.remove(tempGroup);
+                const idxGroup = objToBeDetected.indexOf(tempGroup);
+                if (idxGroup !== -1) objToBeDetected.splice(idxGroup, 1);
+                tempGroup = null;
+            }
+            // Se l'oggetto è già selezionato, toglilo dalla selezione (e smette di blinkare)
+            const idx = multiSelectedObjects.indexOf(obj);
+            if (idx !== -1) {
+                multiSelectedObjects.splice(idx, 1);
+            } else {
+                multiSelectedObjects.push(obj);
+            }
+            // Avvia lampeggio se almeno un oggetto selezionato
+            if (multiSelectedObjects.length > 0) {
+                startGroupBlinking();
+            } else {
+                stopGroupBlinking();
+            }
+            control.detach();
+        } else {
+            // Shift+click su spazio vuoto: sgroupa e resetta tutto
+            if (tempGroup) {
+                tempGroup.updateMatrixWorld(true);
+                multiSelectedObjects.forEach(o => {
+                    o.applyMatrix4(tempGroup.matrixWorld);
+                    scene.add(o);
+                    objToBeDetected.push(o);
+                });
+                scene.remove(tempGroup);
+                const idxGroup = objToBeDetected.indexOf(tempGroup);
+                if (idxGroup !== -1) objToBeDetected.splice(idxGroup, 1);
+            }
+            tempGroup = null;
+            multiSelectedObjects = [];
+            stopGroupBlinking();
+            control.detach();
+        }
+        return;
+    }
+});
+
+// Premi Enter per creare il gruppo con tutti gli oggetti selezionati
+window.addEventListener('keydown', function(event) {
+    if (event.key === 'Enter' && multiSelectedObjects.length >= 2 && !tempGroup) {
+        stopGroupBlinking();
+        tempGroup = new THREE.Group();
+        tempGroup.name = 'Gruppo di trasformazione';
+        scene.add(tempGroup);
+        multiSelectedObjects.forEach(o => {
+            const idx = objToBeDetected.indexOf(o);
+            if (idx !== -1) objToBeDetected.splice(idx, 1);
+            tempGroup.attach(o);
+        });
+        objToBeDetected.push(tempGroup);
+        outlinePass.selectedObjects = multiSelectedObjects.slice();
+        control.detach();
+    }
+});
 
 // Inizializza post-processing e avvia il rendering
 initPostProcessing();

@@ -300,12 +300,18 @@
 
   transition: all 0.25s ease;
   z-index: 500;
-  overflow: scroll;
+  overflow: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;  /* IE 10+ */
   border-radius: 10px;
 }
 
+#black-panel::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
 .container {
-  margin-top: 4rem;
+  margin-top: 0;
   /* font-size: small; */
   padding: 0.5rem 1rem;
   display: flex;

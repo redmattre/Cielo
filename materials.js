@@ -245,8 +245,7 @@ export let goochMaterialArrow = new THREE.ShaderMaterial({
         // warmColor: { value: new THREE.Color(0xffebcc) }, 
         // coolColor: { value: new THREE.Color(0x0077ff) }, // cool
         // warmColor: { value: new THREE.Color(0xffaa00) }, 
-        // coolColor: { value: new THREE.Color(0xf0644d) }, // metal
-        // warmColor: { value: new THREE.Color(0xC04F3D) }, //
+
         coolColor: { value: new THREE.Color(0x303030) }, // metal
         warmColor: { value: new THREE.Color(0x000000) }, //
         surfaceColor: { value: new THREE.Color(0xffffff) }, // Colore base

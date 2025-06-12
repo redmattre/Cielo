@@ -1,0 +1,76 @@
+Vorrei cambiare un po' il workflow della UI e gestirlo meglio e vorrei 
+anche che il codice venisse refattorato dove serve per essere univoco 
+e funzionare bene. Dunque:
+
+- la parte in alto a destra fa vedere che cosa è selezionato (quindi 
+anche l'ultimo oggetto selezionato tramite il raycaster, esattamente 
+come funziona adesso)
+
+- la parte in basso a sinistra mostra qualsiasi tipo di informazione 
+testuale utile all'utente per fare qualcosa. Per esempio se siamo in 
+modalità trasformazione c'è scritto quale trasformazione è.
+
+----------------------------------------------------------------
+
+Vorrei apporre questi cambiamenti alla UI e alla logica del programma:
+
+- vorrei cambiare che il drag del mouse non muove la visuale ma crea 
+il quadrato di selezione. Questo serve ovviamente a creare dei gruppi. 
+Dunque la funzione del drag (quindi di rivoluzione) si fa con il tasto 
+"a" verso sinistra e "d" verso destra.
+
+- vorrei togliere il tasto del menu come è adesso.
+Sostituendo la cosa con un tasto con tre "~" [~ ~ ~] al centro in alto
+che apra lo stesso menu che apriva il vecchio tasto dal lato.
+
+- vorrei uniformare il comportamento riguardo la selezione è l'outline 
+in questa maniera:
+
+1) ogni oggetto della scena che viene incrociato dal raycaster gli viene 
+disegnato un outline. Questo oggetto è il "lastHoveredObject" ed è sempre
+ quello il nome che viene scritto in cima a sinistra nella UI
+
+2) ogni oggetto della scena che viene cliccato una volta è "selezionato" 
+(un nuovo concetto per il nostro programma). Gli oggetti selezionati 
+hanno una outline che fissa.
+
+- Vorrei togliere l'icona per aprire il menu a destra, togliere la bottoniera
+in alto a destra e riposizionare la bottoniera laterale destra come un 
+dock a destra che sia centrato verticalmente. Tutti i tasti ora staranno a
+destra, anche quelli che stavano nella bottoniera sopra. Tutti i tasti 
+dovranno essere più piccoli. I tasti saranno:
+
+- tasto "muovi": quello che già fa
+
+- tasto "ruota": quello che già fa
+
+- tasto "scala": quello che già fa
+
+- tasto "+" (add): che quando viene hoverato fa comparire una serie di bottoni
+paralleli alla sua sinistra in orizzontale. Uno per aggiungere halo,
+uno per aggiungere gli altoparlanti, uno per aggiungere oggetto sonoro, uno
+per aggiungere le zone, uno per aggiungere i modelli 3D. Quando uno di questi
+viene cliccato si apre un menu contestuale al centro della UI. Questo 
+menu deve essere utilizzato per più cose quindi il contenitore sarà 
+generico e il contenuto dipende da dove viene attivato
+nel codice. Nel caso dei bottoni add a seconda di che cosa viene aggiunto
+il menu sarà diverso ma la prima voce di tutti i menu di aggiunta sarà il
+numero di oggetti di quel tipo che dovranno essere aggiunti alla scena.
+Successivamente implementeremo il come. Nel senso che se si tratta di 
+altorparlanti allora ci sarà la possibilità di metterli in 2D: in riga, in colonna, a cerchio, a
+rettangolo o in 3D: in rettangolo 3D (matrice) o a sfera. E poi un tasto
+aggiungi in fondo. Se si tratta di fonti si potrà scegliere tra omnifonte e 
+orifonte e si potrebbe pensare a vari tipi di distribuzione "già pronti". 
+Se si tratta di halo si potrà scegliere tra "Aureola" e "Generic Cloud" e qui
+la distribuzione nello spazio sarà tipo a matrice, tanto poi sono elementi
+che hanno tracking esterno e si sposteranno. Se si tratta di zone ci saranno
+le "zone di tracking" e le "zone sonore" al momento non mi viene in mente 
+come si potrebbe implementare una distribuzione ma vedremo più in la.
+
+- tasto "menu": quello che già fa.
+
+
+
+
+
+Ok ora vorrei che bottonieraSopra e bottonieraDestra non esistessero più e invece tutti i bottoni che ci stanno dentro (manentendo le stesse funzioni) venissero spostati in un nuovo div che sarà un dock centrato verticalmente a destra. Vorrei anche che il tasti fossero più piccoli (e di conseguenza anche la label dove si indica il tipo di visuale - prospettiva, pianta etc-)

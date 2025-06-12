@@ -336,23 +336,9 @@ export function render() {
 	requestAnimationFrame(render);
 }
 
-// export function debugGeo() {
-//     const geometry = new THREE.TorusKnotGeometry(1, 0.3, 256, 32);
-//     // const geometry = new THREE.BoxGeometry(0.2,0.2,0.2);
-// 	// const geometry = new THREE.SphereGeometry;
-//     const material = goochMaterial;
-//     const mesh = new THREE.Mesh(geometry, material);
-// 	mesh.scale.set(0.25, 0.24, 0.25);
-// 	mesh.name = `debug-${scene.children.length}`
-// 	mesh.isDashed = false;
-// 	mesh.position.set(0, 0.44, 0);
-//     // control.attach(mesh);
-//     scene.add(mesh);
-// 	objToBeDetected.push(mesh);
-// }
 
-// export function debugGeo1() {
-//     // const geometry = new THREE.TorusKnotGeometry(1, 0.3, 256, 32);
+
+
 // 	const geometry = new THREE.BoxGeometry(1.5, 1.5, 1.5);
 //     const edges = new THREE.EdgesGeometry(geometry); // Crea una geometria di bordi
 //     const line = new THREE.LineSegments(edges, dashedLineMat);
@@ -363,12 +349,7 @@ export function render() {
 //     objToBeDetected.push(line);
 // }
 
-// export function LineaContinuaObj() {
-//     const geometry = new THREE.BoxGeometry(1, 1, 1); 
-// 	// const geometry = new THREE.TorusKnotGeometry(1, 0.3, 256, 32);
-//     const edges = new THREE.EdgesGeometry(geometry); // Estrai gli edge del cubo
 
-//     const lineGeometry = new LineSegmentsGeometry().fromEdgesGeometry(edges); // LineSegmentsGeometry compatibile
 //     const line = new LineSegments2(lineGeometry, solidMaterial); // Applica il materiale dashed
 
 //     scene.add(line); // Aggiungi alla scena
@@ -377,15 +358,7 @@ export function render() {
 // 	objToBeDetected.push(line);
 // }
 
-// export function debugGeo4() {
-//     const geometry = loadObj('parkinglot.obj');
-//     const edges = new THREE.EdgesGeometry(geometry); // Estrai gli edge del cubo
 
-//     const lineGeometry = new LineSegmentsGeometry().fromEdgesGeometry(edges); // LineSegmentsGeometry compatibile
-//     const line = new LineSegments2(lineGeometry, solidMaterial); // Applica il materiale dashed
-
-//     scene.add(line); // Aggiungi alla scena
-// }
 
 function initTransformControls() {
     control = new TransformControls( cameraPersp, renderer.domElement );

@@ -2,17 +2,23 @@ import * as THREE from 'three';
 import { objToBeDetected, scene, currentCamera } from './setup.js';
 
 // --- METRO BUTTON ---
-export function addMetroButton() {
-    const bottonieraSopra = document.querySelector('.bottonieraSopra');
-    if (!bottonieraSopra) return;
-    if (document.getElementById('metroButton')) return; // già presente
-    const btn = document.createElement('button');
-    btn.id = 'metroButton';
-    btn.className = 'topButtons';
-    btn.title = 'Visualizza distanze tra altoparlanti';
-    btn.textContent = 'm';
-    btn.addEventListener('click', toggleMetro);
-    bottonieraSopra.appendChild(btn);
+// Funzione per aggiungere il bottone metro alla dockTasti
+export function addMetroButtonToDock() {
+  const dock = document.querySelector('.dockTasti');
+  if (!dock) return;
+  if (document.getElementById('metroButton')) return; // già presente
+  const btn = document.createElement('button');
+  btn.id = 'metroButton';
+  btn.title = 'Visualizza distanze tra altoparlanti';
+  btn.textContent = '↔︎';
+  btn.addEventListener('click', toggleMetro);
+  dock.appendChild(btn);
+}
+
+const metroBtn = document.getElementById('metroButton');
+if (metroBtn) {
+  metroBtn.addEventListener('click', toggleMetro);
+  // Stato attivo/feedback visivo già gestito in toggleMetro
 }
 
 let metroActive = false;
@@ -84,33 +90,19 @@ function showSpeakerConnections() {
     });
 }
 
-function drawMetroLine(p1, p2) {
-    // Linea
-    const material = new THREE.LineBasicMaterial({ color: 0x00bcd4 });
-    const geometry = new THREE.BufferGeometry().setFromPoints([p1, p2]);
-    const line = new THREE.Line(geometry, material);
-    line.name = '__metroLine';
-    scene.add(line);
-    metroLines.push(line);
-    // Etichetta distanza
-    const dist = p1.distanceTo(p2);
-    const mid = p1.clone().lerp(p2, 0.5);
-    const label = createMetroLabel(mid, dist);
-    metroLabels.push(label);
-}
-
 function createMetroLabel(position, distance) {
     const div = document.createElement('div');
     div.className = 'metro-label';
     div.textContent = distance.toFixed(2) + ' m';
     div.style.position = 'absolute';
     div.style.pointerEvents = 'none';
-    div.style.background = 'rgba(0,188,212,0.8)';
-    div.style.color = 'white';
+    div.style.background = getComputedStyle(document.documentElement).getPropertyValue('--fondale') || '#d6d6d6';
+    div.style.color = getComputedStyle(document.documentElement).getPropertyValue('--testo') || 'black';
     div.style.padding = '2px 6px';
     div.style.borderRadius = '6px';
     div.style.fontSize = '1rem';
     div.style.transform = 'translate(-50%,-50%)';
+    div.style.boxShadow = '0 2px 8px rgba(34,34,34,0.2)'; // shadow scura opacità 0.2
     document.body.appendChild(div);
     // Aggiorna posizione ogni frame
     function updateLabel() {
@@ -127,12 +119,54 @@ function createMetroLabel(position, distance) {
     return div;
 }
 
+// Usa THREE.Line2/LineGeometry/LineMaterial per linea spessa e tratteggiata
+import { Line2 } from 'three/examples/jsm/lines/Line2.js';
+import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
+import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
+
+function drawMetroLine(p1, p2) {
+    // Linea rossa, spessa, tratteggiata
+    const positions = [p1.x, p1.y, p1.z, p2.x, p2.y, p2.z];
+    const geometry = new LineGeometry();
+    geometry.setPositions(positions);
+    const material = new LineMaterial({
+        color: 0xff2222,
+        linewidth: 2, // in world units (es. 0.008 = ~8px su canvas 1000px)
+        dashed: true,
+        dashSize: 0.02,
+        gapSize: 0.02,
+        transparent: true
+    });
+    material.resolution.set(window.innerWidth, window.innerHeight);
+    const line = new Line2(geometry, material);
+    line.computeLineDistances();
+    line.name = '__metroLine';
+    scene.add(line);
+    metroLines.push(line);
+    // Etichetta distanza
+    const dist = p1.distanceTo(p2);
+    const mid = p1.clone().lerp(p2, 0.5);
+    const label = createMetroLabel(mid, dist);
+    metroLabels.push(label);
+}
+
 function clearAllMetro() {
     metroLines.forEach(line => scene.remove(line));
     metroLines = [];
     metroLabels.forEach(label => label.remove());
     metroLabels = [];
 }
+
+// Aggiorna la risoluzione di tutte le linee metro quando la finestra cambia
+window.addEventListener('resize', () => {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    metroLines.forEach(line => {
+        if (line.material && line.material.resolution) {
+            line.material.resolution.set(w, h);
+        }
+    });
+});
 
 // Hook per aggiornare il metro quando necessario
 export function triggerMetroUpdate() {

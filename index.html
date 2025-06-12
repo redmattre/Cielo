@@ -16,15 +16,7 @@
       </div>
     </div>
 
-    <div class="bottonieraDestra">
-
-      <div id="nav-icon3">
-        <span></span>
-        <span></span>
-        <span></span>
-        <span></span>
-      </div>
-
+    <!-- <div class="bottonieraDestra">
       <button title="aggiung aureola" id="addHalo">❍</button>
       <button id="addCloudElement" style="display: none;">☁</button>
       <button title="aggiungi altoparlante" id="addCone">⊚</button>
@@ -33,15 +25,33 @@
       <button title="aggiungi omnifonte" id="addSphere">⬤</button>
       <button title="menu di oggetti nella scena" id="seeItemsList">▤</button>
       <button id="chiudiMenuSotto">⸓</button>
-    </div>
+    </div> -->
 
-    <div class="bottonieraSopra">
+    <!-- <div class="bottonieraSopra">
       <button id="chiudiMenuSopra">꜏</button>
       <button id="makeGroup" class="topButtons">⧉</button>
       <button title="sposta (g); (esc) per uscire" id="moveButton" class="topButtons">&#10021;</button>
       <button title="ruota (r); (esc) per uscire" id="rotateButton" class="topButtons">R</button>
       <button title="scala (s); (esc) per uscire" id="scaleButton" class="topButtons">S</button>
       <button title="chiudi trasformazione" id="toggleTransButton" class="topButtons">⏚</button>
+    </div> -->
+
+    <div class="dockTasti">
+      <div class="dockTastiHighlight hide" id="dockTastiHighlight"></div>
+      <button id="chiudiMenuSopra">꜏</button>
+      <button id="makeGroup" class="topButtons">⧉</button>
+      <button title="sposta (g); (esc) per uscire" id="moveButton" class="topButtons">&#10021;</button>
+      <button title="ruota (r); (esc) per uscire" id="rotateButton" class="topButtons">R</button>
+      <button title="scala (s); (esc) per uscire" id="scaleButton" class="topButtons">S</button>
+      <button title="chiudi trasformazione" id="toggleTransButton" class="topButtons">⏚</button>
+      <button title="aggiung aureola" id="addHalo">❍</button>
+      <button id="addCloudElement" style="display: none;">☁</button>
+      <button title="aggiungi altoparlante" id="addCone">⊚</button>
+      <button id="addZone" style="display: none;">⛶</button>
+      <!-- <button title="aggiungi orifonte" id="addArrow">➞</button> -->
+      <button title="aggiungi omnifonte" id="addSphere">⬤</button>
+      <button title="menu di oggetti nella scena" id="seeItemsList">▤</button>
+      <button id="chiudiMenuSotto">⸓</button>
     </div>
     
     <div id="black-panel">
@@ -171,10 +181,6 @@
 			</div>
 		</div>
 
-    <button id="helper">
-      <a href="https://github.com/redmattre/Archisound/blob/main/README.md" target="_blank">⁈</a>
-    </button>
-
     <div id="infoDivTopLeft">---</div>
 
     <div id="infoDivBottomLeft">---</div>
@@ -187,7 +193,9 @@
     </div>
 
     <div id="menuList"></div>
-    <div id="ghostButton"></div>
+
+    <!-- Bottone tre puntini per aprire il menu laterale -->
+    <button id="openSideMenu">&#8226; &#8226; &#8226;</button>
 
     <script type="module" src="main.js"></script>
     <script type="module" src="setup.js"></script>

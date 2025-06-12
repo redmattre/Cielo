@@ -7,7 +7,6 @@ import { changeNatMatTransparency, toggleMaterial, toggleModelVisibility, toggle
 let scaleMoveSnap = 0.05;
 let rotationSnapDegrees = 15;
 let snapIsActive = true;
-let ghostButton = document.getElementById('ghostButton');
 
 // SWITCHES
 document.querySelectorAll('.switch input').forEach((checkbox) => {
@@ -252,31 +251,16 @@ let toggleTransButton = document.getElementById('toggleTransButton');
 moveButton.addEventListener('click', () => {
     control.setMode('translate');
     updateStato('Spostamento (g)');
-    ghostButton.style.display = 'block';
-    ghostButton.style.right = '21.5rem';
-    if (!currentSelectedObject) return;
-    const targetObject = currentSelectedObject.parent?.isGroup ? currentSelectedObject.parent : currentSelectedObject;
-    control.attach(targetObject);
 });
 
 rotateButton.addEventListener('click', () => {
     control.setMode('rotate');
 	updateStato('Rotazione (r)');
-    ghostButton.style.display = 'block';
-    ghostButton.style.right = '16.5rem';
-    if (!currentSelectedObject) return;
-    const targetObject = currentSelectedObject.parent?.isGroup ? currentSelectedObject.parent : currentSelectedObject;
-    control.attach(targetObject);
 });
 
 scaleButton.addEventListener('click', () => {
     control.setMode('scale');
 	updateStato('Scala (s)');
-    ghostButton.style.display = 'block';
-    ghostButton.style.right = '11.5rem';
-    if (!currentSelectedObject) return;
-    const targetObject = currentSelectedObject.parent?.isGroup ? currentSelectedObject.parent : currentSelectedObject;
-    control.attach(targetObject);
 });
 
 toggleTransButton.addEventListener('click', () => {
@@ -285,12 +269,76 @@ toggleTransButton.addEventListener('click', () => {
     updateStato1();
 });
 
+// Bottone tilde per aprire il menu laterale
+const openSideMenu = document.getElementById('openSideMenu');
+const blackPanel = document.getElementById('black-panel');
+
+openSideMenu.addEventListener('click', () => {
+  if (blackPanel.style.opacity === '1') {
+    blackPanel.style.opacity = 0;
+    blackPanel.style.pointerEvents = 'none';
+    blackPanel.style.width = '0vw';
+    blackPanel.style.color = 'var(--fondale)';
+  } else {
+    blackPanel.style.opacity = 1;
+    blackPanel.style.pointerEvents = 'all';
+    blackPanel.style.width = '29rem';
+    blackPanel.style.color = 'var(--testo)';
+  }
+});
+
+// Evidenziatore mobile per tasto attivo nella dock
+const dockTasti = document.querySelector('.dockTasti');
+const dockHighlight = document.getElementById('dockTastiHighlight');
+const moveBtn = document.getElementById('moveButton');
+const rotateBtn = document.getElementById('rotateButton');
+const scaleBtn = document.getElementById('scaleButton');
+const toggleTransBtn = document.getElementById('toggleTransButton');
+
+function showDockHighlight(targetBtn) {
+  if (!targetBtn) return;
+  const top = targetBtn.offsetTop;
+  dockHighlight.style.top = top + 'px';
+  dockHighlight.classList.remove('hide');
+}
+
+function hideDockHighlight() {
+  dockHighlight.classList.add('hide');
+}
+
+// Gestione click UI
+moveBtn.addEventListener('click', () => {
+  showDockHighlight(moveBtn);
+});
+rotateBtn.addEventListener('click', () => {
+  showDockHighlight(rotateBtn);
+});
+scaleBtn.addEventListener('click', () => {
+  showDockHighlight(scaleBtn);
+});
+toggleTransBtn.addEventListener('click', () => {
+  hideDockHighlight();
+});
+
+// Gestione shortcut tastiera
+window.addEventListener('keydown', (event) => {
+  if (event.key === 'g') {
+    showDockHighlight(moveBtn);
+  } else if (event.key === 'r') {
+    showDockHighlight(rotateBtn);
+  } else if (event.key === 's') {
+    showDockHighlight(scaleBtn);
+  } else if (event.key === 'Escape') {
+    hideDockHighlight();
+  }
+});
+
+// Nascondi highlight all'avvio
+hideDockHighlight();
+
 //OPTIMIZATION
 
-// const canvas = renderer.domElement; // Ottieni il canvas della scena
-// canvas.addEventListener('mousedown', function () {
-//     setRaycasterActive(false);
-// });
+
 // canvas.addEventListener('mouseup', function () {
 //     setRaycasterActive(true);
 // });

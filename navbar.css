@@ -292,7 +292,8 @@
   /* width: 33vw; */
   width: 0; /*non si controlla qua ma da js*/
   background-color: var(--fondale);
-  border: solid var(--dettaglio) 2px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.207);
+  /* border: solid var(--dettaglio) .5px; */
   border-radius: 2px;
   color: var(--testo);
   padding: 1rem;

@@ -38,7 +38,7 @@
 
     <div class="dockTasti">
       <div class="dockTastiHighlight hide" id="dockTastiHighlight"></div>
-      <button id="chiudiMenuSopra">꜏</button>
+      <!-- <button id="chiudiMenuSopra">꜏</button> -->
       <button id="makeGroup" class="topButtons">⧉</button>
       <button title="sposta (g); (esc) per uscire" id="moveButton" class="topButtons">&#10021;</button>
       <button title="ruota (r); (esc) per uscire" id="rotateButton" class="topButtons">R</button>
@@ -51,135 +51,139 @@
       <!-- <button title="aggiungi orifonte" id="addArrow">➞</button> -->
       <button title="aggiungi omnifonte" id="addSphere">⬤</button>
       <button title="menu di oggetti nella scena" id="seeItemsList">▤</button>
-      <button id="chiudiMenuSotto">⸓</button>
+      <!-- <button id="chiudiMenuSotto">⸓</button> -->
     </div>
     
     <div id="black-panel">
-
-			<div class="container">
-        <div>Generali</div>
-        <div class="switch-wrapper">
-					<label class="switch">
-						<input type="checkbox" data-id="theme"/>
-						<div></div>
-					</label>
-					<span class="switch-label">Tema Eco</span>
-				</div>
-
-        <div class="switch-wrapper">
-					<label class="switch">
-						<input type="checkbox" data-id="gridSnapState" checked/>
-						<div></div>
-					</label>
-					<span class="switch-label">Aggancio Griglia</span>
-				</div>
-
-        <div class="input-wrapper">
-          <label class="multitoggle">
-            <input type='range' min='1' max='3' value='2' step='1' class="n n3" data-id="snapDefinition"/>
-          </label>
-        </div>
-
-        <div class="switch-wrapper">
-					<label class="switch">
-						<input type="checkbox" data-id="lock"/>
-						<div></div>
-					</label>
-					<span class="switch-label">Diorama</span>
-				</div>
-
-        <div class="switch-wrapper">
-					<label class="switch">
-						<input type="checkbox" data-id="grid" checked/>
-						<div></div>
-					</label>
-					<span class="switch-label">Super Superficie</span>
-				</div>
-        <div class="input-wrapper">
-          <label class="multitoggle">
-            <input type='range' min='1' max='4' value='2' step='1' class="n n4" data-id="gridsize"/>
-          </label>
-        </div>
-      
-        <div>Plastico</div>
-        <button class="menuButton" id="loadPlastico">Carica</button>
-        <div class="switch-wrapper">
-					<label class="switch">
-						<input type="checkbox" data-id="archVisibility"/>
-						<div></div>
-					</label>
-					<span class="switch-label">⏿</span>
-				</div>
-
-        <div class="switch-wrapper">
-					<label class="switch">
-						<input type="checkbox" data-id="wireframeVisibility"/>
-						<div></div>
-					</label>
-					<span class="switch-label">Wireframe</span>
-				</div>
-
-        <div class="switch-wrapper">
-					<label class="switch">
-						<input type="checkbox" data-id="serioso"/>
-						<div></div>
-					</label>
-					<span class="switch-label">Tema Muto</span>
-				</div>
-
-				<div class="switch-wrapper">
-          <label class="switch">
-            <input type="checkbox" data-id="transparencyA"/>
-            <div></div>
-          </label>
-          <span class="switch-label">Trasparenza</span>
-				</div>
-
-        <label class="multitoggle">
-          <div class="input-wrapper">
-            <input type='range' min='1' max='4' value='4' step='1' class="n n4" data-id="transArchVal"/>
+      <div class="panel-tabs">
+        <button class="panel-tab active" data-panel="generali">G</button>
+        <button class="panel-tab" data-panel="plastico">P</button>
+        <button class="panel-tab" data-panel="carica">C</button>
+        <button class="panel-tab" data-panel="zone">Z</button>
+        <button class="panel-tab" data-panel="altoparlanti">A</button>
+        <button class="panel-tab" data-panel="corone">Co</button>
+      </div>
+      <div class="container">
+        <div class="panel-section panel-content" data-panel-content="generali" style="display:block;">
+          <div class="panel-title">Generali</div>
+          <div class="switch-wrapper">
+            <label class="switch">
+              <input type="checkbox" data-id="theme"/>
+              <div></div>
+            </label>
+            <span class="switch-label">Tema Eco</span>
           </div>
-        </label>
+          <div class="switch-wrapper">
+            <label class="switch">
+              <input type="checkbox" data-id="gridSnapState" checked/>
+              <div></div>
+            </label>
+            <span class="switch-label">Aggancio Griglia</span>
+          </div>
+          <div class="input-wrapper">
+            <label class="multitoggle">
+              <input type='range' min='1' max='3' value='2' step='1' class="n n3" data-id="snapDefinition"/>
+            </label>
+          </div>
+          <div class="switch-wrapper">
+            <label class="switch">
+              <input type="checkbox" data-id="lock"/>
+              <div></div>
+            </label>
+            <span class="switch-label">Diorama</span>
+          </div>
+          <div class="switch-wrapper">
+            <label class="switch">
+              <input type="checkbox" data-id="grid" checked/>
+              <div></div>
+            </label>
+            <span class="switch-label">Super Superficie</span>
+          </div>
+          <div class="input-wrapper">
+            <label class="multitoggle">
+              <input type='range' min='1' max='4' value='2' step='1' class="n n4" data-id="gridsize"/>
+            </label>
+          </div>
+        </div>
 
-        <div>Carica modello</div>
-        <button class="button menuButton" id="loadGenericGltf">Carica</button>
-				<div class="switch-wrapper">
-					<label class="switch">
-						<input type="checkbox" data-id="zoneVisibility" checked/>
-						<div></div>
-					</label>
-					<span class="switch-label">⏿</span>
-				</div>
+        <div class="panel-section panel-content" data-panel-content="plastico" style="display:none;">
+          <div class="panel-title">Plastico</div>
+          <button class="menuButton" id="loadPlastico">Carica</button>
+          <div class="switch-wrapper">
+            <label class="switch">
+              <input type="checkbox" data-id="archVisibility"/>
+              <div></div>
+            </label>
+            <span class="switch-label">⏿</span>
+          </div>
+          <div class="switch-wrapper">
+            <label class="switch">
+              <input type="checkbox" data-id="wireframeVisibility"/>
+              <div></div>
+            </label>
+            <span class="switch-label">Wireframe</span>
+          </div>
+          <div class="switch-wrapper">
+            <label class="switch">
+              <input type="checkbox" data-id="serioso"/>
+              <div></div>
+            </label>
+            <span class="switch-label">Tema Muto</span>
+          </div>
+          <div class="switch-wrapper">
+            <label class="switch">
+              <input type="checkbox" data-id="transparencyA"/>
+              <div></div>
+            </label>
+            <span class="switch-label">Trasparenza</span>
+          </div>
+          <label class="multitoggle">
+            <div class="input-wrapper">
+              <input type='range' min='1' max='4' value='4' step='1' class="n n4" data-id="transArchVal"/>
+            </div>
+          </label>
+        </div>
 
-        <div>Zone</div>
-				<div class="switch-wrapper">
-					<label class="switch">
-						<input type="checkbox" data-id="zoneVisibility" checked/>
-						<div></div>
-					</label>
-					<span class="switch-label">⏿</span>
-				</div>
+        <div class="panel-section panel-content" data-panel-content="carica" style="display:none;">
+          <div class="panel-title">Carica Modello</div>
+          <button class="button menuButton" id="loadGenericGltf">Carica</button>
+        </div>
 
-        <div>Altoparlanti</div>
-				<div class="switch-wrapper">
-					<label class="switch">
-						<input type="checkbox" data-id="speakersVisibility" checked/>
-						<div></div>
-					</label>
-					<span class="switch-label">⏿</span>
-				</div>
+        <div class="panel-section panel-content" data-panel-content="zone" style="display:none;">
+          <div class="panel-title">Zone</div>
+          <div class="switch-wrapper">
+            <label class="switch">
+              <input type="checkbox" data-id="zoneVisibility" checked/>
+              <div></div>
+            </label>
+            <span class="switch-label">⏿</span>
+          </div>
+        </div>
 
-        <div>Corone</div>
-				<div class="switch-wrapper">
-					<label class="switch">
-						<input type="checkbox" data-id="speakersVisibility" checked/>
-						<div></div>
-					</label>
-					<span class="switch-label">⏿</span>
-				</div>
-				
-			</div>
-		</div>
+        <div class="panel-section panel-content" data-panel-content="altoparlanti" style="display:none;">
+          <div class="panel-title">Altoparlanti</div>
+          <div class="switch-wrapper">
+            <label class="switch">
+              <input type="checkbox" data-id="speakersVisibility" checked/>
+              <div></div>
+            </label>
+            <span class="switch-label">⏿</span>
+          </div>
+        </div>
+
+        <div class="panel-section panel-content" data-panel-content="corone" style="display:none;">
+          <div class="panel-title">Corone</div>
+          <div class="switch-wrapper">
+            <label class="switch">
+              <input type="checkbox" data-id="speakersVisibility" checked/>
+              <div></div>
+            </label>
+            <span class="switch-label">⏿</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
 
     <div id="infoDivTopLeft">---</div>
 
@@ -208,5 +212,21 @@
     <script type="module" src="objmenu.js"></script>
     <script type="module" src="navbar.js"></script>
     <script type="module" src="max.js"></script>
+    <script>
+      // Gestione selezione tab pannello destro
+      document.addEventListener('DOMContentLoaded', function() {
+        const tabs = document.querySelectorAll('.panel-tab');
+        const panels = document.querySelectorAll('.panel-content');
+        tabs.forEach(tab => {
+          tab.addEventListener('click', function() {
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            panels.forEach(panel => {
+              panel.style.display = (panel.getAttribute('data-panel-content') === tab.getAttribute('data-panel')) ? 'block' : 'none';
+            });
+          });
+        });
+      });
+    </script>
   </body>
 </html>

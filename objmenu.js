@@ -2,9 +2,118 @@ import { scene, objToBeDetected } from './setup.js';
 
 export function createMenu() {
     const menuList = document.getElementById('menuList');
-    menuList.innerHTML = ''; // Resetta il menu
+    menuList.innerHTML = '';
 
-    objToBeDetected.forEach((object) => {
+    // --- Barra di selezione categorie ---
+    const categories = [
+        { key: 'fonti', label: 'F' },
+        { key: 'halo', label: 'H' },
+        { key: 'altoparlanti', label: 'A' },
+        { key: 'zone', label: 'Z' }
+    ];
+    let selectedCategory = localStorage.getItem('cielo_menu_category') || 'fonti';
+    const bar = document.createElement('div');
+    bar.style.display = 'flex';
+    bar.style.gap = '0.3rem';
+    bar.style.marginBottom = '1rem';
+    bar.style.justifyContent = 'flex-start';
+    bar.style.alignItems = 'flex-end';
+    bar.style.height = '1.7rem';
+    bar.style.position = 'relative';
+    // Array per i bottoni per calcolare posizione
+    const btns = [];
+    categories.forEach(cat => {
+        const btn = document.createElement('button');
+        btn.textContent = cat.label;
+        btn.style.padding = '0 0.5rem';
+        btn.style.height = '1.4rem';
+        btn.style.minWidth = '1.4rem';
+        btn.style.fontSize = '0.95rem';
+        btn.style.fontWeight = 'bold';
+        btn.style.background = 'none';
+        btn.style.border = 'none';
+        btn.style.borderRadius = '0';
+        btn.style.color = selectedCategory === cat.key ? 'var(--dettaglio)' : 'var(--testo)';
+        btn.style.opacity = selectedCategory === cat.key ? '0.85' : '0.45';
+        btn.style.position = 'relative';
+        btn.style.cursor = 'pointer';
+        btn.style.transition = 'color 0.2s, opacity 0.2s';
+        btn.classList.toggle('menuCatActive', selectedCategory === cat.key);
+        btn.classList.add('menuCatBtn');
+        btn.addEventListener('click', () => {
+            localStorage.setItem('cielo_menu_category', cat.key);
+            createMenu();
+        });
+        bar.appendChild(btn);
+        btns.push(btn);
+    });
+    // Indicatore sliding: crea una sola volta e riusa sempre
+    let indicator = document.getElementById('menuCatSliderGlobal');
+    if (!indicator) {
+        indicator = document.createElement('div');
+        indicator.id = 'menuCatSliderGlobal';
+        indicator.className = 'menuCatSlider';
+        indicator.style.position = 'absolute';
+        indicator.style.height = '0.13rem';
+        indicator.style.background = 'var(--dettaglio)';
+        indicator.style.borderRadius = '2px';
+        indicator.style.bottom = '-0.25rem';
+        indicator.style.transition = 'left 0.28s cubic-bezier(0.4,0,0.2,1), width 0.28s cubic-bezier(0.4,0,0.2,1)';
+        indicator.style.zIndex = '2';
+        // Store previous position for animation
+        indicator.dataset.prevLeft = '0';
+        indicator.dataset.prevWidth = '0';
+    }
+    bar.appendChild(indicator);
+    menuList.appendChild(bar);
+    // Aggiorna posizione indicatore SEMPRE dopo che la barra è nel DOM
+    requestAnimationFrame(() => {
+        const idx = categories.findIndex(c => c.key === selectedCategory);
+        if (btns[idx]) {
+            const btn = btns[idx];
+            const newLeft = (btn.offsetLeft + btn.offsetWidth * 0.1);
+            const newWidth = (btn.offsetWidth * 0.8);
+            // Se è la prima volta o la posizione è cambiata, imposta la posizione precedente senza transizione
+            if (indicator.dataset.prevLeft !== undefined && indicator.dataset.prevWidth !== undefined) {
+                // Se la posizione è cambiata, imposta prima la posizione precedente senza transizione
+                if (indicator.style.left !== newLeft + 'px' || indicator.style.width !== newWidth + 'px') {
+                    indicator.style.transition = 'none';
+                    indicator.style.left = indicator.dataset.prevLeft + 'px';
+                    indicator.style.width = indicator.dataset.prevWidth + 'px';
+                    // Forza il reflow
+                    void indicator.offsetWidth;
+                    // Poi attiva la transizione e vai alla nuova posizione
+                    indicator.style.transition = 'left 0.28s cubic-bezier(0.4,0,0.2,1), width 0.28s cubic-bezier(0.4,0,0.2,1)';
+                }
+            }
+            indicator.style.left = newLeft + 'px';
+            indicator.style.width = newWidth + 'px';
+            indicator.dataset.prevLeft = newLeft;
+            indicator.dataset.prevWidth = newWidth;
+        } else {
+            indicator.style.left = '0px';
+            indicator.style.width = '0px';
+            indicator.dataset.prevLeft = 0;
+            indicator.dataset.prevWidth = 0;
+        }
+    });
+
+    // --- Filtra oggetti in base alla categoria selezionata ---
+    let filterFn;
+    if (selectedCategory === 'fonti') {
+        filterFn = obj => obj.name && (/Omnifonte|Orifonte/i).test(obj.name);
+    } else if (selectedCategory === 'halo') {
+        filterFn = obj => obj.name && (/Aureola|Cloud/i).test(obj.name);
+    } else if (selectedCategory === 'altoparlanti') {
+        filterFn = obj => obj.name && (/Altoparlante/i).test(obj.name);
+    } else if (selectedCategory === 'zone') {
+        filterFn = obj => obj.name && (/Zona|Zone/i).test(obj.name);
+    } else {
+        filterFn = () => true;
+    }
+    const filteredObjects = objToBeDetected.filter(filterFn);
+
+    filteredObjects.forEach((object) => {
         const parent = object.parent && object.parent !== scene ? object.parent : object;
 
         const itemList = document.createElement('div');
@@ -47,7 +156,7 @@ export function createMenu() {
         toggleGlyph.addEventListener('click', () => {
             collapsibleContainer.style.display =
                 collapsibleContainer.style.display === 'none' ? 'block' : 'none';
-            itemList.style.height = itemList.style.height === '1.2rem' ? 'auto' : '1.2rem'
+            itemList.style.height = itemList.style.height === '1.2rem' ? 'auto' : '1.2rem';
         });
 
         // Aggiungi i contenitori sinistro e destro al titolo

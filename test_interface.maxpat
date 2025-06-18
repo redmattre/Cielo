@@ -19,7 +19,7 @@
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 968.5, 562.0, 151.0, 127.0 ],
+					"patching_rect" : [ 968.5, 562.0, 155.0, 127.0 ],
 					"text" : "forse potrebbe aver senso pensare ad una versione che manda i messaggi con node tramite localhost. Così da avere anche un interfaccia utilizzabile col touch. Che in performance mode potrebbe essere interessante."
 				}
 
@@ -280,7 +280,7 @@
 
 							}
  ],
-						"originid" : "pat-1470"
+						"originid" : "pat-1478"
 					}
 ,
 					"patching_rect" : [ 26.0, 833.0, 44.0, 22.0 ],
@@ -642,7 +642,7 @@
 
 							}
  ],
-						"originid" : "pat-1472"
+						"originid" : "pat-1480"
 					}
 ,
 					"patching_rect" : [ 290.0, 773.0, 73.0, 22.0 ],
@@ -1243,7 +1243,7 @@
 
 							}
  ],
-						"originid" : "pat-1474"
+						"originid" : "pat-1482"
 					}
 ,
 					"patching_rect" : [ 450.0, 48.0, 96.0, 22.0 ],
@@ -2515,8 +2515,15 @@
 
 			}
  ],
-		"originid" : "pat-1468",
-		"dependency_cache" : [  ],
+		"originid" : "pat-1476",
+		"dependency_cache" : [ 			{
+				"name" : "setupPase_cielo.txt",
+				"bootpath" : "~/Desktop/Temporaneo/Dottorato2025/cielo_dev/Cielo",
+				"patcherrelativepath" : ".",
+				"type" : "TEXT",
+				"implicit" : 1
+			}
+ ],
 		"autosave" : 0
 	}
 

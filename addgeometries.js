@@ -4,8 +4,6 @@ import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js
 import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
 import { dashedMaterial, dashedMaterialB, dashedMaterialC, dashedMaterialD, goochMaterialArrow, goochMaterialSp, standardMat } from './materials.js';
 import { objToBeDetected, scene } from './setup.js';
-// import { color } from 'three/tsl';
-// import { bool } from 'three/tsl';
 import { createMenu } from './objmenu.js';
 import { loadGenericGltf } from './loadersFIX.js';
 
@@ -17,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const addCloudClient = document.getElementById('addCloudElement');
   const addGenericModel = document.getElementById('loadGenericGltf');
 
+  //da modificare: fare che sia un tasto nel dock che ogni volta apre finestra di dialogo per importare un modello esterno
   let howManyGenericModels = 0;
   if (addGenericModel) {
     addGenericModel.addEventListener('click', () => {
@@ -205,5 +204,79 @@ document.addEventListener('DOMContentLoaded', () => {
       scene.add(mesh);
       objToBeDetected.push(mesh);
       createMenu();
+  }
+
+  // Funzione per rimuovere il modello architettura dalla scena
+  function removeArchitetturaModel() {
+    const arch = scene.getObjectByName('architettura');
+    if (arch) {
+      const idx = objToBeDetected.indexOf(arch);
+      if (idx !== -1) objToBeDetected.splice(idx, 1);
+      if (arch.parent) arch.parent.remove(arch);
+      if (arch.geometry) arch.geometry.dispose?.();
+      if (arch.material) arch.material.dispose?.();
+    }
+  }
+
+  // Gestione caricamento nuovo modello plastico
+  const plasticoBtn = document.getElementById('loadPlastico');
+  if (plasticoBtn) {
+    // Crea input file nascosto
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = '.glb,.gltf,.obj';
+    fileInput.style.display = 'none';
+    document.body.appendChild(fileInput);
+
+    plasticoBtn.addEventListener('click', () => {
+      removeArchitetturaModel();
+      fileInput.value = '';
+      fileInput.click();
+    });
+
+    fileInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const ext = file.name.split('.').pop().toLowerCase();
+      if (ext === 'glb' || ext === 'gltf') {
+        // Dynamic import for GLTFLoader
+        const { GLTFLoader } = await import('three/addons/loaders/GLTFLoader.js');
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+          let loader = new GLTFLoader();
+          let onLoad = function(gltf) {
+            const model = gltf.scene;
+            model.name = 'architettura';
+            scene.add(model);
+          };
+          let onError = function(err) {
+            alert('Errore nel parsing del modello GLTF/GLB');
+          };
+          if (ext === 'glb') {
+            loader.parse(ev.target.result, '', onLoad, onError);
+          } else {
+            loader.parse(ev.target.result, '', onLoad, onError);
+          }
+        };
+        if (ext === 'glb') {
+          reader.readAsArrayBuffer(file);
+        } else {
+          reader.readAsText(file);
+        }
+      } else if (ext === 'obj') {
+        // Dynamic import for OBJLoader
+        const { OBJLoader } = await import('three/addons/loaders/OBJLoader.js');
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+          let loader = new OBJLoader();
+          const object = loader.parse(ev.target.result);
+          object.name = 'architettura';
+          scene.add(object);
+        };
+        reader.readAsText(file);
+      } else {
+        alert('Formato non supportato. Usa .glb, .gltf o .obj');
+      }
+    });
   }
 });

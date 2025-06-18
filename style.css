@@ -496,6 +496,10 @@ input[type='number'] {
   z-index: 2;
 }
 
+.dockTasti button:hover {
+  box-shadow: #0002 0 0 0.5rem;
+}
+
 /* Evidenziatore mobile per tasto attivo nella dock */
 .dockTastiHighlight {
   position: absolute;
@@ -512,4 +516,140 @@ input[type='number'] {
 .dockTastiHighlight.hide {
   opacity: 0;
   transition: opacity 0.15s;
+}
+
+/* --- Menu oggetti sinistra: tabs stile originale (slider) --- */
+.menuCatBtn {
+  background: none;
+  border: none;
+  border-radius: 0;
+  position: relative;
+  color: var(--testo);
+  opacity: 0.45;
+  font-size: 0.95rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: color 0.2s, opacity 0.2s;
+}
+.menuCatBtn.menuCatActive {
+  color: var(--dettaglio);
+  opacity: 0.85;
+}
+.menuCatBtn::after {
+  display: none !important;
+}
+.menuCatSlider {
+  position: absolute;
+  height: 0.13rem;
+  background: var(--dettaglio);
+  border-radius: 2px;
+  bottom: -0.25rem;
+  left: 0;
+  width: 0;
+  pointer-events: none;
+  z-index: 2;
+  transition: left 0.28s cubic-bezier(0.4,0,0.2,1), width 0.28s cubic-bezier(0.4,0,0.2,1);
+}
+.menuCatBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  background: transparent;
+  padding: 0 0.5em;
+}
+
+/* --- Pannello destro: tabs e sezioni --- */
+.panel-tabs {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  background: transparent;
+  padding: 0 0.5em;
+  margin-bottom: 0.3em;
+  min-height: 2.1em;
+  height: 2.1em;
+}
+.panel-tab {
+  background: none;
+  border: none;
+  color: var(--testo, rgba(200,200,200,0.65));
+  font-size: 0.82em;
+  padding: 0.1em 0.45em 0.1em 0.45em;
+  min-width: 1.5em;
+  cursor: pointer;
+  border-radius: 0;
+  transition: border-bottom 0.2s;
+  margin-right: 0.1em;
+  letter-spacing: 0.01em;
+  border-bottom: 2.5px solid transparent;
+  box-shadow: none;
+  height: 1.7em;
+  line-height: 1.7em;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.panel-tab:active, .panel-tab:focus {
+  background: none !important;
+  color: var(--testo, rgba(200,200,200,0.65)) !important;
+  outline: none;
+  box-shadow: none;
+}
+.panel-tab.active {
+  border-bottom: 2.5px solid var(--testo, #fff);
+}
+.panel-section {
+  background: transparent;
+  border-radius: 0 0 10px 10px;
+  margin-bottom: 1.2em;
+  padding: 1em 0.7em 0.7em 0.7em;
+  box-shadow: none;
+}
+.panel-title {
+  font-size: 1em;
+  font-weight: 600;
+  color: var(--testo, #e0e0e0);
+  margin-bottom: 0.7em;
+  letter-spacing: 0.03em;
+}
+
+.panel-content {
+  display: none;
+}
+.panel-content[style*="display:block"] {
+  display: block;
+}
+
+.panel-section .switch-wrapper,
+.panel-section .input-wrapper,
+.panel-section label.multitoggle,
+.panel-section button.menuButton,
+.panel-section button.button.menuButton {
+  margin-bottom: 0.7em;
+}
+.panel-section .switch-wrapper:last-child,
+.panel-section .input-wrapper:last-child,
+.panel-section label.multitoggle:last-child,
+.panel-section button.menuButton:last-child,
+.panel-section button.button.menuButton:last-child {
+  margin-bottom: 0;
+}
+
+@media (max-width: 600px) {
+  .panel-tabs {
+    flex-wrap: wrap;
+    font-size: 0.8em;
+    min-height: 1.7em;
+    height: 1.7em;
+  }
+  .panel-tab {
+    padding: 0.1em 0.2em;
+    font-size: 0.75em;
+    min-width: 1.1em;
+    height: 1.2em;
+    line-height: 1.2em;
+  }
+  .panel-section {
+    padding: 0.7em 0.3em 0.5em 0.3em;
+  }
 }

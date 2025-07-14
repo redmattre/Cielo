@@ -1,0 +1,80 @@
+[
+  {
+    "name": "Omnifonte 1",
+    "position": {
+      "x": 0,
+      "y": 1.2,
+      "z": -1.55
+    },
+    "rotation": {
+      "x": 0,
+      "y": 0,
+      "z": 0
+    }
+  },
+  {
+    "name": "Omnifonte 2",
+    "position": {
+      "x": 0,
+      "y": 2.2,
+      "z": 1.55
+    },
+    "rotation": {
+      "x": 0,
+      "y": 0,
+      "z": 0
+    }
+  },
+  {
+    "name": "Omnifonte 3",
+    "position": {
+      "x": -2.6500000000000004,
+      "y": 0.7000000000000001,
+      "z": 0
+    },
+    "rotation": {
+      "x": 0,
+      "y": 0,
+      "z": 0
+    }
+  },
+  {
+    "name": "Omnifonte 4",
+    "position": {
+      "x": 2,
+      "y": 1.2,
+      "z": 0
+    },
+    "rotation": {
+      "x": 0,
+      "y": 0,
+      "z": 0
+    }
+  },
+  {
+    "name": "Orifonte 1",
+    "position": {
+      "x": 0,
+      "y": 2.7,
+      "z": -3.2
+    },
+    "rotation": {
+      "x": 0.5235987755982987,
+      "y": 0,
+      "z": 0
+    }
+  },
+  {
+    "name": "Orifonte 2",
+    "position": {
+      "x": 3.1,
+      "y": 1.2,
+      "z": 0
+    },
+    "rotation": {
+      "x": 0,
+      "y": -1.5707963267948966,
+      "z": 0
+    }
+  }
+]

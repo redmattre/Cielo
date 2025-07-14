@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
-import { color } from 'three/tsl';
 
 export let normalMat = new THREE.MeshNormalMaterial({
 	transparent: false,

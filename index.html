@@ -47,8 +47,8 @@
       <button title="aggiung aureola" id="addHalo">❍</button>
       <button id="addCloudElement" style="display: none;">☁</button>
       <button title="aggiungi altoparlante" id="addCone">⊚</button>
-      <button id="addZone" style="display: none;">⛶</button>
-      <!-- <button title="aggiungi orifonte" id="addArrow">➞</button> -->
+      <button id="addZone">⛶</button>
+      <button title="aggiungi orifonte" id="addArrow">➞</button>
       <button title="aggiungi omnifonte" id="addSphere">⬤</button>
       <button title="menu di oggetti nella scena" id="seeItemsList">▤</button>
       <!-- <button id="chiudiMenuSotto">⸓</button> -->
@@ -103,6 +103,16 @@
             <label class="multitoggle">
               <input type='range' min='1' max='4' value='2' step='1' class="n n4" data-id="gridsize"/>
             </label>
+          </div>
+          <!-- Bottoni import preset -->
+          <div class="input-wrapper">
+            <button id="loadSpeakersPresetBtn" class="menuButton">Carica Setup Altoparlanti</button>
+          </div>
+          <div class="input-wrapper">
+            <button id="loadSourcesPresetBtn" class="menuButton">Carica Setup Fonti Sonore</button>
+          </div>
+          <div class="input-wrapper">
+            <button id="resetSceneBtn" class="menuButton">Init (Reset Scene)</button>
           </div>
         </div>
 

@@ -6,6 +6,8 @@ import { dashedMaterial, dashedMaterialB, dashedMaterialC, dashedMaterialD, gooc
 import { objToBeDetected, scene } from './setup.js';
 import { createMenu } from './objmenu.js';
 import { loadGenericGltf } from './loadersFIX.js';
+import { saveSpeakersPreset, saveSourcesPreset } from './presetSaver.js';
+import { loadSpeakersPreset, loadSourcesPreset } from './presetLoader.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   const addSpeaker = document.getElementById('addCone');
@@ -278,5 +280,39 @@ document.addEventListener('DOMContentLoaded', () => {
         alert('Formato non supportato. Usa .glb, .gltf o .obj');
       }
     });
+  }
+
+  // Aggiungi bottoni nel menu "Generali"
+  const generaliMenu = document.getElementById('generaliMenu');
+  if (generaliMenu) {
+    // Bottone Carica Setup Altoparlanti
+    const btnLoadSpeakers = document.createElement('button');
+    btnLoadSpeakers.textContent = 'Carica Setup Altoparlanti';
+    btnLoadSpeakers.onclick = () => loadSpeakersPreset();
+    generaliMenu.appendChild(btnLoadSpeakers);
+
+    // Bottone Carica Setup Fonti Sonore
+    const btnLoadSources = document.createElement('button');
+    btnLoadSources.textContent = 'Carica Setup Fonti Sonore';
+    btnLoadSources.onclick = () => loadSourcesPreset();
+    generaliMenu.appendChild(btnLoadSources);
+  }
+
+  // Trova il menu di destra dove sono presenti "tema eco" o "super superficie"
+  const rightMenu = document.getElementById('rightMenu'); // Sostituisci con l'id corretto se diverso
+  if (rightMenu) {
+    // Bottone Carica Setup Altoparlanti
+    const btnLoadSpeakers = document.createElement('button');
+    btnLoadSpeakers.textContent = 'Carica Setup Altoparlanti';
+    btnLoadSpeakers.className = 'menu-btn'; // usa la classe delle voci del menu se presente
+    btnLoadSpeakers.onclick = () => loadSpeakersPreset();
+    rightMenu.appendChild(btnLoadSpeakers);
+
+    // Bottone Carica Setup Fonti Sonore
+    const btnLoadSources = document.createElement('button');
+    btnLoadSources.textContent = 'Carica Setup Fonti Sonore';
+    btnLoadSources.className = 'menu-btn';
+    btnLoadSources.onclick = () => loadSourcesPreset();
+    rightMenu.appendChild(btnLoadSources);
   }
 });

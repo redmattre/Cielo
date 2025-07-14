@@ -9,7 +9,7 @@ import { goochMaterial, goochMaterialAlpha, normalMat, phongMat, standardMat } f
 import { createMenu } from './objmenu.js';
 
 //questa è la funzione utilizzata per caricare tutti gli obj
-export function loadObj(filename, name, material, scaleFactor, x, y, z) {
+export function loadObj(filename, name, material, scaleFactor, x, y, z, rotation) {
     const loader = new OBJLoader();
 
     // Ensure the path is correct in both dev and production (GitHub Pages)
@@ -33,6 +33,9 @@ export function loadObj(filename, name, material, scaleFactor, x, y, z) {
             // Apply transformations to the group
             group.scale.multiplyScalar(scaleFactor);
             group.position.set(x, z, y);
+            if (rotation) {
+                group.rotation.set(rotation.x, rotation.y, rotation.z);
+            }
 
             // Add the group to the scene and the objects to detect
             scene.add(group);

@@ -76,21 +76,9 @@ button {
   transition: background-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* .menubutton:active {
-  background-color: var(--dettaglio);
-} */
-
-/* #helper {
-  background-image: url("modelli/Logo_TempoReale.webp");
-  background-position: center;
-  background-size: 80%;
-  background-repeat: no-repeat;
-  border: none;
-} */
-
 #addArrow {
     overflow: hidden;
-    height: 3.6rem;
+    /* height: 3.6rem; */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -129,10 +117,6 @@ button:active {
   background-color: var(--dettaglio);
 }
 
-/* button:hover {
-  box-shadow: 0 0 0.5rem var(--grigino);
-} */
-
 #infoDivTopLeft {
     position: absolute;
     color: var(--testo);
@@ -166,10 +150,7 @@ button:active {
   z-index: 9999;
   width: 2rem;
   height: 2rem;
-  /* aspect-ratio: 1; */
-  /* clip-path: polygon(0 0,100% 100%,0 100%); */
   clip-path: polygon(0 100%,0 0,100% 0);
-  /* background: linear-gradient(90deg,red, violet); */
   background-color: var(--testo);
   display: none;
 }
@@ -188,7 +169,6 @@ button:active {
     left: calc(50vw - 5.5rem);
     text-shadow: 2px 0 var(--fondale), -2px 0 var(--fondale), 0 2px var(--fondale), 0 -2px var(--fondale),
              1px 1px var(--fondale), -1px -1px var(--fondale), 1px -1px var(--fondale), -1px 1px var(--fondale);
-    /* display: flex; */
     display: flex;
     opacity: 0;
     pointer-events: none;
@@ -208,7 +188,6 @@ button:active {
     padding: 0;
     margin: 0;
     position: absolute;
-    /* background-color: red; */
     height: 85vh;
     width: 4rem;
     top: 1rem;

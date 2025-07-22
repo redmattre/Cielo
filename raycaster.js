@@ -30,9 +30,6 @@ window.setMenuOutline = function(object, enable) {
     }
 };
 
-// Variabile per tracciare l'oggetto attualmente con l'outline
-let outlineObject = null;
-
 // Intervallo per limitare la frequenza degli aggiornamenti
 let lastUpdateTime = 0;
 const updateInterval = 50; // Aggiorna ogni 100ms
@@ -60,7 +57,6 @@ window.addEventListener('resize', () => {
 });
 
 // Variabile per tracciare l'ultimo testo mostrato
-let lastHoveredObject = null;
 
 export let currentSelectedObject = null; // L'ultimo oggetto selezionato rimane memorizzato
 
@@ -71,7 +67,6 @@ window.addEventListener('keydown', function(event) {
         // Attacca il controllo all'ultimo oggetto selezionato
         const targetObject = currentSelectedObject.parent?.isGroup ? currentSelectedObject.parent : currentSelectedObject;
         control.attach(targetObject);
-        outlineObject = null;
         outlinePass.selectedObjects = [];
         isRaycasterActive = false;
     } else if (event.key === 'x' || event.key === 'Backspace') {
@@ -96,7 +91,6 @@ window.addEventListener('keydown', function(event) {
 
 renderer.domElement.addEventListener('mousemove', (event) => {
     if (!isRaycasterActive) return;
-    if (isGroupCreationBlinking) return; // Blocca l'aggiornamento outline durante il lampeggio
 
     const now = Date.now();
     if (now - lastUpdateTime < updateInterval) return;
@@ -110,6 +104,7 @@ renderer.domElement.addEventListener('mousemove', (event) => {
 
     if (intersects.length > 0) {
         let hovered = intersects[0].object;
+
         // --- INVIO A MAX/MSP DELLE INFO DELL'OGGETTO HOVERATO ---
         if (window.max && window.max.outlet) {
             const obj = hovered;
@@ -132,24 +127,31 @@ renderer.domElement.addEventListener('mousemove', (event) => {
             if (angleDeg < 0) angleDeg += 360;
             window.max.outlet(name, index, x, y, elevazione, angleDeg, distanceXY);
         }
-        // Se hover su gruppo, outline su tutti i membri
-        if (hovered.parent && hovered.parent.name === 'Gruppo di trasformazione') {
-            const group = hovered.parent;
-            // Prendi tutti i figli mesh del gruppo
-            const groupMembers = group.children.filter(child => child.isMesh || child.type === 'Group' || child.type === 'Object3D');
-            outlinePass.selectedObjects = groupMembers;
+        // Cerca se hovered (o uno dei suoi parent) è figlio di un gruppo di trasformazione
+        let group = null;
+        let obj = hovered;
+        while (obj) {
+            if (obj.parent && obj.parent.name === 'Gruppo di trasformazione') {
+                group = obj.parent;
+                break;
+            }
+            obj = obj.parent;
+        }
+
+        if (group) {
+            // Outline su tutti i membri del gruppo
+            outlinePass.selectedObjects = group.children;
             currentSelectedObject = group;
             updateInfoText(group.name || 'Gruppo di trasformazione');
             highlightMenuItemByObject(group);
         } else if (hovered.name === 'Gruppo di trasformazione') {
             // Hover diretto sul gruppo
-            const groupMembers = hovered.children.filter(child => child.isMesh || child.type === 'Group' || child.type === 'Object3D');
-            outlinePass.selectedObjects = groupMembers;
+            outlinePass.selectedObjects = hovered.children;
             currentSelectedObject = hovered;
             updateInfoText(hovered.name || 'Gruppo di trasformazione');
             highlightMenuItemByObject(hovered);
         } else {
-            // Oggetto singolo
+            // Oggetto singolo (mesh o non mesh)
             outlinePass.selectedObjects = [hovered];
             currentSelectedObject = hovered;
             updateInfoText(hovered.name || 'Oggetto non trattato');
@@ -157,7 +159,6 @@ renderer.domElement.addEventListener('mousemove', (event) => {
         }
 
     } else {
-        // Non resettare currentSelectedObject quando non c'è hover
         outlinePass.selectedObjects = [];
         highlightMenuItemByObject(null);
     }
@@ -234,121 +235,264 @@ function highlightMenuItemByObject(object) {
 
 // --- SELEZIONE MULTIPLA E GRUPPO TEMPORANEO ---
 let tempGroup = null;
-let multiSelectedObjects = [];
-let groupCreationBlinkInterval = null;
-let isGroupCreationBlinking = false;
+let selectedObjects = [];
+let isDragging = false;
+let dragStart = null;
+let dragEnd = null;
+const selectionRect = document.getElementById('selection-rectangle');
 
-function startGroupBlinking() {
-    if (groupCreationBlinkInterval) return;
-    isGroupCreationBlinking = true;
-    let visible = true;
-    groupCreationBlinkInterval = setInterval(() => {
-        if (!isGroupCreationBlinking) return;
-        if (multiSelectedObjects.length > 0) {
-            outlinePass.selectedObjects = visible ? multiSelectedObjects.slice() : [];
-        }
-        visible = !visible;
-    }, 300);
-    // Messaggio in basso a sinistra
-    const infoDivDown = document.getElementById('infoDivBottomLeft');
-    if (infoDivDown) infoDivDown.textContent = 'Creazione gruppo, clicca enter per confermare';
-    // Mostra triangolino nero
-    const transTriangle = document.getElementById('transTriangle');
-    if (transTriangle) transTriangle.style.display = 'block';
-}
-
-function stopGroupBlinking() {
-    isGroupCreationBlinking = false;
-    if (groupCreationBlinkInterval) {
-        clearInterval(groupCreationBlinkInterval);
-        groupCreationBlinkInterval = null;
+// Disegna il rettangolo di selezione
+function updateSelectionRect() {
+    if (!isDragging || !dragStart || !dragEnd) {
+        selectionRect.style.display = 'none';
+        return;
     }
-    outlinePass.selectedObjects = [];
-    // Ripristina messaggio
-    const infoDivDown = document.getElementById('infoDivBottomLeft');
-    if (infoDivDown) infoDivDown.textContent = '---';
-    // Nascondi triangolino nero
-    const transTriangle = document.getElementById('transTriangle');
-    if (transTriangle) transTriangle.style.display = 'none';
+    selectionRect.style.display = 'block';
+    const x = Math.min(dragStart.x, dragEnd.x);
+    const y = Math.min(dragStart.y, dragEnd.y);
+    const w = Math.abs(dragEnd.x - dragStart.x);
+    const h = Math.abs(dragEnd.y - dragStart.y);
+    selectionRect.style.left = x + 'px';
+    selectionRect.style.top = y + 'px';
+    selectionRect.style.width = w + 'px';
+    selectionRect.style.height = h + 'px';
 }
 
-renderer.domElement.addEventListener('mousedown', (event) => {
-    if (!isRaycasterActive) return;
-    if (event.button !== 0) return;
-    const isShift = event.shiftKey;
+// Seleziona oggetti nel rettangolo
+function selectObjectsInRect(start, end) {
+    // Trasforma coordinate schermo in normalized device coordinates
+    const minX = Math.min(start.x, end.x);
+    const maxX = Math.max(start.x, end.x);
+    const minY = Math.min(start.y, end.y);
+    const maxY = Math.max(start.y, end.y);
+
+    selectedObjects = [];
+    objToBeDetected.forEach(obj => {
+        // Ottieni posizione proiettata
+        let target = obj;
+        // Se obj è un gruppo o Object3D senza geometria, cerca una mesh figlia per la posizione
+        if (!obj.isMesh && obj.children && obj.children.length > 0) {
+            // Cerca la prima mesh figlia
+            const meshChild = obj.children.find(child => child.isMesh);
+            if (meshChild) target = meshChild;
+        }
+        const pos = target.getWorldPosition(new THREE.Vector3());
+        const screenPos = pos.clone().project(currentCamera);
+        const sx = (screenPos.x * 0.5 + 0.5) * window.innerWidth;
+        const sy = (-screenPos.y * 0.5 + 0.5) * window.innerHeight;
+        if (sx >= minX && sx <= maxX && sy >= minY && sy <= maxY) {
+            selectedObjects.push(obj);
+        }
+    });
+    updateTempGroup();
+}
+
+// Aggiorna il gruppo temporaneo
+function updateTempGroup() {
+    // Rimuovi gruppo precedente
+    if (tempGroup) {
+        tempGroup.children.slice().forEach(obj => {
+            if (obj.parent === tempGroup) {
+                // Salva posizione globale
+                obj.updateMatrixWorld(true);
+                const worldPos = new THREE.Vector3();
+                obj.getWorldPosition(worldPos);
+                scene.add(obj);
+                obj.position.copy(worldPos);
+            }
+            if (obj.material && obj.material.emissive) {
+                obj.material.emissive.setHex(0x000000);
+            }
+        });
+        scene.remove(tempGroup);
+        tempGroup = null;
+    }
+    // Rimuovi gli oggetti selezionati dal gruppo precedente, se necessario
+    selectedObjects.forEach(obj => {
+        if (obj.parent && obj.parent.type === 'Group' && obj.parent.name === 'Gruppo di trasformazione') {
+            // Salva posizione globale
+            obj.updateMatrixWorld(true);
+            const worldPos = new THREE.Vector3();
+            obj.getWorldPosition(worldPos);
+            obj.parent.remove(obj);
+            scene.add(obj);
+            obj.position.copy(worldPos);
+        }
+    });
+    if (selectedObjects.length > 1) {
+        tempGroup = new THREE.Group();
+        tempGroup.name = 'Gruppo di trasformazione';
+        selectedObjects.forEach(obj => {
+            if (obj.parent === scene) {
+                // Salva posizione globale
+                obj.updateMatrixWorld(true);
+                const worldPos = new THREE.Vector3();
+                obj.getWorldPosition(worldPos);
+                scene.remove(obj);
+                tempGroup.add(obj);
+                obj.position.copy(tempGroup.worldToLocal(worldPos));
+            } else {
+                tempGroup.add(obj);
+            }
+            // Evidenzia solo le mesh
+            if (obj.material && obj.material.emissive) {
+                obj.material.emissive.setHex(0x4444ff);
+            }
+            // Se obj è un gruppo/obj3d, evidenzia tutte le mesh figlie
+            if (!obj.isMesh && obj.children && obj.children.length > 0) {
+                obj.children.forEach(child => {
+                    if (child.material && child.material.emissive) {
+                        child.material.emissive.setHex(0x4444ff);
+                    }
+                });
+            }
+        });
+        scene.add(tempGroup);
+    } else if (selectedObjects.length === 1) {
+        const obj = selectedObjects[0];
+        if (obj.material && obj.material.emissive) {
+            obj.material.emissive.setHex(0x4444ff);
+        }
+        if (!obj.isMesh && obj.children && obj.children.length > 0) {
+            obj.children.forEach(child => {
+                if (child.material && child.material.emissive) {
+                    child.material.emissive.setHex(0x4444ff);
+                }
+            });
+        }
+    }
+    // Aggiorna outline
+    outlinePass.selectedObjects = selectedObjects.length > 0 ? selectedObjects : [];
+}
+
+function clearSelection() {
+    if (tempGroup) {
+        tempGroup.children.slice().forEach(obj => {
+            if (obj.parent === tempGroup) {
+                obj.updateMatrixWorld(true);
+                const worldPos = new THREE.Vector3();
+                obj.getWorldPosition(worldPos);
+                scene.add(obj);
+                obj.position.copy(worldPos);
+            }
+            if (obj.material && obj.material.emissive) {
+                obj.material.emissive.setHex(0x000000);
+            }
+            if (!obj.isMesh && obj.children && obj.children.length > 0) {
+                obj.children.forEach(child => {
+                    if (child.material && child.material.emissive) {
+                        child.material.emissive.setHex(0x000000);
+                    }
+                });
+            }
+        });
+        scene.remove(tempGroup);
+        tempGroup = null;
+    }
+    selectedObjects.forEach(obj => {
+        if (obj.material && obj.material.emissive) {
+            obj.material.emissive.setHex(0x000000);
+        }
+        if (!obj.isMesh && obj.children && obj.children.length > 0) {
+            obj.children.forEach(child => {
+                if (child.material && child.material.emissive) {
+                    child.material.emissive.setHex(0x000000);
+                }
+            });
+        }
+        if (obj.parent && obj.parent.type === 'Group' && obj.parent.name === 'Gruppo di trasformazione') {
+            obj.updateMatrixWorld(true);
+            const worldPos = new THREE.Vector3();
+            obj.getWorldPosition(worldPos);
+            obj.parent.remove(obj);
+            scene.add(obj);
+            obj.position.copy(worldPos);
+        }
+    });
+    selectedObjects = [];
+    outlinePass.selectedObjects = [];
+    updateSelectionRect(); // Nascondi il rettangolo di selezione
+}
+
+function isTransformActive() {
+    return control && (control.dragging || control.object);
+}
+
+// Gestione mouse
+renderer.domElement.addEventListener('pointerdown', (event) => {
+    if (!isOrthoView()) return;
+    if (isTransformActive()) return; // Blocca selezione se TransformControls attivi
+    isDragging = true;
+    dragStart = { x: event.clientX, y: event.clientY };
+    dragEnd = { x: event.clientX, y: event.clientY };
+    updateSelectionRect();
+});
+
+renderer.domElement.addEventListener('pointermove', (event) => {
+    if (!isOrthoView()) return;
+    if (isTransformActive()) return; // Blocca selezione se TransformControls attivi
+    if (isDragging) {
+        dragEnd = { x: event.clientX, y: event.clientY };
+        updateSelectionRect();
+    }
+});
+
+renderer.domElement.addEventListener('pointerup', (event) => {
+    if (!isOrthoView()) return;
+    if (isTransformActive()) return; // Blocca selezione se TransformControls attivi
+    if (isDragging) {
+        dragEnd = { x: event.clientX, y: event.clientY };
+        updateSelectionRect();
+        if (Math.abs(dragEnd.x - dragStart.x) > 5 && Math.abs(dragEnd.y - dragStart.y) > 5) {
+            clearSelection();
+            selectObjectsInRect(dragStart, dragEnd);
+        } else {
+            // Click singolo
+            const intersected = getIntersectedObject(event);
+            if (intersected) {
+                clearSelection();
+                selectedObjects = [intersected];
+                updateTempGroup();
+            } else {
+                clearSelection();
+            }
+        }
+        isDragging = false;
+        dragStart = null;
+        dragEnd = null;
+        updateSelectionRect(); // Nascondi il rettangolo di selezione
+    }
+});
+
+// Shift+Click per selezione multipla
+renderer.domElement.addEventListener('click', (event) => {
+    if (!isOrthoView()) return;
+    if (event.shiftKey) {
+        const intersected = getIntersectedObject(event);
+        if (intersected) {
+            if (!selectedObjects.includes(intersected)) {
+                selectedObjects.push(intersected);
+            } else {
+                selectedObjects = selectedObjects.filter(obj => obj !== intersected);
+            }
+            updateTempGroup();
+        }
+    }
+});
+
+// Funzione per verificare se la visuale è ortogonale
+function isOrthoView() {
+    // Implementazione reale: controlla che la camera sia ortogonale
+    return currentCamera && currentCamera.isOrthographicCamera;
+}
+
+function getIntersectedObject(event) {
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
     raycaster.setFromCamera(mouse, currentCamera);
     const intersects = raycaster.intersectObjects(objToBeDetected, true);
-    if (isShift) {
-        if (intersects.length > 0) {
-            const obj = intersects[0].object;
-            // Se il gruppo esiste, sgroupa e resetta tutto
-            if (tempGroup) {
-                tempGroup.updateMatrixWorld(true);
-                multiSelectedObjects.forEach(o => {
-                    o.applyMatrix4(tempGroup.matrixWorld);
-                    scene.add(o);
-                    objToBeDetected.push(o);
-                });
-                scene.remove(tempGroup);
-                const idxGroup = objToBeDetected.indexOf(tempGroup);
-                if (idxGroup !== -1) objToBeDetected.splice(idxGroup, 1);
-                tempGroup = null;
-            }
-            // Se l'oggetto è già selezionato, toglilo dalla selezione (e smette di blinkare)
-            const idx = multiSelectedObjects.indexOf(obj);
-            if (idx !== -1) {
-                multiSelectedObjects.splice(idx, 1);
-            } else {
-                multiSelectedObjects.push(obj);
-            }
-            // Avvia lampeggio se almeno un oggetto selezionato
-            if (multiSelectedObjects.length > 0) {
-                startGroupBlinking();
-            } else {
-                stopGroupBlinking();
-            }
-            control.detach();
-        } else {
-            // Shift+click su spazio vuoto: sgroupa e resetta tutto
-            if (tempGroup) {
-                tempGroup.updateMatrixWorld(true);
-                multiSelectedObjects.forEach(o => {
-                    o.applyMatrix4(tempGroup.matrixWorld);
-                    scene.add(o);
-                    objToBeDetected.push(o);
-                });
-                scene.remove(tempGroup);
-                const idxGroup = objToBeDetected.indexOf(tempGroup);
-                if (idxGroup !== -1) objToBeDetected.splice(idxGroup, 1);
-            }
-            tempGroup = null;
-            multiSelectedObjects = [];
-            stopGroupBlinking();
-            control.detach();
-        }
-        return;
-    }
-});
-
-// Premi Enter per creare il gruppo con tutti gli oggetti selezionati
-window.addEventListener('keydown', function(event) {
-    if (event.key === 'Enter' && multiSelectedObjects.length >= 2 && !tempGroup) {
-        stopGroupBlinking();
-        tempGroup = new THREE.Group();
-        tempGroup.name = 'Gruppo di trasformazione';
-        scene.add(tempGroup);
-        multiSelectedObjects.forEach(o => {
-            const idx = objToBeDetected.indexOf(o);
-            if (idx !== -1) objToBeDetected.splice(idx, 1);
-            tempGroup.attach(o);
-        });
-        objToBeDetected.push(tempGroup);
-        outlinePass.selectedObjects = multiSelectedObjects.slice();
-        control.detach();
-    }
-});
+    return intersects.length > 0 ? intersects[0].object : null;
+}
 
 // Inizializza post-processing e avvia il rendering
 initPostProcessing();

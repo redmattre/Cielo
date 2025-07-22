@@ -18,7 +18,6 @@
 
     <div class="dockTasti">
       <div class="dockTastiHighlight hide" id="dockTastiHighlight"></div>
-      <button id="makeGroup" class="topButtons">⧉</button>
       <button title="sposta (g); (esc) per uscire" id="moveButton" class="topButtons">&#10021;</button>
       <button title="ruota (r); (esc) per uscire" id="rotateButton" class="topButtons">R</button>
       <button title="scala (s); (esc) per uscire" id="scaleButton" class="topButtons">S</button>
@@ -195,6 +194,8 @@
     <!-- Bottone tre puntini per aprire il menu laterale -->
     <button id="openSideMenu">&#8226; &#8226; &#8226;</button>
 
+    <div id="selection-rectangle" style="position:fixed; pointer-events:none; border:1.5px dashed #4488ff; background:rgba(68,136,255,0.08); display:none; z-index:1000;"></div>
+
     <script type="module" src="main.js"></script>
     <script type="module" src="setup.js"></script>
     <script type="module" src="materials.js"></script>
@@ -223,4 +224,5 @@
       });
     </script>
   </body>
+</html>
 </html>

@@ -110,6 +110,28 @@ renderer.domElement.addEventListener('mousemove', (event) => {
 
     if (intersects.length > 0) {
         let hovered = intersects[0].object;
+        // --- INVIO A MAX/MSP DELLE INFO DELL'OGGETTO HOVERATO ---
+        if (window.max && window.max.outlet) {
+            const obj = hovered;
+            const fullName = obj.name || '';
+            const match = fullName.match(/^(.*?)[\s_-]?(\d+)$/);
+            let name = fullName;
+            let index = 1;
+            if (match) {
+                name = match[1].trim();
+                index = parseInt(match[2], 10);
+            }
+            // Coordinate corrette per il piano orizzontale (x, z), elevazione = y
+            const x = obj.position.x;
+            const y = obj.position.z;
+            const elevazione = obj.position.y;
+            // Distanza XY dal centro
+            const distanceXY = Math.sqrt(x * x + y * y);
+            // Angolo da 0 a 360 gradi rispetto all'origine sul piano XZ
+            let angleDeg = Math.atan2(y, x) * (180 / Math.PI) - 90;
+            if (angleDeg < 0) angleDeg += 360;
+            window.max.outlet(name, index, x, y, elevazione, angleDeg, distanceXY);
+        }
         // Se hover su gruppo, outline su tutti i membri
         if (hovered.parent && hovered.parent.name === 'Gruppo di trasformazione') {
             const group = hovered.parent;
@@ -133,6 +155,7 @@ renderer.domElement.addEventListener('mousemove', (event) => {
             updateInfoText(hovered.name || 'Oggetto non trattato');
             highlightMenuItemByObject(hovered);
         }
+
     } else {
         // Non resettare currentSelectedObject quando non c'è hover
         outlinePass.selectedObjects = [];
@@ -345,8 +368,14 @@ if (control) {
                 name = match[1].trim();
                 index = parseInt(match[2], 10);
             }
+            const x = obj.position.x;
+            const y = obj.position.z;
+            const elevazione = obj.position.y;
+            const distanceXY = Math.sqrt(x * x + y * y);
+            let angleDeg = Math.atan2(y, x) * (180 / Math.PI) - 90;
+            if (angleDeg < 0) angleDeg += 360;
             if (window.max && window.max.outlet) {
-                window.max.outlet(name, index, obj.position.x, obj.position.y, obj.position.z);
+                window.max.outlet(name, index, x, y, elevazione, angleDeg, distanceXY);
             }
         }
     });

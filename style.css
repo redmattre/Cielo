@@ -219,23 +219,6 @@ button:active {
   margin-left: 1rem;
 }
 
-#chiudiMenuSopra, #chiudiMenuSotto {
-  display: none;
-  /* background-color: var(--testo); */
-  /* color: var(--dettaglio); */
-  transition: all 0.5s ease;
-  border: 2px solid var(--testo)
-
-}
-
-#chiudiMenuSotto {
-  height: 2rem;
-}
-
-#chiudiMenuSopra {
-  width: 2rem;
-}
-
 .bottonieraSotto {
     padding: 0;
     margin: 0;
@@ -353,46 +336,6 @@ input[type='number'] {
     right: 1rem;
     position: absolute;
 }
-
-/* #helper {
-  background-color: transparent;
-  border: solid var(--dettaglio) 2px;
-  border-radius: 10px;
-  color: var(--dettaglio);
-  padding: 0.5rem 1rem;
-
-  position: absolute;
-  bottom: 1rem;
-  right: 1rem;
-
-  transition: all 0.25s ease;
-  cursor: pointer;
-}
-
-#helperCard {
-  background-color: var(--fondale);
-  border: solid var(--dettaglio) 2px;
-  border-radius: 8px;
-  color: var(--dettaglio);
-  padding: 0.5rem 1rem;
-  opacity: 0;
-  font-size: large;
-
-  position: absolute;
-  bottom: 1rem;
-  right: 1rem;
-  height: 23vh;
-  width: 42vw;
-  overflow: scroll;
-  pointer-events: none;
-
-  transition: all 0.25s ease;
-}
-
-/* Qui il contenuto diventa visibile quando l'hover è sul #helper 
-#helper:hover #helperCard {
-  opacity: 1;
-} */
 
 .itemList-hover {
   /* border: 1px solid #888; */

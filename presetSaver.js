@@ -64,8 +64,24 @@ export async function saveSourcesPreset() {
   await writable.close();
 }
 
-// Shortcut per salvataggio preset (cmd+s / ctrl+s)
+// Collega i bottoni di salvataggio ai rispettivi handler
 if (typeof window !== 'undefined') {
+  window.addEventListener('DOMContentLoaded', () => {
+    const btnSaveSpeakers = document.getElementById('saveSpeakersPresetBtn');
+    if (btnSaveSpeakers) {
+      btnSaveSpeakers.addEventListener('click', () => {
+        saveSpeakersPreset();
+      });
+    }
+    const btnSaveSources = document.getElementById('saveSourcesPresetBtn');
+    if (btnSaveSources) {
+      btnSaveSources.addEventListener('click', () => {
+        saveSourcesPreset();
+      });
+    }
+  });
+
+  // Shortcut per salvataggio preset (cmd+s / ctrl+s)
   window.addEventListener('keydown', async (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key === 's') {
       e.preventDefault();

@@ -4,6 +4,7 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { OutlinePass } from 'three/addons/postprocessing/OutlinePass.js';
 import { createMenu, updateMenu } from './objmenu';
+import { syncMaxDictionaries } from './maxSync.js';
 
 export let raycaster = new THREE.Raycaster();
 export let mouse = new THREE.Vector2();
@@ -72,6 +73,7 @@ if (!window.__raycasterKeydownRegistered) {
         ) {
             console.log('[DEBUG] Shift+D detected, duplicating:', currentSelectedObject?.name);
             duplicateObject(currentSelectedObject);
+            syncMaxDictionaries();
             return; // Evita che il resto del listener venga eseguito
         }
 
@@ -100,7 +102,8 @@ if (!window.__raycasterKeydownRegistered) {
                 // console.error("Oggetto con nome '" + targetObject.name + "' non trovato nell'array.");
             }
             createMenu();
-            currentSelectedObject = null; // Resetta la selezione
+            currentSelectedObject = null;
+            setTimeout(syncMaxDictionaries, 50); // Delay per assicurarsi che l'oggetto sia stato rimosso
         }
 
         // --- CAMERA SWITCH ---
@@ -398,6 +401,7 @@ function updateTempGroup() {
     }
     // Aggiorna outline
     outlinePass.selectedObjects = selectedObjects.length > 0 ? selectedObjects : [];
+    syncMaxDictionaries();
 }
 
 function clearSelection() {
@@ -556,6 +560,7 @@ if (control) {
             if (window.max && window.max.outlet) {
                 window.max.outlet(name, index, x, y, elevazione, angleDeg, distanceXY);
             }
+            syncMaxDictionaries();
         }
     });
 }
@@ -656,4 +661,5 @@ function duplicateObject(original) {
     outlinePass.selectedObjects = [clone];
     updateInfoText(clone.name);
     highlightMenuItemByObject(clone);
+    setTimeout(syncMaxDictionaries, 50); // Delay per assicurarsi che l'oggetto sia in scena
 }

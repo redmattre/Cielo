@@ -3,6 +3,7 @@ import { loadObj } from './loaders.js';
 import { goochMaterialSp, goochMaterialArrow, dashedMaterial, dashedMaterialB, dashedMaterialC, dashedMaterialD } from './materials.js';
 import * as THREE from 'three';
 import { createMenu } from './objmenu.js';
+import { syncMaxDictionaries } from './maxSync.js';
 
 // Utility per rimuovere oggetti di una tipologia
 function removeObjectsByPrefix(prefix) {
@@ -42,6 +43,7 @@ export async function loadSpeakersPreset() {
     // La funzione loadObj deve accettare un parametro rotation opzionale
   }
   createMenu();
+  setTimeout(syncMaxDictionaries, 50);
 }
 
 // Carica preset fonti sonore e zone (.sources)
@@ -126,6 +128,7 @@ export async function loadSourcesPreset() {
     }
   }
   createMenu();
+  setTimeout(syncMaxDictionaries, 50);
 }
 
 // Funzione per resettare la scena (rimuove altoparlanti, fonti e zone)

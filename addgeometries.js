@@ -8,6 +8,7 @@ import { createMenu } from './objmenu.js';
 import { loadGenericGltf } from './loadersFIX.js';
 import { saveSpeakersPreset, saveSourcesPreset } from './presetSaver.js';
 import { loadSpeakersPreset, loadSourcesPreset } from './presetLoader.js';
+import { syncMaxDictionaries } from './maxSync.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   const addSpeaker = document.getElementById('addCone');
@@ -24,6 +25,8 @@ document.addEventListener('DOMContentLoaded', () => {
       howManyGenericModels++;
       let nome = `Modello custom ${howManyGenericModels}`
       loadGenericGltf('./modelli/galleriaGLTF/scultura.glb', nome, 0.045, -3.5, -0.7, 0.5);
+      createMenu();
+      setTimeout(syncMaxDictionaries, 50);
     });
   }
 
@@ -38,6 +41,8 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       let nome = `Altoparlante ${howManySpeakers + 1}`;
       loadObj('./modelli/galleriaOBJ/speaker3dec.obj', nome, goochMaterialSp, 0.045, 0., 0, 1.2);
+      createMenu();
+      setTimeout(syncMaxDictionaries, 50);
     });
   }
 
@@ -47,6 +52,8 @@ document.addEventListener('DOMContentLoaded', () => {
       howManyHalos++;
       let nome = `Aureola-${howManyHalos}`
       loadObj('./modelli/galleriaOBJ/halo2_lowpoly.obj', nome, goochMaterialSp, 0.15, 0., 0, 1.2);
+      createMenu();
+      setTimeout(syncMaxDictionaries, 50);
     });
   }
 
@@ -55,7 +62,9 @@ document.addEventListener('DOMContentLoaded', () => {
     addArrow.addEventListener('click', () => {
       howManyArrows++;
       const nome = `Orifonte ${howManyArrows}`;
-      loadObj('./modelli/galleriaOBJ/arrow.obj', nome, goochMaterialArrow, 0.045, 0., 0., 1.2)
+      loadObj('./modelli/galleriaOBJ/arrow.obj', nome, goochMaterialArrow, 0.045, 0., 0., 1.2);
+      createMenu();
+      setTimeout(syncMaxDictionaries, 50);
     });
   }
 
@@ -65,6 +74,8 @@ document.addEventListener('DOMContentLoaded', () => {
       howManyCloudClients++;
       const nome = `Nuvola:client ${howManyCloudClients}`;
       loadObj('./modelli/galleriaOBJ/cloudDec.obj', nome, goochMaterialSp, 0.035, 0., 0, 1.2);
+      createMenu();
+      setTimeout(syncMaxDictionaries, 50);
     });
   }
 
@@ -88,6 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
       scene.add(mesh);
       objToBeDetected.push(mesh);
       createMenu();
+      setTimeout(syncMaxDictionaries, 50);
     });
   }
 
@@ -118,6 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
       newZone(false, nome, color, 0., 0., 1.2);
       multimenu.style.opacity = 0;
       multimenu.style.pointerEvents = "none";
+      setTimeout(syncMaxDictionaries, 50);
     });
   }
   if (closeMultimenu && multimenu) {
@@ -136,6 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
       newZone(true, nome, color, 0., 0., 1.2);
       multimenu.style.opacity = 0;
       multimenu.style.pointerEvents = "none";
+      setTimeout(syncMaxDictionaries, 50);
     });
   }
 
@@ -185,6 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
       scene.add(group);
       objToBeDetected.push(line);
       createMenu();
+      // syncMaxDictionaries() viene già chiamata dopo la funzione
   }
 
   function newShape(boolgeo, name, materiale, x, y, z) {
@@ -206,6 +221,7 @@ document.addEventListener('DOMContentLoaded', () => {
       scene.add(mesh);
       objToBeDetected.push(mesh);
       createMenu();
+      syncMaxDictionaries();
   }
 
   // Funzione per rimuovere il modello architettura dalla scena
@@ -250,6 +266,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const model = gltf.scene;
             model.name = 'architettura';
             scene.add(model);
+            setTimeout(syncMaxDictionaries, 50);
           };
           let onError = function(err) {
             alert('Errore nel parsing del modello GLTF/GLB');
@@ -274,6 +291,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const object = loader.parse(ev.target.result);
           object.name = 'architettura';
           scene.add(object);
+          setTimeout(syncMaxDictionaries, 50);
         };
         reader.readAsText(file);
       } else {

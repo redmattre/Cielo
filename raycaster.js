@@ -60,34 +60,69 @@ window.addEventListener('resize', () => {
 
 export let currentSelectedObject = null; // L'ultimo oggetto selezionato rimane memorizzato
 
-window.addEventListener('keydown', function(event) {
-    if (!currentSelectedObject) return; // Nessun oggetto selezionato, esci
+if (!window.__raycasterKeydownRegistered) {
+    window.__raycasterKeydownRegistered = true;
 
-    if (event.key === 'g' || event.key === 's' || event.key === 'r') {
-        // Attacca il controllo all'ultimo oggetto selezionato
-        const targetObject = currentSelectedObject.parent?.isGroup ? currentSelectedObject.parent : currentSelectedObject;
-        control.attach(targetObject);
-        outlinePass.selectedObjects = [];
-        isRaycasterActive = false;
-    } else if (event.key === 'x' || event.key === 'Backspace') {
-
-        const targetObject = currentSelectedObject.parent?.isGroup ? currentSelectedObject.parent : currentSelectedObject;
-        const index = objToBeDetected.findIndex(obj => obj.name?.trim() === targetObject.name.trim());
-
-        if (index !== -1) {
-            // console.log("Oggetto trovato, rimuovo:", objToBeDetected[index].name);
-            objToBeDetected.splice(index, 1);
-            disposeObject(targetObject);
-            console.log(objToBeDetected[index].name);
-            updateInfoTextBasso(objToBeDetected[index].name);
-            
-        } else {
-            // console.error("Oggetto con nome '" + targetObject.name + "' non trovato nell'array.");
+    window.addEventListener('keydown', function(event) {
+        // --- DUPLICAZIONE OGGETTO: Shift+D ---
+        if (
+            event.shiftKey &&
+            event.key.toLowerCase() === 'd' &&
+            currentSelectedObject
+        ) {
+            console.log('[DEBUG] Shift+D detected, duplicating:', currentSelectedObject?.name);
+            duplicateObject(currentSelectedObject);
+            return; // Evita che il resto del listener venga eseguito
         }
-        createMenu();
-        currentSelectedObject = null; // Resetta la selezione
-    }
-});
+
+        // --- ALTRE AZIONI ---
+        if (!currentSelectedObject) return; // Nessun oggetto selezionato, esci
+
+        if (event.key === 'g' || event.key === 's' || event.key === 'r') {
+            // Attacca il controllo all'ultimo oggetto selezionato
+            const targetObject = currentSelectedObject.parent?.isGroup ? currentSelectedObject.parent : currentSelectedObject;
+            control.attach(targetObject);
+            outlinePass.selectedObjects = [];
+            isRaycasterActive = false;
+        } else if (event.key === 'x' || event.key === 'Backspace') {
+
+            const targetObject = currentSelectedObject.parent?.isGroup ? currentSelectedObject.parent : currentSelectedObject;
+            const index = objToBeDetected.findIndex(obj => obj.name?.trim() === targetObject.name.trim());
+
+            if (index !== -1) {
+                // console.log("Oggetto trovato, rimuovo:", objToBeDetected[index].name);
+                objToBeDetected.splice(index, 1);
+                disposeObject(targetObject);
+                console.log(objToBeDetected[index].name);
+                updateInfoTextBasso(objToBeDetected[index].name);
+                
+            } else {
+                // console.error("Oggetto con nome '" + targetObject.name + "' non trovato nell'array.");
+            }
+            createMenu();
+            currentSelectedObject = null; // Resetta la selezione
+        }
+
+        // --- CAMERA SWITCH ---
+        switch (event.key) {
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+                initPostProcessing();
+                animate();
+                scene.add(currentCamera);
+                renderer.render(scene, currentCamera);
+                break;
+            case 'Escape':
+                if (!isRaycasterActive) {
+                    isRaycasterActive = true;
+                    updateMenu();
+                }
+                break;
+        }
+    });
+}
 
 renderer.domElement.addEventListener('mousemove', (event) => {
     if (!isRaycasterActive) return;
@@ -525,40 +560,6 @@ if (control) {
     });
 }
 
-window.addEventListener('keydown', (event) => {
-    switch (event.key) {
-        case '1': // Tasto 1: Camera prospettica
-            initPostProcessing();
-            animate();
-            break;
-
-        case '2': // Tasto 2: Camera ortogonale
-            initPostProcessing();
-            animate();
-            break;
-        case '3': // Tasto 2: Camera ortogonale
-            initPostProcessing();
-            animate();
-            break;
-        case '4': // Tasto 2: Camera ortogonale
-            initPostProcessing();
-            animate();
-            break;
-        case 'Escape':
-            if (!isRaycasterActive) {
-                isRaycasterActive = true;
-                updateMenu();
-            } 
-            break;
-    }
-
-    // Aggiungi la nuova camera alla scena
-    scene.add(currentCamera);
-
-    // Forza il renderer a utilizzare la nuova camera
-    renderer.render(scene, currentCamera);
-});
-
 // Disattiva i TransformControls quando si clicca il bottone toggleTransButton
 const toggleTransButton = document.getElementById('toggleTransButton');
 if (toggleTransButton) {
@@ -600,4 +601,59 @@ if (toggleTransButton) {
             updateMenu();
         }
     });
+}
+
+// Funzione per duplicare un oggetto
+function duplicateObject(original) {
+    console.log('[DEBUG] duplicateObject called for:', original?.name);
+    console.trace();
+    // Clona l'oggetto (deep clone)
+    const clone = original.clone(true);
+
+    // Calcola la matrice globale dell'originale
+    original.updateMatrixWorld(true);
+    const worldMatrix = original.matrixWorld.clone();
+
+    // Decompone la matrice globale in posizione, rotazione, scala
+    const pos = new THREE.Vector3();
+    const quat = new THREE.Quaternion();
+    const scale = new THREE.Vector3();
+    worldMatrix.decompose(pos, quat, scale);
+
+    // Shift sulla X di +1.5 (nello spazio globale)
+    pos.x += 1.5;
+
+    // Imposta direttamente posizione, rotazione, scala globali sul clone
+    clone.position.copy(pos);
+    clone.quaternion.copy(quat);
+    clone.scale.copy(scale);
+
+    // --- Assegna nome coerente ---
+    let baseName = original.name || 'Duplicato';
+    let match = baseName.match(/^(.*?)[\s_-]?(\d+)$/);
+    if (match) {
+        baseName = match[1].trim();
+    }
+    let maxIndex = 0;
+    objToBeDetected.forEach(obj => {
+        if (obj.name) {
+            let m = obj.name.match(new RegExp(`^${baseName}[\\s_-]?(\\d+)$`));
+            if (m) {
+                let idx = parseInt(m[1], 10);
+                if (idx > maxIndex) maxIndex = idx;
+            }
+        }
+    });
+    clone.name = `${baseName} ${maxIndex + 1}`;
+
+    // Aggiungi il clone alla scena e all'array objToBeDetected
+    scene.add(clone);
+    objToBeDetected.push(clone);
+
+    createMenu();
+
+    currentSelectedObject = clone;
+    outlinePass.selectedObjects = [clone];
+    updateInfoText(clone.name);
+    highlightMenuItemByObject(clone);
 }

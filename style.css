@@ -566,6 +566,46 @@ input[type='number'] {
     z-index: 1000;
 }
 
+#scene-mask {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 10;
+  pointer-events: none;
+  background: none;
+}
+
+#scene-mask::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: var(--fondale); 
+  /* Rettangolo trasparente centrale */
+  /* Regola i valori per la dimensione del buco */
+  clip-path: polygon(
+    0% 0%, 100% 0%, 100% 100%, 0% 100%, /* bordo esterno */
+    0% 8vh, 8vw 8vh, 8vw 92vh, 92vw 92vh, 92vw 12vh, 0% 12vh /* buco centrale */
+  );
+}
+
+#scene-mask-blur {
+  position: absolute;
+  top: 8vh;
+  left: 8vw;
+  width: calc(84vw);
+  height: calc(84vh);
+  pointer-events: none;
+  background: transparent;
+  /* Ombra interna viola verso l'interno */
+  box-shadow:
+    inset 0 0 8px 8px var(--fondale),
+    inset 0 0 8px 8px var(--fondale);
+  /* border-radius: 1.5rem; */
+  z-index: 11;
+}
+
 @media (max-width: 600px) {
   .panel-tabs {
     flex-wrap: wrap;

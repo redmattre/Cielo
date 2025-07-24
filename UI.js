@@ -282,7 +282,7 @@ openSideMenu.addEventListener('click', () => {
   } else {
     blackPanel.style.opacity = 1;
     blackPanel.style.pointerEvents = 'all';
-    blackPanel.style.width = '29rem';
+    blackPanel.style.width = '35vw';
     blackPanel.style.color = 'var(--testo)';
   }
 });

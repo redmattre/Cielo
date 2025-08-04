@@ -5,6 +5,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { OutlinePass } from 'three/addons/postprocessing/OutlinePass.js';
 import { createMenu, updateMenu } from './objmenu';
 import { syncMaxDictionaries } from './maxSync.js';
+import { sendUpdateToMax } from './max.js'; // <--- aggiunto
 
 export let raycaster = new THREE.Raycaster();
 export let mouse = new THREE.Vector2();
@@ -139,6 +140,28 @@ renderer.domElement.addEventListener('mousemove', (event) => {
 
     raycaster.setFromCamera(mouse, currentCamera);
     const intersects = raycaster.intersectObjects(objToBeDetected, true);
+
+    // --- CURSORE GRAB PER OMNIFONTE/ORIFONTE IN VISTA ORTOGONALE ---
+    if (isOrthoView() && intersects.length > 0) {
+        let hovered = intersects[0].object;
+        // Cerca il nome anche nei parent se serve
+        let obj = hovered;
+        let found = false;
+        while (obj) {
+            if (typeof obj.name === 'string' && (obj.name.toLowerCase().includes('omnifonte') || obj.name.toLowerCase().includes('orifonte'))) {
+                found = true;
+                break;
+            }
+            obj = obj.parent;
+        }
+        if (found) {
+            renderer.domElement.style.cursor = 'grab';
+        } else {
+            renderer.domElement.style.cursor = '';
+        }
+    } else {
+        renderer.domElement.style.cursor = '';
+    }
 
     if (intersects.length > 0) {
         let hovered = intersects[0].object;
@@ -561,6 +584,7 @@ if (control) {
                 window.max.outlet(name, index, x, y, elevazione, angleDeg, distanceXY);
             }
             syncMaxDictionaries();
+            sendUpdateToMax(); // <--- aggiunto
         }
     });
 }
@@ -662,4 +686,5 @@ function duplicateObject(original) {
     updateInfoText(clone.name);
     highlightMenuItemByObject(clone);
     setTimeout(syncMaxDictionaries, 50); // Delay per assicurarsi che l'oggetto sia in scena
+    sendUpdateToMax(); // <--- aggiunto
 }

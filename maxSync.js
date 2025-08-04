@@ -6,21 +6,23 @@ function extractDataByPrefix(prefix) {
         if (obj.name && obj.name.startsWith(prefix)) {
             // Prendi il parent se è un group, altrimenti l'oggetto stesso
             const target = obj.parent && obj.parent.type === 'Group' ? obj.parent : obj;
-            result[obj.name] = {
+            // Sostituisci gli spazi con underscore nel nome
+            const safeName = obj.name.replace(/\s+/g, '_');
+            result[safeName] = {
                 position: {
                     x: target.position.x,
-                    y: target.position.y,
-                    z: target.position.z
+                    y: target.position.z, // invertito
+                    z: target.position.y  // invertito
                 },
                 rotation: {
                     x: target.rotation.x,
-                    y: target.rotation.y,
-                    z: target.rotation.z
+                    y: target.rotation.z, // invertito
+                    z: target.rotation.y  // invertito
                 },
                 scale: {
                     x: target.scale.x,
-                    y: target.scale.y,
-                    z: target.scale.z
+                    y: target.scale.z, // invertito
+                    z: target.scale.y  // invertito
                 }
             };
         }

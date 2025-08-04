@@ -1,0 +1,41 @@
+[
+  {
+    "name": "Altoparlante 1",
+    "position": {
+      "x": -0.55,
+      "y": 1.2,
+      "z": 0
+    },
+    "rotation": {
+      "x": 0,
+      "y": 0,
+      "z": 0
+    }
+  },
+  {
+    "name": "Altoparlante 2",
+    "position": {
+      "x": 0.65,
+      "y": 1.2,
+      "z": 0
+    },
+    "rotation": {
+      "x": 0,
+      "y": 0,
+      "z": 0
+    }
+  },
+  {
+    "name": "Altoparlante 3",
+    "position": {
+      "x": -2.1,
+      "y": 1.2,
+      "z": 0.4
+    },
+    "rotation": {
+      "x": 0,
+      "y": 0,
+      "z": 0
+    }
+  }
+]

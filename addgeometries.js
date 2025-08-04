@@ -9,6 +9,7 @@ import { loadGenericGltf } from './loadersFIX.js';
 import { saveSpeakersPreset, saveSourcesPreset } from './presetSaver.js';
 import { loadSpeakersPreset, loadSourcesPreset } from './presetLoader.js';
 import { syncMaxDictionaries } from './maxSync.js';
+import { sendUpdateToMax } from './max.js'; // <--- aggiunto
 
 document.addEventListener('DOMContentLoaded', () => {
   const addSpeaker = document.getElementById('addCone');
@@ -27,6 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
       loadGenericGltf('./modelli/galleriaGLTF/scultura.glb', nome, 0.045, -3.5, -0.7, 0.5);
       createMenu();
       setTimeout(syncMaxDictionaries, 50);
+      sendUpdateToMax(); // <--- aggiunto
     });
   }
 
@@ -43,6 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
       loadObj('./modelli/galleriaOBJ/speaker3dec.obj', nome, goochMaterialSp, 0.045, 0., 0, 1.2);
       createMenu();
       setTimeout(syncMaxDictionaries, 50);
+      sendUpdateToMax(); // <--- aggiunto
     });
   }
 
@@ -54,6 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
       loadObj('./modelli/galleriaOBJ/halo2_lowpoly.obj', nome, goochMaterialSp, 0.15, 0., 0, 1.2);
       createMenu();
       setTimeout(syncMaxDictionaries, 50);
+      sendUpdateToMax(); // <--- aggiunto
     });
   }
 
@@ -65,6 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
       loadObj('./modelli/galleriaOBJ/arrow.obj', nome, goochMaterialArrow, 0.045, 0., 0., 1.2);
       createMenu();
       setTimeout(syncMaxDictionaries, 50);
+      sendUpdateToMax(); // <--- aggiunto
     });
   }
 
@@ -76,6 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
       loadObj('./modelli/galleriaOBJ/cloudDec.obj', nome, goochMaterialSp, 0.035, 0., 0, 1.2);
       createMenu();
       setTimeout(syncMaxDictionaries, 50);
+      sendUpdateToMax(); // <--- aggiunto
     });
   }
 
@@ -100,6 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
       objToBeDetected.push(mesh);
       createMenu();
       setTimeout(syncMaxDictionaries, 50);
+      sendUpdateToMax(); // <--- aggiunto
     });
   }
 
@@ -131,6 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
       multimenu.style.opacity = 0;
       multimenu.style.pointerEvents = "none";
       setTimeout(syncMaxDictionaries, 50);
+      sendUpdateToMax(); // <--- aggiunto
     });
   }
   if (closeMultimenu && multimenu) {
@@ -150,6 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
       multimenu.style.opacity = 0;
       multimenu.style.pointerEvents = "none";
       setTimeout(syncMaxDictionaries, 50);
+      sendUpdateToMax(); // <--- aggiunto
     });
   }
 
@@ -199,6 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
       scene.add(group);
       objToBeDetected.push(line);
       createMenu();
+      sendUpdateToMax(); // <--- aggiunto
       // syncMaxDictionaries() viene già chiamata dopo la funzione
   }
 
@@ -222,6 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
       objToBeDetected.push(mesh);
       createMenu();
       syncMaxDictionaries();
+      sendUpdateToMax(); // <--- aggiunto
   }
 
   // Funzione per rimuovere il modello architettura dalla scena

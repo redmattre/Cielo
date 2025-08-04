@@ -4,6 +4,7 @@ import { goochMaterialSp, goochMaterialArrow, dashedMaterial, dashedMaterialB, d
 import * as THREE from 'three';
 import { createMenu } from './objmenu.js';
 import { syncMaxDictionaries } from './maxSync.js';
+import { sendUpdateToMax } from './max.js'; // <--- aggiunto
 
 // Utility per rimuovere oggetti di una tipologia
 function removeObjectsByPrefix(prefix) {
@@ -40,7 +41,7 @@ export async function loadSpeakersPreset() {
   for (const item of data) {
     // Ricrea altoparlante
     loadObj('./modelli/galleriaOBJ/speaker3dec.obj', item.name, goochMaterialSp, 0.045, item.position.x, item.position.z, item.position.y, item.rotation);
-    // La funzione loadObj deve accettare un parametro rotation opzionale
+    sendUpdateToMax(); // <--- aggiunto
   }
   createMenu();
   setTimeout(syncMaxDictionaries, 50);
@@ -81,10 +82,12 @@ export async function loadSourcesPreset() {
       }
       scene.add(mesh);
       objToBeDetected.push(mesh);
+      sendUpdateToMax(); // <--- aggiunto
     } else if (item.name.startsWith('Orifonte')) {
       // Freccia
       // FIX: usa x, y, z (non x, z, y)
       loadObj('./modelli/galleriaOBJ/arrow.obj', item.name, goochMaterialArrow, 0.045, item.position.x, item.position.z, item.position.y, item.rotation);
+      sendUpdateToMax(); // <--- aggiunto
     } else if (item.name.startsWith('Zona')) {
       // Zona (alternanza materiali)
       const index = zoneCount % materials.length;
@@ -125,6 +128,7 @@ export async function loadSourcesPreset() {
       }
       scene.add(group);
       objToBeDetected.push(line);
+      sendUpdateToMax(); // <--- aggiunto
     }
   }
   createMenu();

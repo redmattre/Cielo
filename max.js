@@ -4,12 +4,14 @@ import { loadObj } from './loaders.js';
 import { goochMaterialSp, goochMaterialArrow } from './materials.js';
 import { createMenu } from './objmenu.js';
 
-window.max.bindInlet("hello", function(){
-	max.outlet("from the other side!");
-});
+// Proteggi tutte le chiamate a window.max.bindInlet
+function safeBindInlet(name, fn) {
+    if (typeof window !== 'undefined' && window.max && typeof window.max.bindInlet === 'function') {
+        window.max.bindInlet(name, fn);
+    }
+}
 
-
-window.max.bindInlet("meshlist", function(){
+safeBindInlet("meshlist", function(){
 	sendMeshesToMax();
 });
 
@@ -38,25 +40,31 @@ function sendMeshesToMax() {
                 const message = `dict set ${conta} ${mesh.name} position ${worldPosition.x} ${worldPosition.y} ${worldPosition.z} rotation ${worldEuler.x} ${worldEuler.y} ${worldEuler.z}`;
 
                 // Send the message to Max
-                max.outlet(message);
+                if (typeof window !== 'undefined' && window.max && typeof window.max.outlet === 'function') {
+                    window.max.outlet(message);
+                }
                 conta++;
             }
         });
     });
 }
 
-window.max.bindInlet("moveHalo", function(index, x, z, y) {
+safeBindInlet("moveHalo", function(index, x, z, y) {
     const targetName = `Aureola-${index}`;
     const targetObject = scene.getObjectByName(targetName);
     if (targetObject) {
         targetObject.position.set(x, y, z);
-        max.outlet("halo", index, x, y, z);
+        if (typeof window !== 'undefined' && window.max && typeof window.max.outlet === 'function') {
+            window.max.outlet("halo", index, x, y, z);
+        }
     } else {
-        max.outlet("halo", index, "not found");
+        if (typeof window !== 'undefined' && window.max && typeof window.max.outlet === 'function') {
+            window.max.outlet("halo", index, "not found");
+        }
     }
 });
 
-window.max.bindInlet("rotateHalo", function(index, x, z, y) {
+safeBindInlet("rotateHalo", function(index, x, z, y) {
     const xRotation = x * Math.PI * 2;
     const yRotation = y * Math.PI * 2;
     const zRotation = z * Math.PI * 2;
@@ -64,13 +72,17 @@ window.max.bindInlet("rotateHalo", function(index, x, z, y) {
     const targetObject = scene.getObjectByName(targetName);
     if (targetObject) {
         targetObject.rotation.set(xRotation, yRotation, zRotation);
-        max.outlet("halo", index, xRotation, yRotation, zRotation);
+        if (typeof window !== 'undefined' && window.max && typeof window.max.outlet === 'function') {
+            window.max.outlet("halo", index, xRotation, yRotation, zRotation);
+        }
     } else {
-        max.outlet("halo", index, "not found");
+        if (typeof window !== 'undefined' && window.max && typeof window.max.outlet === 'function') {
+            window.max.outlet("halo", index, "not found");
+        }
     }
 });
 
-window.max.bindInlet("addSpeaker", function(x, y, z, rx = 0, ry = 0, rz = 0) {
+safeBindInlet("addSpeaker", function(x, y, z, rx = 0, ry = 0, rz = 0) {
     // Conta solo gli speaker di primo livello nella scena
     let howManySpeakers = 0;
     scene.children.forEach((obj) => {
@@ -92,21 +104,27 @@ window.max.bindInlet("addSpeaker", function(x, y, z, rx = 0, ry = 0, rz = 0) {
             targetObject.rotation.set(xRotation, yRotation, zRotation);
         }
     }, 100);
-    max.outlet(`Speaker ${nome}, ${x}, ${y}, ${z}, rot: ${rx}, ${ry}, ${rz}`);
+    if (typeof window !== 'undefined' && window.max && typeof window.max.outlet === 'function') {
+        window.max.outlet(`Speaker ${nome}, ${x}, ${y}, ${z}, rot: ${rx}, ${ry}, ${rz}`);
+    }
 });
 
-window.max.bindInlet("moveSpeaker", function(index, x, z, y) {
+safeBindInlet("moveSpeaker", function(index, x, z, y) {
     const targetName = `Altoparlante ${index}`;
     const targetObject = scene.getObjectByName(targetName);
     if (targetObject) {
         targetObject.position.set(x, y, z);
-        max.outlet("speaker", index, x, y, z);
+        if (typeof window !== 'undefined' && window.max && typeof window.max.outlet === 'function') {
+            window.max.outlet("speaker", index, x, y, z);
+        }
     } else {
-        max.outlet("speaker", index, "not found");
+        if (typeof window !== 'undefined' && window.max && typeof window.max.outlet === 'function') {
+            window.max.outlet("speaker", index, "not found");
+        }
     }
 });
 
-window.max.bindInlet("rotateSpeaker", function(index, x, z, y) {
+safeBindInlet("rotateSpeaker", function(index, x, z, y) {
     const xRotation = x * Math.PI * 2;
     const yRotation = y * Math.PI * 2;
     const zRotation = z * Math.PI * 2;
@@ -114,13 +132,17 @@ window.max.bindInlet("rotateSpeaker", function(index, x, z, y) {
     const targetObject = scene.getObjectByName(targetName);
     if (targetObject) {
         targetObject.rotation.set(xRotation, yRotation, zRotation);
-        max.outlet("speaker", index, xRotation, yRotation, zRotation);
+        if (typeof window !== 'undefined' && window.max && typeof window.max.outlet === 'function') {
+            window.max.outlet("speaker", index, xRotation, yRotation, zRotation);
+        }
     } else {
-        max.outlet("speaker", index, "not found");
+        if (typeof window !== 'undefined' && window.max && typeof window.max.outlet === 'function') {
+            window.max.outlet("speaker", index, "not found");
+        }
     }
 });
 
-window.max.bindInlet("addSphere", function(x, y, z) {
+safeBindInlet("addSphere", function(x, y, z) {
     // Conta solo le sfere di primo livello nella scena
     let howManySpheres = 0;
     scene.children.forEach((obj) => {
@@ -140,21 +162,27 @@ window.max.bindInlet("addSphere", function(x, y, z) {
     scene.add(mesh);
     objToBeDetected.push(mesh);
     createMenu(); // Aggiorna il menu dopo aver aggiunto la sfera
-    max.outlet(`Sfera aggiunta: ${nome} in posizione (${x}, ${y}, ${z})`);
+    if (typeof window !== 'undefined' && window.max && typeof window.max.outlet === 'function') {
+        window.max.outlet(`Sfera aggiunta: ${nome} in posizione (${x}, ${y}, ${z})`);
+    }
 });
 
-window.max.bindInlet("moveSphere", function(index, x, z, y) {
+safeBindInlet("moveSphere", function(index, x, z, y) {
     const targetName = `Omnifonte ${index}`;
     const targetObject = scene.getObjectByName(targetName);
     if (targetObject) {
         targetObject.position.set(x, y, z);
-        max.outlet("omnifonte", index, x, y, z);
+        if (typeof window !== 'undefined' && window.max && typeof window.max.outlet === 'function') {
+            window.max.outlet("Omnifonte", index, x, y, z);
+        }
     } else {
-        max.outlet("omnifonte", index, "not found");
+        if (typeof window !== 'undefined' && window.max && typeof window.max.outlet === 'function') {
+            window.max.outlet("Omnifonte", index, "not found");
+        }
     }
 });
 
-window.max.bindInlet("setSphere", function(index, x, z, y) {
+safeBindInlet("setSphere", function(index, x, z, y) {
     const targetName = `Omnifonte ${index}`;
     const targetObject = scene.getObjectByName(targetName);
     if (targetObject) {
@@ -162,4 +190,14 @@ window.max.bindInlet("setSphere", function(index, x, z, y) {
         // Nessun output sugli outlet
     }
 });
+
+export function sendUpdateToMax() {
+    if (
+        typeof window !== 'undefined' &&
+        window.max &&
+        typeof window.max.outlet === 'function'
+    ) {
+        window.max.outlet("update");
+    }
+}
 

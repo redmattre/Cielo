@@ -169,11 +169,3 @@ if (typeof window !== 'undefined') {
     }
   });
 }
-
-// Modifica suggerita per loadObj (in loaders.js):
-// function loadObj(path, name, material, scale, x, y, z, rotation) {
-//   // ...existing code...
-//   mesh.position.set(x, y, z);
-//   if (rotation) mesh.rotation.set(rotation.x, rotation.y, rotation.z);
-//   // ...existing code...
-// }

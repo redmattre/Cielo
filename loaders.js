@@ -8,12 +8,20 @@ import * as THREE from 'three';
 import { goochMaterial, goochMaterialAlpha, normalMat, phongMat, standardMat } from './materials.js';
 import { createMenu } from './objmenu.js';
 
+// Helper per risolvere il percorso asset in modo compatibile con Vite e server statici
+function resolveAssetPath(filename) {
+    // Se BASE_URL è definito e non è '/', usalo. Altrimenti usa il percorso relativo.
+    const base = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.BASE_URL && import.meta.env.BASE_URL !== '/')
+        ? import.meta.env.BASE_URL
+        : '';
+    return base + filename;
+}
+
 //questa è la funzione utilizzata per caricare tutti gli obj
 export function loadObj(filename, name, material, scaleFactor, x, y, z, rotation) {
     const loader = new OBJLoader();
 
-    // Ensure the path is correct in both dev and production (GitHub Pages)
-    const fullPath = import.meta.env.BASE_URL + filename;
+    const fullPath = resolveAssetPath(filename);
 
     loader.load(
         fullPath,
@@ -57,8 +65,10 @@ export function loadObjGeometry(filename) {
     return new Promise((resolve, reject) => {
         const loader = new OBJLoader();
 
+        const fullPath = resolveAssetPath(filename);
+
         loader.load(
-            filename,
+            fullPath,
             function (object) {
                 let geometries = [];
                 
@@ -89,8 +99,10 @@ export function loadObjGeometry(filename) {
 export function loadObjWithDashedEdges(filename, dashedMaterial) {
     const loader = new OBJLoader();
 
+    const fullPath = resolveAssetPath(filename);
+
     loader.load(
-        filename,
+        fullPath,
         function (object) {
             object.traverse(function (child) {
                 if (child.isMesh) {

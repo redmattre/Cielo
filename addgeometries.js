@@ -3,15 +3,85 @@ import { loadObj } from './loaders.js';
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
 import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
 import { dashedMaterial, dashedMaterialB, dashedMaterialC, dashedMaterialD, goochMaterialArrow, goochMaterialSp, standardMat } from './materials.js';
-import { objToBeDetected, scene } from './setup.js';
+import { objToBeDetected, scene, renderer } from './setup.js';
 import { createMenu } from './objmenu.js';
 import { loadGenericGltf } from './loadersFIX.js';
 import { saveSpeakersPreset, saveSourcesPreset } from './presetSaver.js';
 import { loadSpeakersPreset, loadSourcesPreset } from './presetLoader.js';
 import { syncMaxDictionaries } from './maxSync.js';
 import { sendUpdateToMax } from './max.js'; // <--- aggiunto
+import { ConditionalLinesManager } from './ConditionalLinesManager.js';
+
+// Initialize ConditionalLinesManager
+let conditionalLinesManager;
+let currentPlasticoControl = null;
+
+// Export the manager for use in other modules
+export function getConditionalLinesManager() {
+  return conditionalLinesManager;
+}
+
+// Export the color helper function
+export function getCSSColorAsHex(cssVariable) {
+  const rootStyles = getComputedStyle(document.documentElement);
+  const colorValue = rootStyles.getPropertyValue(cssVariable).trim();
+  
+  console.log(`getCSSColorAsHex: ${cssVariable} = "${colorValue}"`);
+  
+  // Handle common CSS color values
+  if (colorValue === 'black' || colorValue === '#000000' || colorValue === 'rgb(0, 0, 0)') {
+    console.log(`  -> Returning black: 0x000000`);
+    return 0x000000;
+  }
+  if (colorValue === 'white' || colorValue === '#ffffff' || colorValue === 'rgb(255, 255, 255)') {
+    console.log(`  -> Returning white: 0xffffff`);
+    return 0xffffff;
+  }
+  if (colorValue === '#d6d6d6' || colorValue === 'rgb(214, 214, 214)') {
+    console.log(`  -> Returning light gray: 0xd6d6d6`);
+    return 0xd6d6d6;
+  }
+  
+  // Try to parse hex color
+  if (colorValue.startsWith('#')) {
+    const hexValue = parseInt(colorValue.slice(1), 16);
+    console.log(`  -> Parsed hex: 0x${hexValue.toString(16)} (decimal: ${hexValue})`);
+    return hexValue;
+  }
+  
+  // Try to parse rgb color
+  const rgbMatch = colorValue.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+  if (rgbMatch) {
+    const r = parseInt(rgbMatch[1]);
+    const g = parseInt(rgbMatch[2]);
+    const b = parseInt(rgbMatch[3]);
+    const hexValue = (r << 16) | (g << 8) | b;
+    console.log(`  -> Parsed RGB(${r}, ${g}, ${b}): 0x${hexValue.toString(16)}`);
+    return hexValue;
+  }
+  
+  // Fallback colors based on variable name
+  if (cssVariable === '--fondale') {
+    console.log(`  -> Fallback for --fondale: 0xd6d6d6`);
+    return 0xd6d6d6; // Light gray for background
+  } else if (cssVariable === '--testo') {
+    console.log(`  -> Fallback for --testo: 0x000000`);
+    return 0x000000; // Black for text/lines
+  }
+  
+  console.log(`  -> Default fallback: 0x000000`);
+  return 0x000000; // Default to black
+}
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Initialize ConditionalLinesManager
+  conditionalLinesManager = new ConditionalLinesManager(scene, renderer);
+  
+  // Make it globally available for resize updates
+  window.conditionalLinesManager = conditionalLinesManager;
+  
+  // Make the current control globally available for theme changes
+  window.currentPlasticoControl = null;
   const addSpeaker = document.getElementById('addCone');
   const addHalo = document.getElementById('addHalo');
   const addSphere = document.getElementById('addSphere');
@@ -237,6 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Funzione per rimuovere il modello architettura dalla scena
   function removeArchitetturaModel() {
+    // Remove original model if it exists
     const arch = scene.getObjectByName('architettura');
     if (arch) {
       const idx = objToBeDetected.indexOf(arch);
@@ -245,9 +316,31 @@ document.addEventListener('DOMContentLoaded', () => {
       if (arch.geometry) arch.geometry.dispose?.();
       if (arch.material) arch.material.dispose?.();
     }
+    
+    // Remove ConditionalLines models if they exist
+    const archBackground = scene.getObjectByName('architettura-background');
+    if (archBackground) {
+      scene.remove(archBackground);
+    }
+    
+    const archEdges = scene.getObjectByName('architettura-edges');
+    if (archEdges) {
+      scene.remove(archEdges);
+    }
+    
+    const archConditional = scene.getObjectByName('architettura-conditional');
+    if (archConditional) {
+      scene.remove(archConditional);
+    }
+    
+    // Clean up conditional lines control
+    if (currentPlasticoControl) {
+      currentPlasticoControl.dispose();
+      currentPlasticoControl = null;
+    }
   }
 
-  // Gestione caricamento nuovo modello plastico
+  // Gestione caricamento nuovo modello plastico con ConditionalLines
   const plasticoBtn = document.getElementById('loadPlastico');
   if (plasticoBtn) {
     // Crea input file nascosto
@@ -256,6 +349,89 @@ document.addEventListener('DOMContentLoaded', () => {
     fileInput.accept = '.glb,.gltf,.obj';
     fileInput.style.display = 'none';
     document.body.appendChild(fileInput);
+
+    // Get sliders
+    const thresholdSlider = document.getElementById('plasticoThreshold');
+    const thicknessSlider = document.getElementById('plasticoThickness');
+    const opacitySlider = document.getElementById('plasticoOpacity');
+
+    function applyConditionalLinesToModel(model) {
+      // Get current slider values
+      const threshold = thresholdSlider ? parseFloat(thresholdSlider.value) : 60;
+      const thickness = thicknessSlider ? parseFloat(thicknessSlider.value) : 2;
+      const opacity = opacitySlider ? parseFloat(opacitySlider.value) : 0.8;
+      
+      // Get CSS colors
+      const materialColor = getCSSColorAsHex('--fondale');
+      const lineColor = getCSSColorAsHex('--testo');
+
+      // Apply conditional lines
+      try {
+        console.log('About to call applyConditionalLines with colors:', {
+          materialColor: materialColor,
+          lineColor: lineColor
+        });
+        
+        currentPlasticoControl = conditionalLinesManager.applyConditionalLines(model, {
+          threshold: threshold,
+          thickness: thickness,
+          opacity: opacity,
+          materialColor: materialColor,
+          lineColor: lineColor
+        });
+        
+        console.log('applyConditionalLines returned:', currentPlasticoControl);
+        
+        // Make currentPlasticoControl globally available for theme changes
+        window.currentPlasticoControl = currentPlasticoControl;
+        console.log('Set window.currentPlasticoControl:', window.currentPlasticoControl);
+        
+        // Remove the original model from the scene
+        scene.remove(model);
+        
+        // Add the new models to the scene
+        scene.add(currentPlasticoControl.backgroundModel);
+        scene.add(currentPlasticoControl.edgesModel);
+        scene.add(currentPlasticoControl.conditionalModel);
+        
+        // Preserve the name and position
+        currentPlasticoControl.backgroundModel.name = 'architettura-background';
+        currentPlasticoControl.edgesModel.name = 'architettura-edges'; 
+        currentPlasticoControl.conditionalModel.name = 'architettura-conditional';
+        
+      } catch (error) {
+        console.error('Error applying ConditionalLines:', error);
+      }
+    }
+
+    function updateConditionalLines() {
+      if (currentPlasticoControl) {
+        const threshold = thresholdSlider ? parseFloat(thresholdSlider.value) : 60;
+        const thickness = thicknessSlider ? parseFloat(thicknessSlider.value) : 2;
+        const opacity = opacitySlider ? parseFloat(opacitySlider.value) : 0.8;
+        
+        currentPlasticoControl.setThreshold(threshold);
+        currentPlasticoControl.setThickness(thickness);
+        currentPlasticoControl.setOpacity(opacity);
+        
+        // Also update colors to current CSS values
+        const materialColor = getCSSColorAsHex('--fondale');
+        const lineColor = getCSSColorAsHex('--testo');
+        currentPlasticoControl.setMaterialColor(materialColor);
+        currentPlasticoControl.setLineColor(lineColor);
+      }
+    }
+
+    // Add event listeners for sliders
+    if (thresholdSlider) {
+      thresholdSlider.addEventListener('input', updateConditionalLines);
+    }
+    if (thicknessSlider) {
+      thicknessSlider.addEventListener('input', updateConditionalLines);
+    }
+    if (opacitySlider) {
+      opacitySlider.addEventListener('input', updateConditionalLines);
+    }
 
     plasticoBtn.addEventListener('click', () => {
       removeArchitetturaModel();
@@ -274,9 +450,16 @@ document.addEventListener('DOMContentLoaded', () => {
         reader.onload = function(ev) {
           let loader = new GLTFLoader();
           let onLoad = function(gltf) {
+            console.log('GLTF loaded:', gltf);
             const model = gltf.scene;
             model.name = 'architettura';
+            console.log('Adding model to scene:', model);
             scene.add(model);
+            
+            // Apply conditional lines instead of regular materials
+            console.log('About to apply conditional lines...');
+            applyConditionalLinesToModel(model);
+            
             setTimeout(syncMaxDictionaries, 50);
           };
           let onError = function(err) {
@@ -300,8 +483,15 @@ document.addEventListener('DOMContentLoaded', () => {
         reader.onload = function(ev) {
           let loader = new OBJLoader();
           const object = loader.parse(ev.target.result);
+          console.log('OBJ loaded:', object);
           object.name = 'architettura';
+          console.log('Adding OBJ to scene:', object);
           scene.add(object);
+          
+          // Apply conditional lines instead of regular materials
+          console.log('About to apply conditional lines to OBJ...');
+          applyConditionalLinesToModel(object);
+          
           setTimeout(syncMaxDictionaries, 50);
         };
         reader.readAsText(file);

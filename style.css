@@ -557,6 +557,14 @@ input[type='number'] {
   margin-bottom: 0;
 }
 
+.slider-label {
+  display: block;
+  font-size: 0.9em;
+  color: var(--testo);
+  margin-bottom: 0.3em;
+  font-weight: normal;
+}
+
 #selection-rectangle {
     position: fixed;
     pointer-events: none;

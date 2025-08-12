@@ -97,7 +97,12 @@ function toggleSwitch(id, state) {
                 goochMaterialAlpha.uniforms.opacity.value = 0;
                 solidMaterial.visible = false;
             }
+            
+            // Handle both old architecture model and new ConditionalLines models
             toggleModelVisibility('architettura', state);
+            toggleModelVisibility('architettura-background', state);
+            toggleModelVisibility('architettura-edges', state);
+            toggleModelVisibility('architettura-conditional', state);
             break;
 		default:
 			console.log('Switch non riconosciuto');

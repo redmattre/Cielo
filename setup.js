@@ -325,9 +325,29 @@ export function changeTheme(state) {
 		goochMaterialArrow.uniforms.coolColor.value = new THREE.Color(0x303030);
 		goochMaterialArrow.uniforms.warmColor.value = new THREE.Color(0x000000);
     }
+    
+        // Update ConditionalLines colors when theme changes
+    if (window.conditionalLinesManager && window.currentPlasticoControl) {
+        // Use dynamic import to avoid circular dependency
+        import('./addgeometries.js').then(module => {
+            const control = window.currentPlasticoControl;
+            if (control) {
+                // Get the helper function from addgeometries
+                const materialColor = module.getCSSColorAsHex('--fondale');
+                const lineColor = module.getCSSColorAsHex('--testo');
+                control.setMaterialColor(materialColor);
+                control.setLineColor(lineColor);
+            }
+        });
+    }
 }
 
 export function render() {
+    // Update conditional lines resolutions if available
+    if (window.conditionalLinesManager) {
+        window.conditionalLinesManager.updateResolutions();
+    }
+
     if (composer) {
         composer.render();
     } else {
@@ -413,4 +433,9 @@ export function onWindowResize() {
 	cameraOrtho.updateProjectionMatrix();
 
 	renderer.setSize( window.innerWidth, window.innerHeight );
+
+	// Update conditional lines resolutions if available
+	if (window.conditionalLinesManager) {
+		window.conditionalLinesManager.updateResolutions();
+	}
 }

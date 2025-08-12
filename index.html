@@ -104,35 +104,27 @@
           <button class="menuButton" id="loadPlastico">Carica</button>
           <div class="switch-wrapper">
             <label class="switch">
-              <input type="checkbox" data-id="archVisibility"/>
+              <input type="checkbox" data-id="archVisibility" checked/>
               <div></div>
             </label>
             <span class="switch-label">⏿</span>
           </div>
-          <div class="switch-wrapper">
-            <label class="switch">
-              <input type="checkbox" data-id="wireframeVisibility"/>
-              <div></div>
-            </label>
-            <span class="switch-label">Wireframe</span>
-          </div>
-          <div class="switch-wrapper">
-            <label class="switch">
-              <input type="checkbox" data-id="serioso"/>
-              <div></div>
-            </label>
-            <span class="switch-label">Tema Muto</span>
-          </div>
-          <div class="switch-wrapper">
-            <label class="switch">
-              <input type="checkbox" data-id="transparencyA"/>
-              <div></div>
-            </label>
-            <span class="switch-label">Trasparenza</span>
-          </div>
           <label class="multitoggle">
+            <span class="slider-label">Threshold</span>
             <div class="input-wrapper">
-              <input type='range' min='1' max='4' value='4' step='1' class="n n4" data-id="transArchVal"/>
+              <input type='range' min='0' max='120' value='60' step='1' class="n n4" id="plasticoThreshold"/>
+            </div>
+          </label>
+          <label class="multitoggle">
+            <span class="slider-label">Line Thickness</span>
+            <div class="input-wrapper">
+              <input type='range' min='0.5' max='10' value='2' step='0.1' class="n n4" id="plasticoThickness"/>
+            </div>
+          </label>
+          <label class="multitoggle">
+            <span class="slider-label">Opacity</span>
+            <div class="input-wrapper">
+              <input type='range' min='0.1' max='1.0' value='0.8' step='0.01' class="n n4" id="plasticoOpacity"/>
             </div>
           </label>
         </div>

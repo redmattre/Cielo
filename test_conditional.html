@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test ConditionalLines</title>
+    <style>
+        body { margin: 0; padding: 20px; background: #f0f0f0; }
+        canvas { border: 1px solid #ccc; }
+    </style>
+</head>
+<body>
+    <h1>Test ConditionalLines</h1>
+    <div id="container"></div>
+    
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { ConditionalLinesManager } from './ConditionalLinesManager.js';
+
+        // Setup base
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xffffff);
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(2, 2, 2);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(800, 600);
+        document.getElementById('container').appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.4);
+        directionalLight.position.set(5, 5, 5);
+        scene.add(directionalLight);
+
+        // Test ConditionalLinesManager
+        try {
+            const manager = new ConditionalLinesManager(scene, renderer);
+            console.log('ConditionalLinesManager created successfully');
+
+            // Create a simple cube to test
+            const geometry = new THREE.BoxGeometry(1, 1, 1);
+            const mesh = new THREE.Mesh(geometry);
+            const group = new THREE.Group();
+            group.add(mesh);
+
+            const control = manager.applyConditionalLines(group, {
+                threshold: 40,
+                thickness: 2,
+                opacity: 0.8,
+                materialColor: 0xd6d6d6,
+                lineColor: 0x000000
+            });
+
+            console.log('ConditionalLines applied successfully');
+
+            function animate() {
+                requestAnimationFrame(animate);
+                manager.updateResolutions();
+                renderer.render(scene, camera);
+            }
+            animate();
+
+        } catch (error) {
+            console.error('Error:', error);
+            document.body.innerHTML += '<p style="color: red;">Error: ' + error.message + '</p>';
+        }
+    </script>
+</body>
+</html>

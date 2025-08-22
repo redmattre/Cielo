@@ -9,7 +9,8 @@ export function createMenu() {
         { key: 'fonti', label: 'F' },
         { key: 'halo', label: 'H' },
         { key: 'altoparlanti', label: 'A' },
-        { key: 'zone', label: 'Z' }
+        { key: 'zone', label: 'Z' },
+        { key: 'povcursor', label: 'P' }
     ];
     let selectedCategory = localStorage.getItem('cielo_menu_category') || 'fonti';
     const bar = document.createElement('div');
@@ -108,6 +109,8 @@ export function createMenu() {
         filterFn = obj => obj.name && (/Altoparlante/i).test(obj.name);
     } else if (selectedCategory === 'zone') {
         filterFn = obj => obj.name && (/Zona|Zone/i).test(obj.name);
+    } else if (selectedCategory === 'povcursor') {
+        filterFn = obj => obj.name && (/POV Cursor/i).test(obj.name);
     } else {
         filterFn = () => true;
     }
@@ -184,6 +187,60 @@ export function createMenu() {
         });
         collapsibleContainer.appendChild(scale);
 
+        // Add special properties for certain object types
+        if (object.name && (object.name.startsWith('Omnifonte') || object.name.startsWith('POV Cursor'))) {
+            // Distance from center
+            const distance = Math.sqrt(
+                parent.position.x * parent.position.x + 
+                parent.position.y * parent.position.y + 
+                parent.position.z * parent.position.z
+            );
+            
+            const distanceField = createSingleEditableField('Distance', distance, (value) => {
+                // Maintain current angle, update position based on new distance
+                const angle = Math.atan2(parent.position.z, parent.position.x);
+                parent.position.x = value * Math.cos(angle);
+                parent.position.z = value * Math.sin(angle);
+            });
+            collapsibleContainer.appendChild(distanceField);
+            
+            // Angle in XZ plane
+            const angle = Math.atan2(parent.position.z, parent.position.x) * 180 / Math.PI;
+            
+            const angleField = createSingleEditableField('Angle', angle, (value) => {
+                // Maintain current distance, update position based on new angle
+                const currentDistance = Math.sqrt(
+                    parent.position.x * parent.position.x + 
+                    parent.position.z * parent.position.z
+                );
+                const angleRad = value * Math.PI / 180;
+                parent.position.x = currentDistance * Math.cos(angleRad);
+                parent.position.z = currentDistance * Math.sin(angleRad);
+            });
+            collapsibleContainer.appendChild(angleField);
+        }
+
+        // Add visibility toggle for POV Cursor
+        if (object.name && object.name.startsWith('POV Cursor')) {
+            const visibilityField = createCheckboxField('Visible', object.visible, (value) => {
+                object.visible = value;
+                
+                // Import objToBeDetected and manage it based on visibility (for raycaster only)
+                // The Max dictionary will always include POV Cursor due to alwaysInDict flag
+                import('./setup.js').then(module => {
+                    const index = module.objToBeDetected.indexOf(object);
+                    if (value && index === -1) {
+                        // Add to objToBeDetected when becoming visible (for raycaster)
+                        module.objToBeDetected.push(object);
+                    } else if (!value && index !== -1) {
+                        // Remove from objToBeDetected when becoming invisible (for raycaster)
+                        module.objToBeDetected.splice(index, 1);
+                    }
+                });
+            });
+            collapsibleContainer.appendChild(visibilityField);
+        }
+
         // Aggiungi il titolo e il contenitore collassabile al menu
         itemList.appendChild(itemTitle);
         itemList.appendChild(collapsibleContainer);
@@ -226,6 +283,46 @@ function createEditableField(label, vector, onUpdate) {
         });
         container.appendChild(input);
     });
+
+    return container;
+}
+
+// Helper per creare un singolo campo editabile (per distanza, angolo, etc.)
+function createSingleEditableField(label, value, onUpdate) {
+    const container = document.createElement('div');
+    container.className = `itemList${label}`;
+    container.textContent = `${label} `;
+
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.value = value.toFixed(2);
+    input.step = label === 'Angle' ? '1' : '0.1';
+    input.style.width = '4rem';
+    input.addEventListener('change', (e) => {
+        onUpdate(parseFloat(e.target.value));
+    });
+    container.appendChild(input);
+
+    return container;
+}
+
+// Helper per creare un campo checkbox
+function createCheckboxField(label, value, onUpdate) {
+    const container = document.createElement('div');
+    container.className = `itemList${label}`;
+    container.textContent = `${label} `;
+
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.checked = value;
+    input.addEventListener('change', (e) => {
+        onUpdate(e.target.checked);
+        // Import syncMaxDictionaries and call it immediately
+        import('./maxSync.js').then(module => {
+            setTimeout(module.syncMaxDictionaries, 50);
+        });
+    });
+    container.appendChild(input);
 
     return container;
 }

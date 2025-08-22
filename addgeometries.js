@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { loadObj } from './loaders.js';
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
 import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
@@ -15,6 +16,54 @@ import { ConditionalLinesManager } from './ConditionalLinesManager.js';
 // Initialize ConditionalLinesManager
 let conditionalLinesManager;
 let currentPlasticoControl = null;
+
+// POV Cursor global variables
+let povCursorModel = null;
+
+// Load the POV Cursor model at initialization (invisible)
+function initializePovCursor() {
+  const loader = new GLTFLoader();
+  const filename = 'modelli/galleriaGLTF/horsehead.glb';
+  // Use BASE_URL for correct path resolution
+  const fullPath = import.meta.env.BASE_URL + filename;
+  
+  loader.load(
+    fullPath,
+    function (gltf) {
+      povCursorModel = gltf.scene;
+      povCursorModel.name = 'POV Cursor';
+      
+      // Add flag to always include in Max dictionary
+      povCursorModel.alwaysInDict = true;
+      
+      // Apply transformations
+      povCursorModel.scale.setScalar(0.1);
+      povCursorModel.position.set(0, 1.2, 0);
+      povCursorModel.visible = false; // Start invisible
+      
+      // Use same material as speakers
+      povCursorModel.traverse((child) => {
+        if (child.isMesh) {
+          child.material = goochMaterialSp; // Same material as speakers
+        }
+      });
+      
+      scene.add(povCursorModel);
+      // Don't add to objToBeDetected initially since it's invisible
+      createMenu();
+      setTimeout(syncMaxDictionaries, 50);
+      sendUpdateToMax();
+      
+      console.log('POV Cursor model loaded and initialized');
+    },
+    function (xhr) {
+      console.log(`POV Cursor: ${Math.round((xhr.loaded / xhr.total) * 100)}% loaded`);
+    },
+    function (error) {
+      console.error('Error loading POV Cursor model:', error);
+    }
+  );
+}
 
 // Export the manager for use in other modules
 export function getConditionalLinesManager() {
@@ -88,6 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const addArrow = document.getElementById('addArrow');
   const addCloudClient = document.getElementById('addCloudElement');
   const addGenericModel = document.getElementById('loadGenericGltf');
+  const addPovCursor = document.getElementById('addPovCursor');
 
   //da modificare: fare che sia un tasto nel dock che ogni volta apre finestra di dialogo per importare un modello esterno
   let howManyGenericModels = 0;
@@ -177,6 +227,32 @@ document.addEventListener('DOMContentLoaded', () => {
       createMenu();
       setTimeout(syncMaxDictionaries, 50);
       sendUpdateToMax(); // <--- aggiunto
+    });
+  }
+
+  if (addPovCursor) {
+    addPovCursor.addEventListener('click', () => {
+      if (povCursorModel) {
+        // Toggle visibility
+        povCursorModel.visible = !povCursorModel.visible;
+        
+        // Add/remove from objToBeDetected based on visibility (for raycaster only)
+        const index = objToBeDetected.indexOf(povCursorModel);
+        if (povCursorModel.visible && index === -1) {
+          // Add to objToBeDetected when becoming visible (for raycaster)
+          objToBeDetected.push(povCursorModel);
+        } else if (!povCursorModel.visible && index !== -1) {
+          // Remove from objToBeDetected when becoming invisible (for raycaster)
+          objToBeDetected.splice(index, 1);
+        }
+        
+        createMenu(); // Update menu to reflect visibility change
+        setTimeout(syncMaxDictionaries, 50); // Sync immediately - will always include POV Cursor due to alwaysInDict flag
+        sendUpdateToMax();
+      } else {
+        // Initialize if not already loaded
+        initializePovCursor();
+      }
     });
   }
 
@@ -534,4 +610,10 @@ document.addEventListener('DOMContentLoaded', () => {
     btnLoadSources.onclick = () => loadSourcesPreset();
     rightMenu.appendChild(btnLoadSources);
   }
+});
+
+// Initialize POV Cursor model on page load
+document.addEventListener('DOMContentLoaded', () => {
+  // Wait a bit for everything to be initialized
+  setTimeout(initializePovCursor, 1000);
 });

@@ -9,7 +9,7 @@
   --testo: black;
   --dettaglio: var(--grigio);
   --fondale: var(--fondaleBianco);
-  font-size: 14px; /*default è 16, da qui decidi grandezza interfaccia in pratica*/
+  font-size: 12px; /*default è 16, da qui decidi grandezza interfaccia in pratica*/
 }
 
 @media only screen and (orientation: portrait) {

@@ -23,10 +23,10 @@ function removeObjectsByPrefix(prefix) {
   });
 }
 
-// Carica preset altoparlanti (.speakers)
+// Carica preset altoparlanti (.json)
 export async function loadSpeakersPreset() {
   const [fileHandle] = await window.showOpenFilePicker({
-    types: [{ description: 'Preset Altoparlanti', accept: { 'application/json': ['.speakers'] } }]
+    types: [{ description: 'Preset Altoparlanti', accept: { 'application/json': ['.json'] } }]
   });
   const file = await fileHandle.getFile();
   const text = await file.text();
@@ -37,20 +37,40 @@ export async function loadSpeakersPreset() {
     alert('File preset non valido');
     return;
   }
+  
   removeObjectsByPrefix('Altoparlante');
-  for (const item of data) {
+  
+  // Gestisce il formato oggetto di Max
+  for (const [objectName, item] of Object.entries(data)) {
+    // Converti il nome con underscore in nome con spazi per il 3D
+    const displayName = objectName.replace(/_/g, ' ');
+    
+    // Converti le coordinate: Max usa y,z invertiti rispetto a Three.js
+    const position = {
+      x: item.position.x,
+      y: item.position.z, // z di Max diventa y di Three.js
+      z: item.position.y  // y di Max diventa z di Three.js
+    };
+    
+    const rotation = item.rotation ? {
+      x: item.rotation.x,
+      y: item.rotation.z, // z di Max diventa y di Three.js
+      z: item.rotation.y  // y di Max diventa z di Three.js
+    } : null;
+    
     // Ricrea altoparlante
-    loadObj('./modelli/galleriaOBJ/speaker3dec.obj', item.name, goochMaterialSp, 0.045, item.position.x, item.position.z, item.position.y, item.rotation);
-    sendUpdateToMax(); // <--- aggiunto
+    loadObj('./modelli/galleriaOBJ/speaker3dec.obj', displayName, goochMaterialSp, 0.045, position.x, position.z, position.y, rotation);
+    sendUpdateToMax();
   }
+  
   createMenu();
   setTimeout(syncMaxDictionaries, 50);
 }
 
-// Carica preset fonti sonore e zone (.sources)
+// Carica preset fonti sonore e zone (.json)
 export async function loadSourcesPreset() {
   const [fileHandle] = await window.showOpenFilePicker({
-    types: [{ description: 'Preset Fonti/Zona', accept: { 'application/json': ['.sources'] } }]
+    types: [{ description: 'Preset Fonti/Zona', accept: { 'application/json': ['.json'] } }]
   });
   const file = await fileHandle.getFile();
   const text = await file.text();
@@ -61,43 +81,63 @@ export async function loadSourcesPreset() {
     alert('File preset non valido');
     return;
   }
+  
   // Rimuovi Omnifonte, Orifonte, Zona
   removeObjectsByPrefix('Omnifonte');
   removeObjectsByPrefix('Orifonte');
   removeObjectsByPrefix('Zona');
+  
   // Materiali per le zone
   const materials = [dashedMaterial, dashedMaterialB, dashedMaterialC, dashedMaterialD];
   let zoneCount = 0;
-  for (const item of data) {
-    if (item.name.startsWith('Omnifonte')) {
+  
+  // Gestisce il formato oggetto di Max
+  for (const [objectName, item] of Object.entries(data)) {
+    // Converti il nome con underscore in nome con spazi per il 3D
+    const displayName = objectName.replace(/_/g, ' ');
+    
+    // Converti le coordinate: Max usa y,z invertiti rispetto a Three.js
+    const position = {
+      x: item.position.x,
+      y: item.position.z, // z di Max diventa y di Three.js
+      z: item.position.y  // y di Max diventa z di Three.js
+    };
+    
+    const rotation = item.rotation ? {
+      x: item.rotation.x,
+      y: item.rotation.z, // z di Max diventa y di Three.js
+      z: item.rotation.y  // y di Max diventa z di Three.js
+    } : null;
+    
+    if (objectName.startsWith('Omnifonte')) {
       // Sfera
       const geometry = new THREE.SphereGeometry(0.3, 40, 40);
       const mesh = new THREE.Mesh(geometry, goochMaterialArrow);
       mesh.scale.set(0.25, 0.24, 0.25);
-      mesh.name = item.name;
+      mesh.name = displayName;
       mesh.isDashed = false;
-      mesh.position.set(item.position.x, item.position.y, item.position.z);
-      if (item.rotation) {
-        mesh.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+      mesh.position.set(position.x, position.y, position.z);
+      if (rotation) {
+        mesh.rotation.set(rotation.x, rotation.y, rotation.z);
       }
       scene.add(mesh);
       objToBeDetected.push(mesh);
-      sendUpdateToMax(); // <--- aggiunto
-    } else if (item.name.startsWith('Orifonte')) {
+      sendUpdateToMax();
+    } else if (objectName.startsWith('Orifonte')) {
       // Freccia
-      // FIX: usa x, y, z (non x, z, y)
-      loadObj('./modelli/galleriaOBJ/arrow.obj', item.name, goochMaterialArrow, 0.045, item.position.x, item.position.z, item.position.y, item.rotation);
-      sendUpdateToMax(); // <--- aggiunto
-    } else if (item.name.startsWith('Zona')) {
+      loadObj('./modelli/galleriaOBJ/arrow.obj', displayName, goochMaterialArrow, 0.045, position.x, position.z, position.y, rotation);
+      sendUpdateToMax();
+    } else if (objectName.startsWith('Zona')) {
       // Zona (alternanza materiali)
       const index = zoneCount % materials.length;
       const color = materials[index];
       zoneCount++;
+      
       // Cubo o sfera? (qui default cubo, puoi estendere se serve)
       const isSphere = false;
       // Funzione newZone simile a quella in addgeometries.js
       const group = new THREE.Group();
-      group.name = item.name;
+      group.name = displayName;
       let geometry = isSphere
         ? new THREE.SphereGeometry(0.5, 8, 8)
         : new THREE.BoxGeometry(3.2, 1.8, 3.2);
@@ -107,7 +147,7 @@ export async function loadSourcesPreset() {
       const lineGeometry = new LineSegmentsGeometry().fromEdgesGeometry(edges);
       const line = new LineSegments2(lineGeometry, color);
       line.computeLineDistances();
-      line.name = item.name;
+      line.name = displayName;
       line.isDashed = true;
       const meshMaterial = new THREE.MeshStandardMaterial({
         color: new THREE.Color(0xf25d00),
@@ -118,19 +158,20 @@ export async function loadSourcesPreset() {
         visible: true
       });
       const mesh = new THREE.Mesh(geometry, meshMaterial);
-      mesh.name = item.name;
+      mesh.name = displayName;
       group.add(mesh);
       group.add(line);
-      // CORREZIONE: usa x, y, z
-      group.position.set(item.position.x, item.position.y, item.position.z);
-      if (item.rotation) {
-        group.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+      
+      group.position.set(position.x, position.y, position.z);
+      if (rotation) {
+        group.rotation.set(rotation.x, rotation.y, rotation.z);
       }
       scene.add(group);
       objToBeDetected.push(line);
-      sendUpdateToMax(); // <--- aggiunto
+      sendUpdateToMax();
     }
   }
+  
   createMenu();
   setTimeout(syncMaxDictionaries, 50);
 }

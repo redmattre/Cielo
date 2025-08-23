@@ -1,63 +1,139 @@
 import { objToBeDetected } from './setup.js';
 
-// Utility per estrarre posizione, nome e rotazione
+// Utility per estrarre posizione, nome e rotazione nel formato Max
 function extractPositions(typePrefix) {
-  return objToBeDetected
+  const result = {};
+  
+  objToBeDetected
     .filter(obj => obj.name && obj.name.startsWith(typePrefix))
-    .map(obj => ({
-      name: obj.name,
-      position: obj.position ? {
-        x: obj.position.x,
-        y: obj.position.y,
-        z: obj.position.z
-      } : null,
-      rotation: obj.rotation ? {
-        x: obj.rotation.x,
-        y: obj.rotation.y,
-        z: obj.rotation.z
-      } : null
-    }));
+    .forEach(obj => {
+      // Prendi il parent se è un group, altrimenti l'oggetto stesso
+      const target = obj.parent && obj.parent.type === 'Group' ? obj.parent : obj;
+      // Sostituisci gli spazi con underscore nel nome
+      const safeName = obj.name.replace(/\s+/g, '_');
+      
+      result[safeName] = {
+        position: {
+          x: target.position.x,
+          y: target.position.z, // invertito come in maxSync
+          z: target.position.y  // invertito come in maxSync
+        },
+        rotation: {
+          x: target.rotation.x,
+          y: target.rotation.z, // invertito come in maxSync
+          z: target.rotation.y  // invertito come in maxSync
+        },
+        scale: {
+          x: target.scale.x,
+          y: target.scale.z, // invertito come in maxSync
+          z: target.scale.y  // invertito come in maxSync
+        }
+      };
+    });
+    
+  return result;
 }
 
-// Salva preset altoparlanti (.speakers)
+// Salva preset altoparlanti (.json)
 export async function saveSpeakersPreset() {
   const data = extractPositions('Altoparlante');
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const fileHandle = await window.showSaveFilePicker({
-    suggestedName: 'preset.speakers',
-    types: [{ description: 'Preset Altoparlanti', accept: { 'application/json': ['.speakers'] } }]
+    suggestedName: 'preset.json',
+    types: [{ description: 'Preset Altoparlanti', accept: { 'application/json': ['.json'] } }]
   });
   const writable = await fileHandle.createWritable();
   await writable.write(blob);
   await writable.close();
 }
 
-// Salva preset fonti sonore e zone (.sources)
+// Salva preset fonti sonore e zone (.json)
 export async function saveSourcesPreset() {
   // Omnifonte, Orifonte, Zona
-  const sources = [
-    ...extractPositions('Omnifonte'),
-    ...extractPositions('Orifonte'),
-    ...objToBeDetected
-      .filter(obj => obj.name && obj.name.startsWith('Zona'))
-      .map(obj => ({
-        name: obj.name,
-        position: obj.position ? {
-          x: obj.position.x,
-          y: obj.position.y,
-          z: obj.position.z
-        } : null,
-        rotation: obj.rotation ? {
-          x: obj.rotation.x,
-          y: obj.rotation.y,
-          z: obj.rotation.z
-        } : null
-      }))
-  ];
-  const blob = new Blob([JSON.stringify(sources, null, 2)], { type: 'application/json' });
+  const result = {};
+  
+  // Aggiungi Omnifonti
+  objToBeDetected
+    .filter(obj => obj.name && obj.name.startsWith('Omnifonte'))
+    .forEach(obj => {
+      const target = obj.parent && obj.parent.type === 'Group' ? obj.parent : obj;
+      const safeName = obj.name.replace(/\s+/g, '_');
+      
+      result[safeName] = {
+        position: {
+          x: target.position.x,
+          y: target.position.z, // invertito come in maxSync
+          z: target.position.y  // invertito come in maxSync
+        },
+        rotation: {
+          x: target.rotation.x,
+          y: target.rotation.z, // invertito come in maxSync
+          z: target.rotation.y  // invertito come in maxSync
+        },
+        scale: {
+          x: target.scale.x,
+          y: target.scale.z, // invertito come in maxSync
+          z: target.scale.y  // invertito come in maxSync
+        }
+      };
+    });
+    
+  // Aggiungi Orifonti
+  objToBeDetected
+    .filter(obj => obj.name && obj.name.startsWith('Orifonte'))
+    .forEach(obj => {
+      const target = obj.parent && obj.parent.type === 'Group' ? obj.parent : obj;
+      const safeName = obj.name.replace(/\s+/g, '_');
+      
+      result[safeName] = {
+        position: {
+          x: target.position.x,
+          y: target.position.z, // invertito come in maxSync
+          z: target.position.y  // invertito come in maxSync
+        },
+        rotation: {
+          x: target.rotation.x,
+          y: target.rotation.z, // invertito come in maxSync
+          z: target.rotation.y  // invertito come in maxSync
+        },
+        scale: {
+          x: target.scale.x,
+          y: target.scale.z, // invertito come in maxSync
+          z: target.scale.y  // invertito come in maxSync
+        }
+      };
+    });
+    
+  // Aggiungi Zone
+  objToBeDetected
+    .filter(obj => obj.name && obj.name.startsWith('Zona'))
+    .forEach(obj => {
+      const target = obj.parent && obj.parent.type === 'Group' ? obj.parent : obj;
+      const safeName = obj.name.replace(/\s+/g, '_');
+      
+      result[safeName] = {
+        position: {
+          x: target.position.x,
+          y: target.position.z, // invertito come in maxSync
+          z: target.position.y  // invertito come in maxSync
+        },
+        rotation: {
+          x: target.rotation.x,
+          y: target.rotation.z, // invertito come in maxSync
+          z: target.rotation.y  // invertito come in maxSync
+        },
+        scale: {
+          x: target.scale.x,
+          y: target.scale.z, // invertito come in maxSync
+          z: target.scale.y  // invertito come in maxSync
+        }
+      };
+    });
+  
+  const blob = new Blob([JSON.stringify(result, null, 2)], { type: 'application/json' });
   const fileHandle = await window.showSaveFilePicker({
-    suggestedName: 'preset.sources',
-    types: [{ description: 'Preset Fonti/Zona', accept: { 'application/json': ['.sources'] } }]
+    suggestedName: 'preset.json',
+    types: [{ description: 'Preset Fonti/Zona', accept: { 'application/json': ['.json'] } }]
   });
   const writable = await fileHandle.createWritable();
   await writable.write(blob);

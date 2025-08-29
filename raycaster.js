@@ -5,7 +5,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { OutlinePass } from 'three/addons/postprocessing/OutlinePass.js';
 import { createMenu, updateMenu } from './objmenu';
 import { syncMaxDictionaries } from './maxSync.js';
-import { sendUpdateToMax } from './max.js'; // <--- aggiunto
+import { sendUpdateToMax, sendLastHoveredObjectToMax } from './max.js'; // <--- aggiunto
 
 export let raycaster = new THREE.Raycaster();
 export let mouse = new THREE.Vector2();
@@ -78,6 +78,25 @@ if (!window.__raycasterKeydownRegistered) {
             return; // Evita che il resto del listener venga eseguito
         }
 
+        // --- CAMERA SWITCH (deve essere prima del controllo currentSelectedObject) ---
+        switch (event.key) {
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+                initPostProcessing();
+                animate();
+                scene.add(currentCamera);
+                renderer.render(scene, currentCamera);
+                return; // Evita che il resto del listener venga eseguito
+            case 'Escape':
+                if (!isRaycasterActive) {
+                    isRaycasterActive = true;
+                    updateMenu();
+                }
+                return; // Evita che il resto del listener venga eseguito
+        }
+
         // --- ALTRE AZIONI ---
         if (!currentSelectedObject) return; // Nessun oggetto selezionato, esci
 
@@ -104,26 +123,8 @@ if (!window.__raycasterKeydownRegistered) {
             }
             createMenu();
             currentSelectedObject = null;
+            sendLastHoveredObjectToMax(null);
             setTimeout(syncMaxDictionaries, 50); // Delay per assicurarsi che l'oggetto sia stato rimosso
-        }
-
-        // --- CAMERA SWITCH ---
-        switch (event.key) {
-            case '1':
-            case '2':
-            case '3':
-            case '4':
-                initPostProcessing();
-                animate();
-                scene.add(currentCamera);
-                renderer.render(scene, currentCamera);
-                break;
-            case 'Escape':
-                if (!isRaycasterActive) {
-                    isRaycasterActive = true;
-                    updateMenu();
-                }
-                break;
         }
     });
 }
@@ -203,24 +204,29 @@ renderer.domElement.addEventListener('mousemove', (event) => {
             // Outline su tutti i membri del gruppo
             outlinePass.selectedObjects = group.children;
             currentSelectedObject = group;
+            sendLastHoveredObjectToMax(group.name || 'Gruppo di trasformazione');
             updateInfoText(group.name || 'Gruppo di trasformazione');
             highlightMenuItemByObject(group);
         } else if (hovered.name === 'Gruppo di trasformazione') {
             // Hover diretto sul gruppo
             outlinePass.selectedObjects = hovered.children;
             currentSelectedObject = hovered;
+            sendLastHoveredObjectToMax(hovered.name || 'Gruppo di trasformazione');
             updateInfoText(hovered.name || 'Gruppo di trasformazione');
             highlightMenuItemByObject(hovered);
         } else {
             // Oggetto singolo (mesh o non mesh)
             outlinePass.selectedObjects = [hovered];
             currentSelectedObject = hovered;
+            sendLastHoveredObjectToMax(hovered.name || 'Oggetto non trattato');
             updateInfoText(hovered.name || 'Oggetto non trattato');
             highlightMenuItemByObject(hovered);
         }
 
     } else {
         outlinePass.selectedObjects = [];
+        currentSelectedObject = null;
+        sendLastHoveredObjectToMax(null);
         highlightMenuItemByObject(null);
     }
 });
@@ -682,6 +688,7 @@ function duplicateObject(original) {
     createMenu();
 
     currentSelectedObject = clone;
+    sendLastHoveredObjectToMax(clone.name);
     outlinePass.selectedObjects = [clone];
     updateInfoText(clone.name);
     highlightMenuItemByObject(clone);

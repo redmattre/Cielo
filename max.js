@@ -170,6 +170,7 @@ safeBindInlet("addSphere", function(x, y, z) {
 safeBindInlet("moveSphere", function(index, x, z, y) {
     const targetName = `Omnifonte ${index}`;
     const targetObject = scene.getObjectByName(targetName);
+    z = 1-z;
     if (targetObject) {
         targetObject.position.set(x, y, z);
         if (typeof window !== 'undefined' && window.max && typeof window.max.outlet === 'function') {
@@ -198,6 +199,16 @@ export function sendUpdateToMax() {
         typeof window.max.outlet === 'function'
     ) {
         window.max.outlet("update");
+    }
+}
+
+export function sendLastHoveredObjectToMax(objectName) {
+    if (
+        typeof window !== 'undefined' &&
+        window.max &&
+        typeof window.max.outlet === 'function'
+    ) {
+        window.max.outlet("LOJ", objectName || "none");
     }
 }
 

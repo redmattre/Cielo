@@ -174,7 +174,7 @@ safeBindInlet("moveSphere", function(index, x, z, y) {
     if (targetObject) {
         targetObject.position.set(x, y, z);
         if (typeof window !== 'undefined' && window.max && typeof window.max.outlet === 'function') {
-            window.max.outlet("Omnifonte", index, x, y, z);
+            window.max.outlet("Omnifonte", index, x, z, y);
         }
     } else {
         if (typeof window !== 'undefined' && window.max && typeof window.max.outlet === 'function') {

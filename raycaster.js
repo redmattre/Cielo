@@ -59,6 +59,7 @@ window.addEventListener('resize', () => {
 });
 
 // Variabile per tracciare l'ultimo testo mostrato
+let lastHoveredObject = null; // L'ultimo oggetto su cui si è fatto hover
 
 export let currentSelectedObject = null; // L'ultimo oggetto selezionato rimane memorizzato
 
@@ -90,6 +91,18 @@ if (!window.__raycasterKeydownRegistered) {
                 renderer.render(scene, currentCamera);
                 return; // Evita che il resto del listener venga eseguito
             case 'Escape':
+                // Se i transform controls sono attaccati, staccali
+                if (control && control.object) {
+                    control.detach();
+                    
+                    // Riabilita orbit controls
+                    orbit.enabled = true;
+                    
+                    // Aggiorna stato UI
+                    updateStato3();
+                }
+                
+                // Riabilita raycaster se disabilitato
                 if (!isRaycasterActive) {
                     isRaycasterActive = true;
                     updateMenu();
@@ -98,17 +111,25 @@ if (!window.__raycasterKeydownRegistered) {
         }
 
         // --- ALTRE AZIONI ---
-        if (!currentSelectedObject) return; // Nessun oggetto selezionato, esci
+        // Usa lastHoveredObject se disponibile, altrimenti currentSelectedObject
+        const targetForTransform = lastHoveredObject || currentSelectedObject;
+        if (!targetForTransform) return; // Nessun oggetto disponibile, esci
 
         if (event.key === 'g' || event.key === 's' || event.key === 'r') {
-            // Attacca il controllo all'ultimo oggetto selezionato
-            const targetObject = currentSelectedObject.parent?.isGroup ? currentSelectedObject.parent : currentSelectedObject;
+            // Attacca il controllo all'ultimo oggetto hoverato o selezionato
+            const targetObject = targetForTransform.parent?.isGroup ? targetForTransform.parent : targetForTransform;
             control.attach(targetObject);
             outlinePass.selectedObjects = [];
             isRaycasterActive = false;
+            
+            // Disabilita orbit controls durante transform
+            orbit.enabled = false;
+            
+            // Aggiorna currentSelectedObject con l'oggetto dei transform
+            currentSelectedObject = targetForTransform;
         } else if (event.key === 'x' || event.key === 'Backspace') {
 
-            const targetObject = currentSelectedObject.parent?.isGroup ? currentSelectedObject.parent : currentSelectedObject;
+            const targetObject = targetForTransform.parent?.isGroup ? targetForTransform.parent : targetForTransform;
             const index = objToBeDetected.findIndex(obj => obj.name?.trim() === targetObject.name.trim());
 
             if (index !== -1) {
@@ -204,6 +225,7 @@ renderer.domElement.addEventListener('mousemove', (event) => {
             // Outline su tutti i membri del gruppo
             outlinePass.selectedObjects = group.children;
             currentSelectedObject = group;
+            lastHoveredObject = group; // Aggiorna lastHoveredObject
             sendLastHoveredObjectToMax(group.name || 'Gruppo di trasformazione');
             updateInfoText(group.name || 'Gruppo di trasformazione');
             highlightMenuItemByObject(group);
@@ -211,6 +233,7 @@ renderer.domElement.addEventListener('mousemove', (event) => {
             // Hover diretto sul gruppo
             outlinePass.selectedObjects = hovered.children;
             currentSelectedObject = hovered;
+            lastHoveredObject = hovered; // Aggiorna lastHoveredObject
             sendLastHoveredObjectToMax(hovered.name || 'Gruppo di trasformazione');
             updateInfoText(hovered.name || 'Gruppo di trasformazione');
             highlightMenuItemByObject(hovered);
@@ -218,6 +241,7 @@ renderer.domElement.addEventListener('mousemove', (event) => {
             // Oggetto singolo (mesh o non mesh)
             outlinePass.selectedObjects = [hovered];
             currentSelectedObject = hovered;
+            lastHoveredObject = hovered; // Aggiorna lastHoveredObject
             sendLastHoveredObjectToMax(hovered.name || 'Oggetto non trattato');
             updateInfoText(hovered.name || 'Oggetto non trattato');
             highlightMenuItemByObject(hovered);
@@ -226,6 +250,7 @@ renderer.domElement.addEventListener('mousemove', (event) => {
     } else {
         outlinePass.selectedObjects = [];
         currentSelectedObject = null;
+        // NON resettiamo lastHoveredObject qui, così rimane disponibile per i tasti
         sendLastHoveredObjectToMax(null);
         highlightMenuItemByObject(null);
     }
@@ -548,6 +573,112 @@ renderer.domElement.addEventListener('click', (event) => {
     }
 });
 
+// --- GESTIONE CLICK GLOBALE PER TRANSFORM CONTROLS ---
+// Gestisce click in tutti i viewport per attaccare/staccare transform controls
+renderer.domElement.addEventListener('mousedown', (event) => {
+    // Solo tasto sinistro
+    if (event.button !== 0) return;
+    
+    clickStartPos = { x: event.clientX, y: event.clientY };
+    clickStartTime = Date.now();
+    isCameraDragging = false;
+    
+    // Se i transform controls stanno già trascinando, non fare nulla
+    if (control && control.dragging) return;
+});
+
+renderer.domElement.addEventListener('mousemove', (event) => {
+    if (clickStartPos) {
+        const dx = event.clientX - clickStartPos.x;
+        const dy = event.clientY - clickStartPos.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        // Se il movimento supera la soglia, considera come drag
+        if (distance > CLICK_THRESHOLD) {
+            isCameraDragging = true;
+        }
+    }
+});
+
+renderer.domElement.addEventListener('mouseup', (event) => {
+    // Solo tasto sinistro
+    if (event.button !== 0) return;
+    
+    if (!clickStartPos) return;
+    
+    const clickDuration = Date.now() - clickStartTime;
+    const dx = event.clientX - clickStartPos.x;
+    const dy = event.clientY - clickStartPos.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    // Verifica se è un click valido (non drag, non timeout, non camera dragging)
+    const isValidClick = distance <= CLICK_THRESHOLD && 
+                        clickDuration <= CLICK_TIMEOUT && 
+                        !isCameraDragging &&
+                        !isTransformActive();
+    
+    if (isValidClick) {
+        handleTransformClick(event);
+    }
+    
+    // Reset variabili
+    clickStartPos = null;
+    clickStartTime = 0;
+    isCameraDragging = false;
+});
+
+// Funzione per gestire i click sui transform controls
+function handleTransformClick(event) {
+    const intersected = getIntersectedObject(event);
+    
+    if (intersected) {
+        // Click su oggetto: attacca transform controls
+        const targetObject = intersected.parent?.isGroup ? intersected.parent : intersected;
+        
+        // Attacca i transform controls all'oggetto
+        control.attach(targetObject);
+        
+        // Disabilita outline durante transform
+        outlinePass.selectedObjects = [];
+        
+        // Disabilita raycaster durante transform
+        isRaycasterActive = false;
+        
+        // Disabilita orbit controls durante transform
+        orbit.enabled = false;
+        
+        // Aggiorna currentSelectedObject e lastHoveredObject
+        currentSelectedObject = intersected;
+        lastHoveredObject = intersected;
+        sendLastHoveredObjectToMax(intersected.name || 'Oggetto');
+        updateInfoText(intersected.name || 'Oggetto');
+        highlightMenuItemByObject(intersected);
+        
+    } else {
+        // Click nel vuoto: stacca transform controls se attaccati
+        if (control && control.object) {
+            control.detach();
+            
+            // Riabilita raycaster
+            isRaycasterActive = true;
+            
+            // Riabilita orbit controls
+            orbit.enabled = true;
+            
+            // Aggiorna UI
+            updateMenu();
+            
+            // Reset selezione corrente
+            currentSelectedObject = null;
+            sendLastHoveredObjectToMax(null);
+            outlinePass.selectedObjects = [];
+            
+            // Aggiorna stato UI
+            updateStato3();
+        }
+    }
+}
+
 // Funzione per verificare se la visuale è ortogonale
 function isOrthoView() {
     // Implementazione reale: controlla che la camera sia ortogonale
@@ -602,13 +733,9 @@ if (toggleTransButton) {
         if (control) {
             control.detach();
         }
-        if (typeof orbit !== 'undefined') {
-            orbit.enabled = true;
-        }
+        orbit.enabled = true;
         // Aggiorna stato UI come fa ESC
-        if (typeof updateStato3 === 'function') {
-            updateStato3();
-        }
+        updateStato3();
         // Nascondi ghostButton
         const ghostButton = document.getElementById('ghostButton');
         if (ghostButton) ghostButton.style.display = 'none';
@@ -625,16 +752,10 @@ if (toggleTransButton) {
         //     lastHoveredObject = null;
         // }
         // Chiama updateStato3 per resettare anche lo stato in basso a sinistra
-        if (typeof updateStato3 === 'function') {
-            updateStato3();
-        }
+        updateStato3();
         // Riattiva raycaster
-        if (typeof isRaycasterActive !== 'undefined') {
-            isRaycasterActive = true;
-        }
-        if (typeof updateMenu === 'function') {
-            updateMenu();
-        }
+        isRaycasterActive = true;
+        updateMenu();
     });
 }
 

@@ -10,7 +10,7 @@ import { loadGenericGltf } from './loadersFIX.js';
 import { saveSpeakersPreset, saveSourcesPreset } from './presetSaver.js';
 import { loadSpeakersPreset, loadSourcesPreset } from './presetLoader.js';
 import { syncMaxDictionaries } from './maxSync.js';
-import { sendUpdateToMax } from './max.js'; // <--- aggiunto
+import { sendUpdateToMax, sendSpeakersLoadedToMax, sendOmnifontesLoadedToMax } from './max.js'; // <--- aggiunto
 import { ConditionalLinesManager } from './ConditionalLinesManager.js';
 
 // Initialize ConditionalLinesManager
@@ -164,7 +164,7 @@ document.addEventListener('DOMContentLoaded', () => {
       let nome = `Altoparlante ${howManySpeakers + 1}`;
       loadObj('./modelli/galleriaOBJ/speaker3dec.obj', nome, goochMaterialSp, 0.045, 0., 0, 1.2);
       createMenu();
-      setTimeout(syncMaxDictionaries, 50);
+      setTimeout(() => syncMaxDictionaries('altoparlanti'), 50);
       sendUpdateToMax(); // <--- aggiunto
     });
   }
@@ -225,7 +225,7 @@ document.addEventListener('DOMContentLoaded', () => {
       scene.add(mesh);
       objToBeDetected.push(mesh);
       createMenu();
-      setTimeout(syncMaxDictionaries, 50);
+      setTimeout(() => syncMaxDictionaries('omnifonti'), 50);
       sendUpdateToMax(); // <--- aggiunto
     });
   }

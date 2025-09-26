@@ -1,4 +1,5 @@
 import { objToBeDetected, scene } from './setup.js';
+import { sendSpeakersLoadedToMax, sendOmnifontesLoadedToMax, sendSpeakersUpdatedToMax } from './max.js';
 
 function extractDataByPrefix(prefix) {
     const result = {};
@@ -72,7 +73,7 @@ function addObjectToResult(obj, result) {
     result[safeName] = objData;
 }
 
-export function syncMaxDictionaries() {
+export function syncMaxDictionaries(notifyLoaded = null) {
     if (!window.max || typeof window.max.setDict !== 'function') return;
     // window.max.outlet(extractDataByPrefix('Altoparlante'));
     // window.max.outlet("è sata chiamata!");
@@ -82,4 +83,17 @@ export function syncMaxDictionaries() {
     window.max.setDict('zone', extractDataByPrefix('Zona'));
     window.max.setDict('aureole', extractDataByPrefix('Aureola'));
     window.max.setDict('povcursor', extractDataByPrefix('POV Cursor'));
+    
+    // Invia notifica se richiesto (può essere stringa singola o array)
+    const notifications = Array.isArray(notifyLoaded) ? notifyLoaded : [notifyLoaded];
+    
+    notifications.forEach(notification => {
+        if (notification === 'altoparlanti') {
+            sendSpeakersLoadedToMax();
+        } else if (notification === 'omnifonti') {
+            sendOmnifontesLoadedToMax();
+        } else if (notification === 'update-altoparlanti') {
+            sendSpeakersUpdatedToMax();
+        }
+    });
 }

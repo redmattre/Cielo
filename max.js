@@ -107,6 +107,8 @@ safeBindInlet("addSpeaker", function(x, y, z, rx = 0, ry = 0, rz = 0) {
     if (typeof window !== 'undefined' && window.max && typeof window.max.outlet === 'function') {
         window.max.outlet(`Speaker ${nome}, ${x}, ${y}, ${z}, rot: ${rx}, ${ry}, ${rz}`);
     }
+    // Notifica che il setup altoparlanti è cambiato
+    sendSpeakersLoadedToMax();
 });
 
 safeBindInlet("moveSpeaker", function(index, x, z, y) {
@@ -165,6 +167,8 @@ safeBindInlet("addSphere", function(x, y, z) {
     if (typeof window !== 'undefined' && window.max && typeof window.max.outlet === 'function') {
         window.max.outlet(`Sfera aggiunta: ${nome} in posizione (${x}, ${y}, ${z})`);
     }
+    // Notifica che il setup omnifonti è cambiato
+    sendOmnifontesLoadedToMax();
 });
 
 safeBindInlet("moveSphere", function(index, x, z, y) {
@@ -202,13 +206,63 @@ export function sendUpdateToMax() {
     }
 }
 
+// Variabile per tracciare l'ultimo oggetto inviato a Max
+let lastSentObjectName = null;
+
 export function sendLastHoveredObjectToMax(objectName) {
+    // Se l'objectName è null/undefined, non fare nulla (mantieni l'ultimo oggetto valido)
+    if (!objectName) {
+        return;
+    }
+
+    // Invia solo se l'oggetto è effettivamente cambiato
+    if (objectName !== lastSentObjectName) {
+        if (
+            typeof window !== 'undefined' &&
+            window.max &&
+            typeof window.max.outlet === 'function'
+        ) {
+            window.max.outlet("LOJ", objectName);
+            lastSentObjectName = objectName; // Aggiorna l'ultimo oggetto inviato
+        }
+    }
+}
+
+// Funzione per resettare il tracking (utile quando si elimina l'oggetto corrente)
+export function resetLastHoveredObject() {
+    lastSentObjectName = null;
+}
+
+// Funzione per notificare a Max che il setup degli altoparlanti è cambiato
+export function sendSpeakersLoadedToMax() {
     if (
         typeof window !== 'undefined' &&
         window.max &&
         typeof window.max.outlet === 'function'
     ) {
-        window.max.outlet("LOJ", objectName || "none");
+        window.max.outlet("loaded", "Altoparlanti");
+    }
+}
+
+// Funzione per notificare a Max che il setup delle omnifonti è cambiato
+export function sendOmnifontesLoadedToMax() {
+    if (
+        typeof window !== 'undefined' &&
+        window.max &&
+        typeof window.max.outlet === 'function'
+    ) {
+        window.max.outlet("loaded", "Omnifonti");
+    }
+}
+
+// Funzione per notificare a Max che la posizione degli altoparlanti è stata aggiornata
+export function sendSpeakersUpdatedToMax() {
+    if (
+        typeof window !== 'undefined' &&
+        window.max &&
+        typeof window.max.outlet === 'function'
+    ) {
+        window.max.outlet("update", "Altoparlanti");
     }
 }
 

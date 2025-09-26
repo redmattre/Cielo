@@ -5,7 +5,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { OutlinePass } from 'three/addons/postprocessing/OutlinePass.js';
 import { createMenu, updateMenu } from './objmenu';
 import { syncMaxDictionaries } from './maxSync.js';
-import { sendUpdateToMax, sendLastHoveredObjectToMax } from './max.js'; // <--- aggiunto
+import { sendUpdateToMax, sendLastHoveredObjectToMax, resetLastHoveredObject } from './max.js'; // <--- aggiunto
 
 export let raycaster = new THREE.Raycaster();
 export let mouse = new THREE.Vector2();
@@ -134,18 +134,29 @@ if (!window.__raycasterKeydownRegistered) {
 
             if (index !== -1) {
                 // console.log("Oggetto trovato, rimuovo:", objToBeDetected[index].name);
+                const isAltoparlante = targetObject.name && targetObject.name.startsWith('Altoparlante');
+                const isOmnifonte = targetObject.name && targetObject.name.startsWith('Omnifonte');
+                const objectName = targetObject.name; // Salva il nome prima di rimuovere
+                
                 objToBeDetected.splice(index, 1);
                 disposeObject(targetObject);
-                console.log(objToBeDetected[index].name);
-                updateInfoTextBasso(objToBeDetected[index].name);
+                console.log("Eliminato oggetto:", objectName);
+                updateInfoTextBasso(objectName);
                 
+                // Notifica in base al tipo di oggetto eliminato
+                if (isAltoparlante) {
+                    setTimeout(() => syncMaxDictionaries('altoparlanti'), 50);
+                } else if (isOmnifonte) {
+                    setTimeout(() => syncMaxDictionaries('omnifonti'), 50);
+                } else {
+                    setTimeout(syncMaxDictionaries, 50);
+                }
             } else {
                 // console.error("Oggetto con nome '" + targetObject.name + "' non trovato nell'array.");
             }
             createMenu();
             currentSelectedObject = null;
-            sendLastHoveredObjectToMax(null);
-            setTimeout(syncMaxDictionaries, 50); // Delay per assicurarsi che l'oggetto sia stato rimosso
+            resetLastHoveredObject(); // Reset del tracking invece di inviare null
         }
     });
 }
@@ -260,7 +271,7 @@ renderer.domElement.addEventListener('mousemove', (event) => {
 const infoDivDown = document.getElementById('infoDivBottomLeft');
 function updateInfoTextBasso(text) {
     console.log("sto cancellando!");
-    infoDivDown.textContent = "rimosso: " + currentSelectedObject || '---';
+    infoDivDown.textContent = "rimosso: " + (text || '---');
 }
 
 
@@ -670,7 +681,7 @@ function handleTransformClick(event) {
             
             // Reset selezione corrente
             currentSelectedObject = null;
-            sendLastHoveredObjectToMax(null);
+            // Non resettare il tracking qui - mantieni l'ultimo oggetto valido
             outlinePass.selectedObjects = [];
             
             // Aggiorna stato UI
@@ -699,6 +710,7 @@ animate();
 
 // --- INVIO A MAX/MSP DEL MOVIMENTO MANUALE ---
 if (control) {
+    // Evento change per aggiornamento continuo delle coordinate (senza notifiche)
     control.addEventListener('change', function () {
         if (control.object) {
             const obj = control.object;
@@ -720,8 +732,28 @@ if (control) {
             if (window.max && window.max.outlet) {
                 window.max.outlet(name, index, x, y, elevazione, angleDeg, distanceXY);
             }
+            
+            // Solo aggiornamento dizionari senza notifiche speciali durante il movimento
             syncMaxDictionaries();
             sendUpdateToMax(); // <--- aggiunto
+        }
+    });
+    
+    // Evento mouseUp per notifica finale solo per altoparlanti
+    control.addEventListener('mouseUp', function () {
+        if (control.object) {
+            const obj = control.object;
+            const fullName = obj.name || '';
+            const match = fullName.match(/^(.*?)[\s_-]?(\d+)$/);
+            let name = fullName;
+            if (match) {
+                name = match[1].trim();
+            }
+            
+            // Invia notifica "update Altoparlanti" solo alla fine del movimento di un altoparlante
+            if (name === 'Altoparlante') {
+                syncMaxDictionaries('update-altoparlanti');
+            }
         }
     });
 }
@@ -813,6 +845,17 @@ function duplicateObject(original) {
     outlinePass.selectedObjects = [clone];
     updateInfoText(clone.name);
     highlightMenuItemByObject(clone);
-    setTimeout(syncMaxDictionaries, 50); // Delay per assicurarsi che l'oggetto sia in scena
+    
+    // Invia notifica corretta in base al tipo di oggetto duplicato
+    const isAltoparlante = clone.name && clone.name.startsWith('Altoparlante');
+    const isOmnifonte = clone.name && clone.name.startsWith('Omnifonte');
+    
+    if (isAltoparlante) {
+        setTimeout(() => syncMaxDictionaries('altoparlanti'), 50);
+    } else if (isOmnifonte) {
+        setTimeout(() => syncMaxDictionaries('omnifonti'), 50);
+    } else {
+        setTimeout(syncMaxDictionaries, 50);
+    }
     sendUpdateToMax(); // <--- aggiunto
 }

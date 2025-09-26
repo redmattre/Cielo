@@ -4,7 +4,7 @@ import { goochMaterialSp, goochMaterialArrow, dashedMaterial, dashedMaterialB, d
 import * as THREE from 'three';
 import { createMenu } from './objmenu.js';
 import { syncMaxDictionaries } from './maxSync.js';
-import { sendUpdateToMax } from './max.js'; // <--- aggiunto
+import { sendUpdateToMax, sendSpeakersLoadedToMax, sendOmnifontesLoadedToMax } from './max.js'; // <--- aggiunto
 
 // Utility per rimuovere oggetti di una tipologia
 function removeObjectsByPrefix(prefix) {
@@ -64,7 +64,7 @@ export async function loadSpeakersPreset() {
   }
   
   createMenu();
-  setTimeout(syncMaxDictionaries, 50);
+  setTimeout(() => syncMaxDictionaries('altoparlanti'), 50);
 }
 
 // Carica preset fonti sonore e zone (.json)
@@ -173,7 +173,7 @@ export async function loadSourcesPreset() {
   }
   
   createMenu();
-  setTimeout(syncMaxDictionaries, 50);
+  setTimeout(() => syncMaxDictionaries('omnifonti'), 50);
 }
 
 // Funzione per resettare la scena (rimuove altoparlanti, fonti e zone)
@@ -183,6 +183,7 @@ export function resetScene() {
   removeObjectsByPrefix('Orifonte');
   removeObjectsByPrefix('Zona');
   createMenu();
+  setTimeout(() => syncMaxDictionaries(['altoparlanti', 'omnifonti']), 50);
 }
 
 // Collega i bottoni di import e reset ai rispettivi handler

@@ -1,8 +1,10 @@
 import * as THREE from 'three';
-import { renderer, objToBeDetected, currentCamera, scene, control, updateStato3 } from './setup';
+import { renderer, objToBeDetected, currentCamera, scene, control, updateStato3, orbit } from './setup';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { OutlinePass } from 'three/addons/postprocessing/OutlinePass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
 import { createMenu, updateMenu } from './objmenu';
 import { syncMaxDictionaries } from './maxSync.js';
 import { sendLastHoveredObjectToMax, resetLastHoveredObject } from './max.js'; // <--- aggiunto
@@ -10,16 +12,76 @@ import { sendLastHoveredObjectToMax, resetLastHoveredObject } from './max.js'; /
 export let raycaster = new THREE.Raycaster();
 export let mouse = new THREE.Vector2();
 export let isRaycasterActive = true;
+let transformControlsOverride = false; // Flag per override dei transform controls
 
 export function setRaycasterActive(state) {
+    // console.log('setRaycasterActive called with:', state, 'transformControlsOverride:', transformControlsOverride);
+    // console.trace('Call stack for setRaycasterActive:');
+    
+    // Se i transform controls hanno il controllo, ignora le chiamate esterne
+    if (transformControlsOverride && state === true) {
+        console.log('setRaycasterActive: BLOCKED by transform controls override');
+        return;
+    }
+    
     isRaycasterActive = state;
+    // console.log('isRaycasterActive now set to:', isRaycasterActive);
+}
+
+// Funzione helper per filtrare oggetti ed escludere transform controls
+function filterTransformControls(objects) {
+    return objects.filter(obj => {
+        let current = obj;
+        while (current) {
+            // Controlla se l'oggetto è parte dei transform controls
+            if (current.isTransformControls || 
+                current.isTransformControlsGizmo ||
+                current.isTransformControlsPlane ||
+                current.isTransformControlsRotationGizmo ||
+                current.isLine || // Molti gizmos sono Line/LineSegments
+                (current.name && (
+                    current.name.includes('TransformControls') || 
+                    current.name.includes('Gizmo') ||
+                    current.name.includes('picker') ||
+                    current.name.includes('helper')
+                )) ||
+                (current.type && (
+                    current.type === 'TransformControlsGizmo' ||
+                    current.type === 'TransformControlsPlane' ||
+                    current.type === 'Line' ||
+                    current.type === 'LineSegments'
+                )) ||
+                // Controlla se è un figlio diretto dei transform controls
+                (current.parent && (
+                    current.parent.isTransformControls ||
+                    current.parent.isTransformControlsGizmo
+                ))) {
+                return false; // Escludi questo oggetto
+            }
+            current = current.parent;
+        }
+        return true; // Includi questo oggetto
+    });
 }
 
 export function getRaycasterActive() {
     return isRaycasterActive;
 }
 
-let outlinePass;
+// Funzioni dedicate per i transform controls con priorità assoluta
+export function setRaycasterActiveForTransformControls(state) {
+    // console.log('setRaycasterActiveForTransformControls called with:', state);
+    transformControlsOverride = !state; // Se disabilitiamo raycaster, attiviamo override
+    isRaycasterActive = state;
+}
+
+export function clearTransformControlsOverride() {
+    // console.log('clearTransformControlsOverride called');
+    // console.trace('Call stack for clearTransformControlsOverride:');
+    transformControlsOverride = false;
+}
+
+export let outlinePass;
 let composer;
 
 // Permette al menu di attivare/disattivare outline sugli oggetti
@@ -32,149 +94,149 @@ window.setMenuOutline = function(object, enable) {
     }
 };
 
-// Intervallo per limitare la frequenza degli aggiornamenti
-let lastUpdateTime = 0;
-const updateInterval = 50; // Aggiorna ogni 100ms
+// Sistema di throttling ottimizzato sincronizzato con rendering
+let pendingMouseUpdate = false;
+let lastMouseEvent = null;
 
-// Inizializza il composer e l'outline pass
+// Variabili per gestione click/drag
+let clickStartPos = null;
+let clickStartTime = 0;
+let isCameraDragging = false;
+const CLICK_THRESHOLD = 5; // pixel
+const CLICK_TIMEOUT = 300; // ms
+
+// Variabile per tracking FXAA pass
+let raycasterFxaaPass = null;
+
+// Funzione per dispose del post-processing esistente
+function disposePostProcessing() {
+    if (composer) {
+        // Dispose di tutti i pass
+        composer.passes.forEach(pass => {
+            if (pass.dispose) pass.dispose();
+        });
+        composer.dispose();
+        composer = null;
+    }
+    if (outlinePass) {
+        outlinePass.dispose();
+        outlinePass = null;
+    }
+    raycasterFxaaPass = null;
+    window.raycasterComposer = null;
+}
+
+// Inizializza il composer e l'outline pass (ottimizzato)
 function initPostProcessing() {
+    // Dispose precedente se esistente (evita memory leak)
+    disposePostProcessing();
+
     const renderPass = new RenderPass(scene, currentCamera);
 
     outlinePass = new OutlinePass(new THREE.Vector2(window.innerWidth, window.innerHeight), scene, currentCamera);
     outlinePass.edgeStrength = 10; // Regola la forza del contorno
-    outlinePass.edgeGlow = 0; // Nessun bagliore
-    outlinePass.edgeThickness = 5; // Spessore del contorno
+    outlinePass.edgeGlow = 1; // Nessun bagliore
+    outlinePass.edgeThickness = 3; // Spessore del contorno
     outlinePass.visibleEdgeColor.set('#ffffff'); // Colore del contorno visibile
     outlinePass.hiddenEdgeColor.set('#ffffff'); // Colore del contorno nascosto
 
     composer = new EffectComposer(renderer);
     composer.addPass(renderPass);
     composer.addPass(outlinePass);
+    
+    // Aggiungi FXAA (ora sincrono con imports statici)
+    raycasterFxaaPass = new ShaderPass(FXAAShader);
+    const pixelRatio = renderer.getPixelRatio();
+    raycasterFxaaPass.material.uniforms['resolution'].value.x = 1 / (window.innerWidth * pixelRatio);
+    raycasterFxaaPass.material.uniforms['resolution'].value.y = 1 / (window.innerHeight * pixelRatio);
+    composer.addPass(raycasterFxaaPass);
+    
+    // Esponi il composer globalmente per il loop di rendering principale
+    window.raycasterComposer = composer;
 }
-
-// Evento per ridimensionare il renderer e il composer
-window.addEventListener('resize', () => {
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    composer.setSize(window.innerWidth, window.innerHeight);
-});
 
 // Variabile per tracciare l'ultimo testo mostrato
 let lastHoveredObject = null; // L'ultimo oggetto su cui si è fatto hover
 
 export let currentSelectedObject = null; // L'ultimo oggetto selezionato rimane memorizzato
 
-if (!window.__raycasterKeydownRegistered) {
-    window.__raycasterKeydownRegistered = true;
+// Funzione per eliminare l'oggetto selezionato
+function deleteSelectedObject() {
+    const targetForTransform = lastHoveredObject || currentSelectedObject;
+    if (!targetForTransform) return false; // Nessun oggetto disponibile
 
-    window.addEventListener('keydown', function(event) {
-        // --- DUPLICAZIONE OGGETTO: Shift+D ---
-        if (
-            event.shiftKey &&
-            event.key.toLowerCase() === 'd' &&
-            currentSelectedObject
-        ) {
-            console.log('[DEBUG] Shift+D detected, duplicating:', currentSelectedObject?.name);
-            duplicateObject(currentSelectedObject);
-            syncMaxDictionaries();
-            return; // Evita che il resto del listener venga eseguito
+    const targetObject = targetForTransform.parent?.isGroup ? targetForTransform.parent : targetForTransform;
+    const index = objToBeDetected.findIndex(obj => obj.name?.trim() === targetObject.name.trim());
+
+    if (index !== -1) {
+        const isAltoparlante = targetObject.name && targetObject.name.startsWith('Altoparlante');
+        const isOmnifonte = targetObject.name && targetObject.name.startsWith('Omnifonte');
+        const objectName = targetObject.name; // Salva il nome prima di rimuovere
+        
+        objToBeDetected.splice(index, 1);
+        disposeObject(targetObject);
+        console.log("Eliminato oggetto:", objectName);
+        updateInfoTextBasso(objectName);
+        
+        // Notifica in base al tipo di oggetto eliminato
+        if (isAltoparlante) {
+            setTimeout(() => syncMaxDictionaries('altoparlanti'), 50);
+        } else if (isOmnifonte) {
+            setTimeout(() => syncMaxDictionaries('omnifonti'), 50);
+        } else {
+            setTimeout(syncMaxDictionaries, 50);
         }
-
-        // --- CAMERA SWITCH (deve essere prima del controllo currentSelectedObject) ---
-        switch (event.key) {
-            case '1':
-            case '2':
-            case '3':
-            case '4':
-                initPostProcessing();
-                animate();
-                scene.add(currentCamera);
-                renderer.render(scene, currentCamera);
-                return; // Evita che il resto del listener venga eseguito
-            case 'Escape':
-                // Se i transform controls sono attaccati, staccali
-                if (control && control.object) {
-                    control.detach();
-                    
-                    // Riabilita orbit controls
-                    orbit.enabled = true;
-                    
-                    // Aggiorna stato UI
-                    updateStato3();
-                }
-                
-                // Riabilita raycaster se disabilitato
-                if (!isRaycasterActive) {
-                    isRaycasterActive = true;
-                    updateMenu();
-                }
-                return; // Evita che il resto del listener venga eseguito
-        }
-
-        // --- ALTRE AZIONI ---
-        // Usa lastHoveredObject se disponibile, altrimenti currentSelectedObject
-        const targetForTransform = lastHoveredObject || currentSelectedObject;
-        if (!targetForTransform) return; // Nessun oggetto disponibile, esci
-
-        if (event.key === 'g' || event.key === 's' || event.key === 'r') {
-            // Attacca il controllo all'ultimo oggetto hoverato o selezionato
-            const targetObject = targetForTransform.parent?.isGroup ? targetForTransform.parent : targetForTransform;
-            control.attach(targetObject);
-            outlinePass.selectedObjects = [];
-            isRaycasterActive = false;
-            
-            // Disabilita orbit controls durante transform
-            orbit.enabled = false;
-            
-            // Aggiorna currentSelectedObject con l'oggetto dei transform
-            currentSelectedObject = targetForTransform;
-        } else if (event.key === 'x' || event.key === 'Backspace') {
-
-            const targetObject = targetForTransform.parent?.isGroup ? targetForTransform.parent : targetForTransform;
-            const index = objToBeDetected.findIndex(obj => obj.name?.trim() === targetObject.name.trim());
-
-            if (index !== -1) {
-                // console.log("Oggetto trovato, rimuovo:", objToBeDetected[index].name);
-                const isAltoparlante = targetObject.name && targetObject.name.startsWith('Altoparlante');
-                const isOmnifonte = targetObject.name && targetObject.name.startsWith('Omnifonte');
-                const objectName = targetObject.name; // Salva il nome prima di rimuovere
-                
-                objToBeDetected.splice(index, 1);
-                disposeObject(targetObject);
-                console.log("Eliminato oggetto:", objectName);
-                updateInfoTextBasso(objectName);
-                
-                // Notifica in base al tipo di oggetto eliminato
-                if (isAltoparlante) {
-                    setTimeout(() => syncMaxDictionaries('altoparlanti'), 50);
-                } else if (isOmnifonte) {
-                    setTimeout(() => syncMaxDictionaries('omnifonti'), 50);
-                } else {
-                    setTimeout(syncMaxDictionaries, 50);
-                }
-            } else {
-                // console.error("Oggetto con nome '" + targetObject.name + "' non trovato nell'array.");
-            }
-            createMenu();
-            currentSelectedObject = null;
-            resetLastHoveredObject(); // Reset del tracking invece di inviare null
-        }
-    });
+        
+        createMenu();
+        currentSelectedObject = null;
+        resetLastHoveredObject();
+        return true;
+    }
+    return false;
 }
 
-renderer.domElement.addEventListener('mousemove', (event) => {
-    if (!isRaycasterActive) return;
+// Esponi funzioni globalmente per comunicazione con setup.js (evita circular imports)
+if (!window.raycasterGlobals) {
+    window.raycasterGlobals = {};
+}
 
-    const now = Date.now();
-    if (now - lastUpdateTime < updateInterval) return;
-    lastUpdateTime = now;
+window.raycasterGlobals = {
+    get currentSelectedObject() { return currentSelectedObject; },
+    set currentSelectedObject(value) { currentSelectedObject = value; },
+    get lastHoveredObject() { return lastHoveredObject; },
+    set lastHoveredObject(value) { lastHoveredObject = value; },
+    get isRaycasterActive() { return isRaycasterActive; },
+    get outlinePass() { return outlinePass; },
+    setRaycasterActive: setRaycasterActive,
+    setRaycasterActiveForTransformControls: setRaycasterActiveForTransformControls,
+    clearTransformControlsOverride: clearTransformControlsOverride,
+    duplicateObject: duplicateObject,
+    deleteSelectedObject: deleteSelectedObject,
+    updateMenu: updateMenu,
+    processMouseRaycasting: processMouseRaycasting,
+    resizeRaycasterComposer: resizeRaycasterComposer,
+    disposePostProcessing: disposePostProcessing,
+    initPostProcessing: initPostProcessing
+};
+
+// Funzione per processare raycasting (chiamata sync con render loop)
+function processMouseRaycasting(event) {
+    const active = getRaycasterActive();
+    // console.log('processMouseRaycasting - isRaycasterActive:', active, 'transformControlsOverride:', transformControlsOverride);
+    if (!active) return;
 
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
     raycaster.setFromCamera(mouse, currentCamera);
-    const intersects = raycaster.intersectObjects(objToBeDetected, true);
+    
+    // Filtra objToBeDetected escludendo i transform controls e i loro figli
+    const filteredObjects = filterTransformControls(objToBeDetected);
+    
+    const intersects = raycaster.intersectObjects(filteredObjects, true);
 
-    // --- CURSORE GRAB PER OMNIFONTE/ORIFONTE IN VISTA ORTOGONALE ---
+    // --- CURSORE GRAB PER OMNIFONTE/ORIFONTE IN VISTA ORTOGONALE --- (COMMENTATO)
+    /*
     if (isOrthoView() && intersects.length > 0) {
         let hovered = intersects[0].object;
         // Cerca il nome anche nei parent se serve
@@ -195,6 +257,7 @@ renderer.domElement.addEventListener('mousemove', (event) => {
     } else {
         renderer.domElement.style.cursor = '';
     }
+    */
 
     if (intersects.length > 0) {
         let hovered = intersects[0].object;
@@ -244,6 +307,26 @@ renderer.domElement.addEventListener('mousemove', (event) => {
         sendLastHoveredObjectToMax(null);
         highlightMenuItemByObject(null);
     }
+}
+
+// Listener mousemove ottimizzato con requestAnimationFrame
+renderer.domElement.addEventListener('mousemove', (event) => {
+    if (!getRaycasterActive()) return;
+    
+    // Salva l'evento più recente
+    lastMouseEvent = event;
+    
+    // Se non c'è già un aggiornamento pendente, programmane uno
+    if (!pendingMouseUpdate) {
+        pendingMouseUpdate = true;
+        requestAnimationFrame(() => {
+            if (lastMouseEvent) {
+                processMouseRaycasting(lastMouseEvent);
+                lastMouseEvent = null;
+            }
+            pendingMouseUpdate = false;
+        });
+    }
 });
 
 // Funzione per aggiornare il div con le informazioni
@@ -286,12 +369,6 @@ function disposeObject(obj) {
     }
 
     console.log("Oggetto eliminato:", obj.name || obj.id);
-}
-
-// Funzione di rendering con il composer
-function animate() {
-    requestAnimationFrame(animate);
-    composer.render();
 }
 
 // Funzione per aggiornare il div con le informazioni
@@ -604,11 +681,21 @@ renderer.domElement.addEventListener('mouseup', (event) => {
     // Verifica se è un click valido (non drag, non timeout, non camera dragging)
     const isValidClick = distance <= CLICK_THRESHOLD && 
                         clickDuration <= CLICK_TIMEOUT && 
-                        !isCameraDragging &&
-                        !isTransformActive();
+                        !isCameraDragging;
     
+    // Gestisce click solo se valido e:
+    // 1. Non ci sono transform controls attivi, OPPURE
+    // 2. Ci sono transform controls attivi ma vogliamo gestire il click nel vuoto per staccarli
     if (isValidClick) {
-        handleTransformClick(event);
+        const transformIsActive = isTransformActive();
+        const intersected = getIntersectedObject(event);
+        
+        // Permetti click se:
+        // - Non ci sono transform controls attivi (caso normale)
+        // - Ci sono transform controls attivi ma click nel vuoto (per staccarli)
+        if (!transformIsActive || (transformIsActive && !intersected)) {
+            handleTransformClick(event);
+        }
     }
     
     // Reset variabili
@@ -628,14 +715,21 @@ function handleTransformClick(event) {
         // Attacca i transform controls all'oggetto
         control.attach(targetObject);
         
-        // Disabilita outline durante transform
-        outlinePass.selectedObjects = [];
-        
-        // Disabilita raycaster durante transform
-        isRaycasterActive = false;
+        // IMPORTANTE: Usa funzione dedicata per transform controls
+        setRaycasterActiveForTransformControls(false);
         
         // Disabilita orbit controls durante transform
         orbit.enabled = false;
+        
+        // IMMEDIATAMENTE pulisci outline per evitare glitch sui transform controls
+        if (outlinePass) {
+            outlinePass.selectedObjects = [];
+        }
+        
+        // Forza un aggiornamento immediato del rendering per rimuovere l'outline
+        if (window.raycasterComposer) {
+            window.raycasterComposer.render();
+        }
         
         // Aggiorna currentSelectedObject e lastHoveredObject
         currentSelectedObject = intersected;
@@ -644,27 +738,37 @@ function handleTransformClick(event) {
         updateInfoText(intersected.name || 'Oggetto');
         highlightMenuItemByObject(intersected);
         
+        // Aggiorna lo stato UI per mostrare "Spostamento" (come con il tasto 'g')
+        if (window.updateStato) {
+            window.updateStato('Spostamento');
+        }
+        
     } else {
         // Click nel vuoto: stacca transform controls se attaccati
         if (control && control.object) {
             control.detach();
             
-            // Riabilita raycaster
-            isRaycasterActive = true;
-            
             // Riabilita orbit controls
             orbit.enabled = true;
             
+            // Reset COMPLETO dello stato per evitare interferenze
+            outlinePass.selectedObjects = [];
+            currentSelectedObject = null;
+            lastHoveredObject = null;
+            
+            // IMPORTANTE: Prima pulisci l'override, POI riabilita il raycaster
+            clearTransformControlsOverride();
+            setRaycasterActive(true);
+            
             // Aggiorna UI
             updateMenu();
-            
-            // Reset selezione corrente
-            currentSelectedObject = null;
-            // Non resettare il tracking qui - mantieni l'ultimo oggetto valido
-            outlinePass.selectedObjects = [];
-            
-            // Aggiorna stato UI
             updateStato3();
+            
+            // Nascondi ghostButton se visibile
+            const ghost = document.getElementById('ghostButton');
+            if (ghost) {
+                ghost.style.display = 'none';
+            }
         }
     }
 }
@@ -679,13 +783,52 @@ function getIntersectedObject(event) {
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
     raycaster.setFromCamera(mouse, currentCamera);
-    const intersects = raycaster.intersectObjects(objToBeDetected, true);
+    
+    // Filtra objToBeDetected escludendo i transform controls e i loro figli  
+    const filteredObjects = filterTransformControls(objToBeDetected);
+    
+    const intersects = raycaster.intersectObjects(filteredObjects, true);
     return intersects.length > 0 ? intersects[0].object : null;
 }
 
-// Inizializza post-processing e avvia il rendering
+// Inizializza post-processing
 initPostProcessing();
-animate();
+
+// Funzione per aggiornare la camera nel post-processing
+function updatePostProcessingCamera(newCamera) {
+    if (outlinePass) {
+        outlinePass.renderCamera = newCamera;
+    }
+    if (composer && composer.passes && composer.passes[0]) {
+        // Aggiorna RenderPass
+        composer.passes[0].camera = newCamera;
+    }
+}
+
+// Funzione per resize del raycaster composer (completa)
+function resizeRaycasterComposer() {
+    if (composer) {
+        composer.setSize(window.innerWidth, window.innerHeight);
+    }
+    if (outlinePass) {
+        outlinePass.setSize(window.innerWidth, window.innerHeight);
+    }
+    // Aggiorna anche FXAA uniforms del raycaster
+    if (raycasterFxaaPass) {
+        const pixelRatio = renderer.getPixelRatio();
+        raycasterFxaaPass.material.uniforms['resolution'].value.x = 1 / (window.innerWidth * pixelRatio);
+        raycasterFxaaPass.material.uniforms['resolution'].value.y = 1 / (window.innerHeight * pixelRatio);
+    }
+}
+
+// Esponi globalmente per evitare import circolari
+window.updatePostProcessingCamera = updatePostProcessingCamera;
+window.resizeRaycasterComposer = resizeRaycasterComposer;
+
+// Cleanup automatico quando la pagina viene ricaricata o chiusa
+window.addEventListener('beforeunload', () => {
+    disposePostProcessing();
+});
 
 // --- INVIO A MAX/MSP DEL MOVIMENTO MANUALE ---
 if (control) {

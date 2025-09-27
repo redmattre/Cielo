@@ -19,11 +19,20 @@ export let cameraPersp, cameraOrtho, currentCamera, camera;
 export let composer, fxaaPass;
 let rendererBackgoundColor = 0xd6d6d6; //inizia bianco
 // let rendererBackgoundColor = 0x000000; //inizia nero
-let ghostButton = document.getElementById('ghostButton');
+let ghostButton = null;
 
 const visualizzazione = document.getElementById("visualizzazione");
 const stato = document.getElementById("infoDivBottomLeft");
 export let transfo = false;
+let ignoreNextEscape = false; // Flag per ignorare Escape dopo attach
+
+// Funzione helper per ottenere ghostButton in modo sicuro
+function getGhostButton() {
+    if (!ghostButton) {
+        ghostButton = document.getElementById('ghostButton');
+    }
+    return ghostButton;
+}
 
 export function changeGrid(size, divisions) {
     scene.remove(ssuper);
@@ -88,25 +97,6 @@ export function init() {
     fxaaPass.material.uniforms['resolution'].value.y = 1 / (window.innerHeight * pixelRatio);
     composer.addPass(fxaaPass);
 
-    window.addEventListener('resize', () => {
-        const aspect = window.innerWidth / window.innerHeight;
-
-        cameraPersp.aspect = aspect;
-        cameraPersp.updateProjectionMatrix();
-
-        cameraOrtho.left = cameraOrtho.bottom * aspect;
-        cameraOrtho.right = cameraOrtho.top * aspect;
-        cameraOrtho.updateProjectionMatrix();
-
-        renderer.setSize( window.innerWidth, window.innerHeight );
-
-        if (fxaaPass) {
-            const pixelRatio = renderer.getPixelRatio();
-            fxaaPass.material.uniforms['resolution'].value.x = 1 / (window.innerWidth * pixelRatio);
-            fxaaPass.material.uniforms['resolution'].value.y = 1 / (window.innerHeight * pixelRatio);
-        }
-    });
-
     // Controlli scena prospettiva
     orbit = new OrbitControls(cameraPersp, renderer.domElement);
     orbit.update();
@@ -120,114 +110,274 @@ export function init() {
 
     initTransformControls();
 
-    // Listener per cambiare camera
-    window.addEventListener('keydown', (event) => {
-		switch (event.key) {
-			case '1': // Tasto 1: Camera prospettica
-				currentCamera = cameraPersp;
-				orbit.enabled = true;
-				orbitOrtho.enabled = false;
-	
-				// Aggiorna i controlli per la nuova camera
-				orbit.object = currentCamera;
-				orbit.update();
-				// currentCamera.position.set(0, 5, 0); // Posizione dall'alto
-				// currentCamera.lookAt(0, 0, 0);
-				control.camera = currentCamera; // Aggiorna la camera nei c
-	
-				visualizzazione.textContent = "Prospettiva";
-				break;
-	
-			case '2': // Tasto 2: Camera ortogonale
-				currentCamera = cameraOrtho;
-				orbit.enabled = false;
-				orbitOrtho.enabled = true;
-	
-				// Aggiorna i controlli per la nuova camera
-				orbitOrtho.object = currentCamera;
-				orbitOrtho.update();
-				currentCamera.position.set(0, 8, 0); // Posizione dall'alto
-				currentCamera.lookAt(0, 0, 0); // Guarda verso il centro della scena
-				orbitOrtho.target.set(0, 0, 0);
-				control.camera = currentCamera; // Aggiorna la camera nei c
-	
-				visualizzazione.textContent = "Pianta";
-				break;
-			case '3': // Tasto 2: Camera ortogonale
-				currentCamera = cameraOrtho;
-				orbit.enabled = false;
-				orbitOrtho.enabled = true;
+    // Listener consolidato per tutti i tasti
+    window.addEventListener('keydown', function(event) {
+        // Importa le funzioni necessarie per evitare circular imports
+        const getRaycasterFunctions = () => {
+            return {
+                currentSelectedObject: window.raycasterGlobals?.currentSelectedObject || null,
+                lastHoveredObject: window.raycasterGlobals?.lastHoveredObject || null,
+                isRaycasterActive: window.raycasterGlobals?.isRaycasterActive || false,
+                setRaycasterActive: window.raycasterGlobals?.setRaycasterActive || (() => {}),
+                duplicateObject: window.raycasterGlobals?.duplicateObject || (() => {}),
+                deleteSelectedObject: window.raycasterGlobals?.deleteSelectedObject || (() => {}),
+                updateMenu: window.raycasterGlobals?.updateMenu || (() => {})
+            };
+        };
 
-				// Aggiorna i controlli per la nuova camera
-				orbitOrtho.object = currentCamera;
-				orbitOrtho.update();
-				currentCamera.position.set(0, 0, 8); // Posizione da di fronte
-				currentCamera.lookAt(0, 0, 0); // Guarda verso il centro della scena
-				orbitOrtho.target.set(0, 0, 0);
-				control.camera = currentCamera; // Aggiorna la camera nei c
+        switch (event.key) {
+            // === CAMERA SWITCHING ===
+            case '1': // Camera prospettica
+                currentCamera = cameraPersp;
+                orbit.enabled = true;
+                orbitOrtho.enabled = false;
 
-				visualizzazione.textContent = "Fronte";
-				break;
-			case '4': // Tasto 2: Camera ortogonale
-				currentCamera = cameraOrtho;
-				orbit.enabled = false;
-				orbitOrtho.enabled = true;
+                orbit.object = currentCamera;
+                orbit.update();
+                control.camera = currentCamera;
+                
+                if (window.updatePostProcessingCamera) {
+                    window.updatePostProcessingCamera(currentCamera);
+                }
 
-				// Aggiorna i controlli per la nuova camera
-				orbitOrtho.object = currentCamera;
-				orbitOrtho.update();
-				currentCamera.position.set(8, 0, 0); // Posizione da destra
-				currentCamera.lookAt(0, 0, 0); // Guarda verso il centro della scena
-				orbitOrtho.target.set(0, 0, 0);
-				control.camera = currentCamera; // Aggiorna la camera nei c
+                visualizzazione.textContent = "Prospettiva";
+                renderer.render(scene, currentCamera);
+                break;
 
-				visualizzazione.textContent = "Lato";
-				break;
-		}
-	
-		// Aggiungi la nuova camera alla scena
-		// scene.add(currentCamera);
-	
-		// Forza il renderer a utilizzare la nuova camera
-		renderer.render(scene, currentCamera);
-	});
+            case '2': // Camera ortogonale - Pianta
+                currentCamera = cameraOrtho;
+                orbit.enabled = false;
+                orbitOrtho.enabled = true;
 
-	window.addEventListener('keydown', function(event) {
-		switch (event.key) {
-			case 'q':
-				transfo = !transfo;
-				control.setSpace(control.space === 'local' ? 'world' : 'local');
-				updateStato1();
-				break;
-			case 'g':
-				control.setMode('translate');
-				updateStato('Spostamento');
-				ghostButton.style.display = 'block';
-				ghostButton.style.right = '21.5rem';
-				break;
-	
-			case 'r':
-				control.setMode('rotate');
-				updateStato('Rotazione');
-				ghostButton.style.display = 'block';
-				ghostButton.style.right = '16.5rem';
-				break;
-	
-			case 's':
-				control.setMode('scale');
-				updateStato('Scala');
-				ghostButton.style.display = 'block';
-				ghostButton.style.right = '11.5rem';
-				break;
-			case 'Escape':
-				control.detach();
-				orbit.enabled = true;
-				updateStato3();
-				ghostButton.style.display = 'none';
-				break;
-				
-		}
-	});
+                orbitOrtho.object = currentCamera;
+                orbitOrtho.update();
+                currentCamera.position.set(0, 8, 0);
+                currentCamera.lookAt(0, 0, 0);
+                orbitOrtho.target.set(0, 0, 0);
+                control.camera = currentCamera;
+                
+                if (window.updatePostProcessingCamera) {
+                    window.updatePostProcessingCamera(currentCamera);
+                }
+
+                visualizzazione.textContent = "Pianta";
+                renderer.render(scene, currentCamera);
+                break;
+
+            case '3': // Camera ortogonale - Fronte
+                currentCamera = cameraOrtho;
+                orbit.enabled = false;
+                orbitOrtho.enabled = true;
+
+                orbitOrtho.object = currentCamera;
+                orbitOrtho.update();
+                currentCamera.position.set(0, 0, 8);
+                currentCamera.lookAt(0, 0, 0);
+                orbitOrtho.target.set(0, 0, 0);
+                control.camera = currentCamera;
+                
+                if (window.updatePostProcessingCamera) {
+                    window.updatePostProcessingCamera(currentCamera);
+                }
+
+                visualizzazione.textContent = "Fronte";
+                renderer.render(scene, currentCamera);
+                break;
+
+            case '4': // Camera ortogonale - Lato
+                currentCamera = cameraOrtho;
+                orbit.enabled = false;
+                orbitOrtho.enabled = true;
+
+                orbitOrtho.object = currentCamera;
+                orbitOrtho.update();
+                currentCamera.position.set(8, 0, 0);
+                currentCamera.lookAt(0, 0, 0);
+                orbitOrtho.target.set(0, 0, 0);
+                control.camera = currentCamera;
+                
+                if (window.updatePostProcessingCamera) {
+                    window.updatePostProcessingCamera(currentCamera);
+                }
+
+                visualizzazione.textContent = "Lato";
+                renderer.render(scene, currentCamera);
+                break;
+
+            // === TRANSFORM CONTROLS ===
+            case 'q':
+                transfo = !transfo;
+                control.setSpace(control.space === 'local' ? 'world' : 'local');
+                updateStato1();
+                break;
+
+            case 'g':
+                // Gestione intelligente: setup o raycaster mode
+                const functions_g = getRaycasterFunctions();
+                const targetForTransform_g = functions_g.lastHoveredObject || functions_g.currentSelectedObject;
+                
+                if (targetForTransform_g) {
+                    // Modalità raycaster: attacca a oggetto selezionato + imposta modalità translate
+                    const targetObject = targetForTransform_g.parent?.isGroup ? targetForTransform_g.parent : targetForTransform_g;
+                    
+
+                    
+                    control.setMode('translate'); // IMPORTANTE: Imposta modalità prima di attach
+                    control.attach(targetObject);
+                    // Usa funzione dedicata per transform controls
+                    if (window.raycasterGlobals?.setRaycasterActiveForTransformControls) {
+                        window.raycasterGlobals.setRaycasterActiveForTransformControls(false);
+                    }
+                    orbit.enabled = false;
+                    
+                    // Ignora il prossimo Escape per evitare conflitti
+                    ignoreNextEscape = true;
+                    setTimeout(() => { ignoreNextEscape = false; }, 100);
+                    
+                    // Aggiorna outline se disponibile
+                    if (window.raycasterGlobals?.outlinePass) {
+                        window.raycasterGlobals.outlinePass.selectedObjects = [];
+                    }
+                } else {
+                    // Modalità setup: imposta modalità translate senza oggetto
+                    control.setMode('translate');
+                    const ghost = getGhostButton();
+                    if (ghost) {
+                        ghost.style.display = 'block';
+                        ghost.style.right = '21.5rem';
+                    }
+                }
+                updateStato('Spostamento');
+                break;
+
+            case 'r':
+                const functions_r = getRaycasterFunctions();
+                const targetForTransform_r = functions_r.lastHoveredObject || functions_r.currentSelectedObject;
+                
+                if (targetForTransform_r) {
+                    // Modalità raycaster: attacca a oggetto selezionato + imposta modalità rotate
+                    const targetObject = targetForTransform_r.parent?.isGroup ? targetForTransform_r.parent : targetForTransform_r;
+                    control.setMode('rotate'); // IMPORTANTE: Imposta modalità prima di attach
+                    control.attach(targetObject);
+                    // Usa funzione dedicata per transform controls
+                    if (window.raycasterGlobals?.setRaycasterActiveForTransformControls) {
+                        window.raycasterGlobals.setRaycasterActiveForTransformControls(false);
+                    }
+                    orbit.enabled = false;
+                    
+                    // Ignora il prossimo Escape per evitare conflitti
+                    ignoreNextEscape = true;
+                    setTimeout(() => { ignoreNextEscape = false; }, 100);
+                    
+                    if (window.raycasterGlobals?.outlinePass) {
+                        window.raycasterGlobals.outlinePass.selectedObjects = [];
+                    }
+                } else {
+                    control.setMode('rotate');
+                    const ghost = getGhostButton();
+                    if (ghost) {
+                        ghost.style.display = 'block';
+                        ghost.style.right = '16.5rem';
+                    }
+                }
+                updateStato('Rotazione');
+                break;
+
+            case 's':
+                const functions_s = getRaycasterFunctions();
+                const targetForTransform_s = functions_s.lastHoveredObject || functions_s.currentSelectedObject;
+                
+                if (targetForTransform_s) {
+                    // Modalità raycaster: attacca a oggetto selezionato + imposta modalità scale
+                    const targetObject = targetForTransform_s.parent?.isGroup ? targetForTransform_s.parent : targetForTransform_s;
+                    control.setMode('scale'); // IMPORTANTE: Imposta modalità prima di attach
+                    control.attach(targetObject);
+                    // Usa funzione dedicata per transform controls
+                    if (window.raycasterGlobals?.setRaycasterActiveForTransformControls) {
+                        window.raycasterGlobals.setRaycasterActiveForTransformControls(false);
+                    }
+                    orbit.enabled = false;
+                    
+                    // Ignora il prossimo Escape per evitare conflitti
+                    ignoreNextEscape = true;
+                    setTimeout(() => { ignoreNextEscape = false; }, 100);
+                    
+                    if (window.raycasterGlobals?.outlinePass) {
+                        window.raycasterGlobals.outlinePass.selectedObjects = [];
+                    }
+                } else {
+                    control.setMode('scale');
+                    const ghost = getGhostButton();
+                    if (ghost) {
+                        ghost.style.display = 'block';
+                        ghost.style.right = '11.5rem';
+                    }
+                }
+                updateStato('Scala');
+                break;
+
+            case 'Escape':
+                // Ignora Escape se appena attaccato i transform controls
+                if (ignoreNextEscape) {
+                    console.log('Escape ignored: ignoreNextEscape flag active');
+                    ignoreNextEscape = false;
+                    return;
+                }
+                
+                // Comportamento unificato per Escape
+                if (control && control.object) {
+                    control.detach();
+                }
+                
+                orbit.enabled = true;
+                updateStato3();
+                const ghost = getGhostButton();
+                if (ghost) {
+                    ghost.style.display = 'none';
+                }
+                
+                // SEMPRE riabilita raycaster e resetta stato completamente
+                const functions_esc = getRaycasterFunctions();
+                
+                // Pulisci override transform controls
+                if (window.raycasterGlobals?.clearTransformControlsOverride) {
+                    window.raycasterGlobals.clearTransformControlsOverride();
+                }
+                
+                functions_esc.setRaycasterActive(true);
+                
+                // RESET COMPLETO: pulisci oggetti selezionati per evitare interferenze
+                if (window.raycasterGlobals?.outlinePass) {
+                    window.raycasterGlobals.outlinePass.selectedObjects = [];
+                }
+                
+                // Resetta gli oggetti selezionati/hoverati per ripartire da zero
+                functions_esc.currentSelectedObject = null;
+                functions_esc.lastHoveredObject = null;
+                
+                functions_esc.updateMenu();
+                break;
+
+            // === DUPLICAZIONE OGGETTO ===
+            default:
+                if (event.shiftKey && event.key.toLowerCase() === 'd') {
+                    const functions_d = getRaycasterFunctions();
+                    if (functions_d.currentSelectedObject && functions_d.duplicateObject) {
+                        functions_d.duplicateObject(functions_d.currentSelectedObject);
+                    }
+                }
+                break;
+
+            // === ELIMINAZIONE OGGETTO ===  
+            case 'x':
+            case 'Backspace':
+                const functions_del = getRaycasterFunctions();
+                if (functions_del.deleteSelectedObject) {
+                    functions_del.deleteSelectedObject();
+                }
+                break;
+        }
+    });
 
 	const canvas = renderer.domElement;
 
@@ -265,6 +415,11 @@ export function init() {
         const event = new KeyboardEvent('keydown', { key: views[currentViewIndex].key });
         window.dispatchEvent(event);
     });
+    
+    // Esporta globalmente per controlli UI
+    window.setupGlobals = {
+        control: control
+    };
 }
 
 let miao;
@@ -343,14 +498,16 @@ export function changeTheme(state) {
 }
 
 export function render() {
-    // Update conditional lines resolutions if available
-    if (window.conditionalLinesManager) {
-        window.conditionalLinesManager.updateResolutions();
+    // Usa sempre il composer del raycaster se disponibile (include OutlinePass)
+    if (window.raycasterComposer) {
+        window.raycasterComposer.render();
     }
-
-    if (composer) {
+    // Altrimenti usa il composer principale (solo FXAA)
+    else if (composer) {
         composer.render();
-    } else {
+    }
+    // Fallback: render diretto
+    else {
         renderer.render(scene, currentCamera);
     }
 	requestAnimationFrame(render);
@@ -418,13 +575,25 @@ function initTransformControls() {
     control.addEventListener('objectChange', setGizmoColors); // Aggiorna i colori ogni volta che cambia oggetto
 
     const helper = control.getHelper();
+    
+    // Marca il helper e tutti i suoi figli come transform controls per escluderli dal raycasting
+    function markAsTransformControl(obj) {
+        obj.isTransformControls = true;
+        if (obj.children) {
+            obj.children.forEach(child => markAsTransformControl(child));
+        }
+    }
+    
+    markAsTransformControl(helper);
+    markAsTransformControl(control);
+    
     scene.add(helper);
 }
 
 export function onWindowResize() {
-
 	const aspect = window.innerWidth / window.innerHeight;
 
+	// === CAMERA UPDATES ===
 	cameraPersp.aspect = aspect;
 	cameraPersp.updateProjectionMatrix();
 
@@ -432,10 +601,57 @@ export function onWindowResize() {
 	cameraOrtho.right = cameraOrtho.top * aspect;
 	cameraOrtho.updateProjectionMatrix();
 
-	renderer.setSize( window.innerWidth, window.innerHeight );
+	// === RENDERER UPDATES ===
+	renderer.setSize(window.innerWidth, window.innerHeight);
 
-	// Update conditional lines resolutions if available
-	if (window.conditionalLinesManager) {
+	// === POST-PROCESSING UPDATES ===
+	// Update main composer (FXAA)
+	if (composer) {
+		composer.setSize(window.innerWidth, window.innerHeight);
+	}
+
+	// Update FXAA uniforms
+	if (fxaaPass) {
+		const pixelRatio = renderer.getPixelRatio();
+		fxaaPass.material.uniforms['resolution'].value.x = 1 / (window.innerWidth * pixelRatio);
+		fxaaPass.material.uniforms['resolution'].value.y = 1 / (window.innerHeight * pixelRatio);
+	}
+
+	// Update raycaster composer (outline + FXAA)
+	if (window.resizeRaycasterComposer) {
+		window.resizeRaycasterComposer();
+	}
+
+	// === CONDITIONAL LINES UPDATES ===
+	// Ottimizzazione: updateResolutions solo quando serve (resize, devicePixelRatio change)
+	updateConditionalLinesResolutions();
+}
+
+// Tracking per evitare chiamate inutili
+let lastWindowSize = { width: 0, height: 0 };
+let lastPixelRatio = 0;
+
+// Funzione ottimizzata per conditional lines updates
+export function updateConditionalLinesResolutions(force = false) {
+	if (!window.conditionalLinesManager || typeof window.conditionalLinesManager.updateResolutions !== 'function') {
+		return;
+	}
+
+	// Verifica se è davvero necessario aggiornare
+	const currentSize = { width: window.innerWidth, height: window.innerHeight };
+	const currentPixelRatio = window.devicePixelRatio || 1;
+
+	const sizeChanged = currentSize.width !== lastWindowSize.width || currentSize.height !== lastWindowSize.height;
+	const pixelRatioChanged = currentPixelRatio !== lastPixelRatio;
+
+	if (force || sizeChanged || pixelRatioChanged) {
 		window.conditionalLinesManager.updateResolutions();
+		
+		// Aggiorna tracking
+		lastWindowSize = { ...currentSize };
+		lastPixelRatio = currentPixelRatio;
 	}
 }
+
+// Funzione globale per forzare update (usabile da altri moduli)
+window.forceConditionalLinesUpdate = () => updateConditionalLinesResolutions(true);

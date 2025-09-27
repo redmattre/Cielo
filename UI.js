@@ -22,6 +22,11 @@ let architectureTransparency = 0.7;
 function toggleSwitch(id, state) {
 	switch (id) {
 		case 'lock':
+            // Non interferire se i transform controls sono attivi
+            if (window.setupGlobals?.control?.object) {
+                console.log('Lock toggle ignored: transform controls are active');
+                return;
+            }
             setRaycasterActive(!state); // Update the value
 			break;
 

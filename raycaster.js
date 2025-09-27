@@ -5,7 +5,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { OutlinePass } from 'three/addons/postprocessing/OutlinePass.js';
 import { createMenu, updateMenu } from './objmenu';
 import { syncMaxDictionaries } from './maxSync.js';
-import { sendUpdateToMax, sendLastHoveredObjectToMax, resetLastHoveredObject } from './max.js'; // <--- aggiunto
+import { sendLastHoveredObjectToMax, resetLastHoveredObject } from './max.js'; // <--- aggiunto
 
 export let raycaster = new THREE.Raycaster();
 export let mouse = new THREE.Vector2();
@@ -199,28 +199,7 @@ renderer.domElement.addEventListener('mousemove', (event) => {
     if (intersects.length > 0) {
         let hovered = intersects[0].object;
 
-        // --- INVIO A MAX/MSP DELLE INFO DELL'OGGETTO HOVERATO ---
-        if (window.max && window.max.outlet) {
-            const obj = hovered;
-            const fullName = obj.name || '';
-            const match = fullName.match(/^(.*?)[\s_-]?(\d+)$/);
-            let name = fullName;
-            let index = 1;
-            if (match) {
-                name = match[1].trim();
-                index = parseInt(match[2], 10);
-            }
-            // Coordinate corrette per il piano orizzontale (x, z), elevazione = y
-            const x = obj.position.x;
-            const y = obj.position.z;
-            const elevazione = obj.position.y;
-            // Distanza XY dal centro
-            const distanceXY = Math.sqrt(x * x + y * y);
-            // Angolo da 0 a 360 gradi rispetto all'origine sul piano XZ
-            let angleDeg = Math.atan2(y, x) * (180 / Math.PI) - 90;
-            if (angleDeg < 0) angleDeg += 360;
-            window.max.outlet(name, index, x, y, elevazione, angleDeg, distanceXY);
-        }
+        // --- INVIO A MAX/MSP DELLE INFO DELL'OGGETTO HOVERATO RIMOSSO ---
         // Cerca se hovered (o uno dei suoi parent) è figlio di un gruppo di trasformazione
         let group = null;
         let obj = hovered;
@@ -735,7 +714,6 @@ if (control) {
             
             // Solo aggiornamento dizionari senza notifiche speciali durante il movimento
             syncMaxDictionaries();
-            sendUpdateToMax(); // <--- aggiunto
         }
     });
     
@@ -857,5 +835,4 @@ function duplicateObject(original) {
     } else {
         setTimeout(syncMaxDictionaries, 50);
     }
-    sendUpdateToMax(); // <--- aggiunto
 }

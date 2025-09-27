@@ -10,7 +10,7 @@ import { loadGenericGltf } from './loadersFIX.js';
 import { saveSpeakersPreset, saveSourcesPreset } from './presetSaver.js';
 import { loadSpeakersPreset, loadSourcesPreset } from './presetLoader.js';
 import { syncMaxDictionaries } from './maxSync.js';
-import { sendUpdateToMax, sendSpeakersLoadedToMax, sendOmnifontesLoadedToMax } from './max.js'; // <--- aggiunto
+import { sendSpeakersLoadedToMax, sendOmnifontesLoadedToMax } from './max.js'; // <--- aggiunto
 import { ConditionalLinesManager } from './ConditionalLinesManager.js';
 
 // Initialize ConditionalLinesManager
@@ -52,7 +52,6 @@ function initializePovCursor() {
       // Don't add to objToBeDetected initially since it's invisible
       createMenu();
       setTimeout(syncMaxDictionaries, 50);
-      sendUpdateToMax();
       
       console.log('POV Cursor model loaded and initialized');
     },
@@ -148,7 +147,6 @@ document.addEventListener('DOMContentLoaded', () => {
       loadGenericGltf('./modelli/galleriaGLTF/scultura.glb', nome, 0.045, -3.5, -0.7, 0.5);
       createMenu();
       setTimeout(syncMaxDictionaries, 50);
-      sendUpdateToMax(); // <--- aggiunto
     });
   }
 
@@ -165,7 +163,6 @@ document.addEventListener('DOMContentLoaded', () => {
       loadObj('./modelli/galleriaOBJ/speaker3dec.obj', nome, goochMaterialSp, 0.045, 0., 0, 1.2);
       createMenu();
       setTimeout(() => syncMaxDictionaries('altoparlanti'), 50);
-      sendUpdateToMax(); // <--- aggiunto
     });
   }
 
@@ -177,7 +174,6 @@ document.addEventListener('DOMContentLoaded', () => {
       loadObj('./modelli/galleriaOBJ/halo2_lowpoly.obj', nome, goochMaterialSp, 0.15, 0., 0, 1.2);
       createMenu();
       setTimeout(syncMaxDictionaries, 50);
-      sendUpdateToMax(); // <--- aggiunto
     });
   }
 
@@ -189,7 +185,6 @@ document.addEventListener('DOMContentLoaded', () => {
       loadObj('./modelli/galleriaOBJ/arrow.obj', nome, goochMaterialArrow, 0.045, 0., 0., 1.2);
       createMenu();
       setTimeout(syncMaxDictionaries, 50);
-      sendUpdateToMax(); // <--- aggiunto
     });
   }
 
@@ -201,7 +196,6 @@ document.addEventListener('DOMContentLoaded', () => {
       loadObj('./modelli/galleriaOBJ/cloudDec.obj', nome, goochMaterialSp, 0.035, 0., 0, 1.2);
       createMenu();
       setTimeout(syncMaxDictionaries, 50);
-      sendUpdateToMax(); // <--- aggiunto
     });
   }
 
@@ -226,7 +220,6 @@ document.addEventListener('DOMContentLoaded', () => {
       objToBeDetected.push(mesh);
       createMenu();
       setTimeout(() => syncMaxDictionaries('omnifonti'), 50);
-      sendUpdateToMax(); // <--- aggiunto
     });
   }
 
@@ -248,7 +241,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         createMenu(); // Update menu to reflect visibility change
         setTimeout(syncMaxDictionaries, 50); // Sync immediately - will always include POV Cursor due to alwaysInDict flag
-        sendUpdateToMax();
       } else {
         // Initialize if not already loaded
         initializePovCursor();
@@ -284,7 +276,6 @@ document.addEventListener('DOMContentLoaded', () => {
       multimenu.style.opacity = 0;
       multimenu.style.pointerEvents = "none";
       setTimeout(syncMaxDictionaries, 50);
-      sendUpdateToMax(); // <--- aggiunto
     });
   }
   if (closeMultimenu && multimenu) {
@@ -304,7 +295,6 @@ document.addEventListener('DOMContentLoaded', () => {
       multimenu.style.opacity = 0;
       multimenu.style.pointerEvents = "none";
       setTimeout(syncMaxDictionaries, 50);
-      sendUpdateToMax(); // <--- aggiunto
     });
   }
 
@@ -354,7 +344,6 @@ document.addEventListener('DOMContentLoaded', () => {
       scene.add(group);
       objToBeDetected.push(line);
       createMenu();
-      sendUpdateToMax(); // <--- aggiunto
       // syncMaxDictionaries() viene già chiamata dopo la funzione
   }
 
@@ -378,7 +367,6 @@ document.addEventListener('DOMContentLoaded', () => {
       objToBeDetected.push(mesh);
       createMenu();
       syncMaxDictionaries();
-      sendUpdateToMax(); // <--- aggiunto
   }
 
   // Funzione per rimuovere il modello architettura dalla scena

@@ -4,7 +4,7 @@ import { goochMaterialSp, goochMaterialArrow, dashedMaterial, dashedMaterialB, d
 import * as THREE from 'three';
 import { createMenu } from './objmenu.js';
 import { syncMaxDictionaries } from './maxSync.js';
-import { sendUpdateToMax, sendSpeakersLoadedToMax, sendOmnifontesLoadedToMax } from './max.js'; // <--- aggiunto
+import { sendSpeakersLoadedToMax, sendOmnifontesLoadedToMax } from './max.js'; // <--- aggiunto
 
 // Utility per rimuovere oggetti di una tipologia
 function removeObjectsByPrefix(prefix) {
@@ -60,7 +60,6 @@ export async function loadSpeakersPreset() {
     
     // Ricrea altoparlante
     loadObj('./modelli/galleriaOBJ/speaker3dec.obj', displayName, goochMaterialSp, 0.045, position.x, position.z, position.y, rotation);
-    sendUpdateToMax();
   }
   
   createMenu();
@@ -122,11 +121,9 @@ export async function loadSourcesPreset() {
       }
       scene.add(mesh);
       objToBeDetected.push(mesh);
-      sendUpdateToMax();
     } else if (objectName.startsWith('Orifonte')) {
       // Freccia
       loadObj('./modelli/galleriaOBJ/arrow.obj', displayName, goochMaterialArrow, 0.045, position.x, position.z, position.y, rotation);
-      sendUpdateToMax();
     } else if (objectName.startsWith('Zona')) {
       // Zona (alternanza materiali)
       const index = zoneCount % materials.length;
@@ -168,7 +165,6 @@ export async function loadSourcesPreset() {
       }
       scene.add(group);
       objToBeDetected.push(line);
-      sendUpdateToMax();
     }
   }
   

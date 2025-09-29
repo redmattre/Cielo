@@ -1,3 +1,6 @@
+    // Se il gruppo scompare, nascondi l'handle
+    groupScaleUIDiv.hide();
+import groupScaleUIDiv from './src/GroupScaleUIDiv.js';
 import * as THREE from 'three';
 import { renderer, objToBeDetected, currentCamera, scene, control, updateStato3, orbit } from './setup';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
@@ -282,6 +285,7 @@ function processMouseRaycasting(event) {
             sendLastHoveredObjectToMax(group.name || 'Gruppo di trasformazione');
             updateInfoText(group.name || 'Gruppo di trasformazione');
             highlightMenuItemByObject(group);
+            // Do not hide groupScaleUIDiv here (keep visible if S is active)
         } else if (hovered.name === 'Gruppo di trasformazione') {
             // Hover diretto sul gruppo
             outlinePass.selectedObjects = hovered.children;
@@ -306,6 +310,17 @@ function processMouseRaycasting(event) {
         // NON resettiamo lastHoveredObject qui, così rimane disponibile per i tasti
         sendLastHoveredObjectToMax(null);
         highlightMenuItemByObject(null);
+        // Nascondi il handle solo se NON c'è un gruppo selezionato
+        const hovered = window.raycasterGlobals?.lastHoveredObject || window.raycasterGlobals?.currentSelectedObject;
+        let isGroup = false;
+        if (hovered) {
+            if (hovered.name === 'Gruppo di trasformazione') isGroup = true;
+            else if (hovered.parent && hovered.parent.name === 'Gruppo di trasformazione') isGroup = true;
+        }
+        if (!isGroup && !groupScaleUIDiv.isDragging) {
+            console.log('[Raycaster] Chiamo groupScaleUIDiv.hide() perché nessun gruppo selezionato');
+            groupScaleUIDiv.hide();
+        }
     }
 }
 
@@ -398,6 +413,7 @@ let selectedObjects = [];
 let isDragging = false;
 let dragStart = null;
 let dragEnd = null;
+let selectionMode = 'default'; // 'omni' o 'speaker'
 const selectionRect = document.getElementById('selection-rectangle');
 
 // Disegna il rettangolo di selezione
@@ -415,6 +431,19 @@ function updateSelectionRect() {
     selectionRect.style.top = y + 'px';
     selectionRect.style.width = w + 'px';
     selectionRect.style.height = h + 'px';
+    selectionRect.style.borderRadius = '4px';
+    // Determina la direzione del drag
+    if (dragEnd.y > dragStart.y) {
+        // Alto -> basso: blu, omnifonti/orifonti
+        selectionRect.style.borderColor = '#4488ff';
+        selectionRect.style.background = 'rgba(68,136,255,0.08)';
+        selectionMode = 'omni';
+    } else {
+        // Basso -> alto: verde, altoparlanti
+        selectionRect.style.borderColor = '#ce572cff';
+        selectionRect.style.background = 'rgba(187, 110, 68, 0.08)';
+        selectionMode = 'speaker';
+    }
 }
 
 // Seleziona oggetti nel rettangolo
@@ -427,11 +456,12 @@ function selectObjectsInRect(start, end) {
 
     selectedObjects = [];
     objToBeDetected.forEach(obj => {
+        // Filtro per tipo
+        let isOmni = obj.name && (obj.name.toLowerCase().includes('omnifonte') || obj.name.toLowerCase().includes('orifonte'));
+        let isSpeaker = obj.name && obj.name.toLowerCase().includes('altoparlante');
         // Ottieni posizione proiettata
         let target = obj;
-        // Se obj è un gruppo o Object3D senza geometria, cerca una mesh figlia per la posizione
         if (!obj.isMesh && obj.children && obj.children.length > 0) {
-            // Cerca la prima mesh figlia
             const meshChild = obj.children.find(child => child.isMesh);
             if (meshChild) target = meshChild;
         }
@@ -440,7 +470,8 @@ function selectObjectsInRect(start, end) {
         const sx = (screenPos.x * 0.5 + 0.5) * window.innerWidth;
         const sy = (-screenPos.y * 0.5 + 0.5) * window.innerHeight;
         if (sx >= minX && sx <= maxX && sy >= minY && sy <= maxY) {
-            selectedObjects.push(obj);
+            if (selectionMode === 'omni' && isOmni) selectedObjects.push(obj);
+            else if (selectionMode === 'speaker' && isSpeaker) selectedObjects.push(obj);
         }
     });
     updateTempGroup();
@@ -610,9 +641,31 @@ renderer.domElement.addEventListener('pointerup', (event) => {
             // Click singolo
             const intersected = getIntersectedObject(event);
             if (intersected) {
-                clearSelection();
-                selectedObjects = [intersected];
-                updateTempGroup();
+                // Se l'oggetto fa parte di un gruppo di trasformazione, seleziona il gruppo e attacca i transform controls al gruppo
+                if (intersected.parent && intersected.parent.type === 'Group' && intersected.parent.name === 'Gruppo di trasformazione') {
+                    const gruppo = intersected.parent;
+                    // Seleziona il gruppo
+                    selectedObjects = [gruppo];
+                    if (outlinePass) outlinePass.selectedObjects = gruppo.children;
+                    currentSelectedObject = gruppo;
+                    lastHoveredObject = gruppo;
+                    sendLastHoveredObjectToMax(gruppo.name || 'Gruppo di trasformazione');
+                    updateInfoText(gruppo.name || 'Gruppo di trasformazione');
+                    highlightMenuItemByObject(gruppo);
+                    // Attacca i transform controls al gruppo
+                    control.attach(gruppo);
+                    setRaycasterActiveForTransformControls(false);
+                    orbit.enabled = false;
+                    // FIX: pulisci subito l'outline per evitare glitch grafico
+                    if (outlinePass) outlinePass.selectedObjects = [];
+                    if (window.raycasterComposer) window.raycasterComposer.render();
+                    if (window.updateStato) window.updateStato('Spostamento');
+                } else {
+                    // Se non è in gruppo, seleziona normalmente
+                    clearSelection();
+                    selectedObjects = [intersected];
+                    updateTempGroup();
+                }
             } else {
                 clearSelection();
             }
@@ -746,29 +799,33 @@ function handleTransformClick(event) {
     } else {
         // Click nel vuoto: stacca transform controls se attaccati
         if (control && control.object) {
+            // Se l'oggetto attaccato è un gruppo di trasformazione, riaggiungi tutti i figli alla scena
+            if (control.object.type === 'Group' && control.object.name === 'Gruppo di trasformazione') {
+                control.object.children.slice().forEach(obj => {
+                    obj.updateMatrixWorld(true);
+                    const worldPos = new THREE.Vector3();
+                    obj.getWorldPosition(worldPos);
+                    control.object.remove(obj);
+                    scene.add(obj);
+                    obj.position.copy(worldPos);
+                });
+                scene.remove(control.object);
+            }
             control.detach();
-            
-            // Riabilita orbit controls
             orbit.enabled = true;
-            
-            // Reset COMPLETO dello stato per evitare interferenze
             outlinePass.selectedObjects = [];
             currentSelectedObject = null;
             lastHoveredObject = null;
-            
-            // IMPORTANTE: Prima pulisci l'override, POI riabilita il raycaster
             clearTransformControlsOverride();
             setRaycasterActive(true);
-            
-            // Aggiorna UI
             updateMenu();
             updateStato3();
-            
-            // Nascondi ghostButton se visibile
             const ghost = document.getElementById('ghostButton');
             if (ghost) {
                 ghost.style.display = 'none';
             }
+            // Nascondi anche l'handle di scala gruppo
+            groupScaleUIDiv.hide();
         }
     }
 }

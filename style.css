@@ -1,3 +1,11 @@
+/* Group Scale UI Handle Styles */
+#group-scale-ui-handle {
+  z-index: 10000;
+  transition: border-color 0.2s;
+}
+#group-scale-ui-handle:active {
+  border-color: #0078d7;
+}
 :root {
   --fondaleBianco: #d6d6d6;
   --fondaleBianco: #d6d6d6;

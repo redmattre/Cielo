@@ -7,6 +7,7 @@ import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
 import { standardMat, phongMat, dashedLineMat, dashedMaterial, solidMaterial, goochMaterial, goochMaterialArrow } from './materials.js';
 import { loadObj } from './loaders.js';
 import { updateMenu } from './objmenu.js';
+import groupScaleUIDiv from './src/GroupScaleUIDiv.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
@@ -128,6 +129,7 @@ export function init() {
         switch (event.key) {
             // === CAMERA SWITCHING ===
             case '1': // Camera prospettica
+                groupScaleUIDiv.hide();
                 currentCamera = cameraPersp;
                 orbit.enabled = true;
                 orbitOrtho.enabled = false;
@@ -145,6 +147,7 @@ export function init() {
                 break;
 
             case '2': // Camera ortogonale - Pianta
+                groupScaleUIDiv.hide();
                 currentCamera = cameraOrtho;
                 orbit.enabled = false;
                 orbitOrtho.enabled = true;
@@ -165,6 +168,7 @@ export function init() {
                 break;
 
             case '3': // Camera ortogonale - Fronte
+                groupScaleUIDiv.hide();
                 currentCamera = cameraOrtho;
                 orbit.enabled = false;
                 orbitOrtho.enabled = true;
@@ -185,6 +189,7 @@ export function init() {
                 break;
 
             case '4': // Camera ortogonale - Lato
+                groupScaleUIDiv.hide();
                 currentCamera = cameraOrtho;
                 orbit.enabled = false;
                 orbitOrtho.enabled = true;
@@ -285,26 +290,15 @@ export function init() {
 
             case 's':
                 const functions_s = getRaycasterFunctions();
-                const targetForTransform_s = functions_s.lastHoveredObject || functions_s.currentSelectedObject;
-                
-                if (targetForTransform_s) {
-                    // Modalità raycaster: attacca a oggetto selezionato + imposta modalità scale
-                    const targetObject = targetForTransform_s.parent?.isGroup ? targetForTransform_s.parent : targetForTransform_s;
-                    control.setMode('scale'); // IMPORTANTE: Imposta modalità prima di attach
-                    control.attach(targetObject);
-                    // Usa funzione dedicata per transform controls
-                    if (window.raycasterGlobals?.setRaycasterActiveForTransformControls) {
-                        window.raycasterGlobals.setRaycasterActiveForTransformControls(false);
-                    }
-                    orbit.enabled = false;
-                    
-                    // Ignora il prossimo Escape per evitare conflitti
-                    ignoreNextEscape = true;
-                    setTimeout(() => { ignoreNextEscape = false; }, 100);
-                    
-                    if (window.raycasterGlobals?.outlinePass) {
-                        window.raycasterGlobals.outlinePass.selectedObjects = [];
-                    }
+                const hovered = functions_s.lastHoveredObject;
+                let isGroup = false;
+                if (hovered && hovered.name === 'Gruppo di trasformazione') isGroup = true;
+                // Mostra il handle solo se il gruppo è selezionato e la camera è ortogonale-top
+                if (isGroup && currentCamera && currentCamera.isOrthographicCamera && currentCamera.position.y > Math.abs(currentCamera.position.x) && currentCamera.position.y > Math.abs(currentCamera.position.z)) {
+                    if (control && control.object) control.detach();
+                    orbit.enabled = true;
+                    groupScaleUIDiv.show(hovered);
+                    updateStato('Scala Gruppo XY');
                 } else {
                     control.setMode('scale');
                     const ghost = getGhostButton();
@@ -312,8 +306,8 @@ export function init() {
                         ghost.style.display = 'block';
                         ghost.style.right = '11.5rem';
                     }
+                    updateStato('Scala');
                 }
-                updateStato('Scala');
                 break;
 
             case 'Escape':
@@ -356,6 +350,7 @@ export function init() {
                 functions_esc.lastHoveredObject = null;
                 
                 functions_esc.updateMenu();
+                groupScaleUIDiv.hide();
                 break;
 
             // === DUPLICAZIONE OGGETTO ===

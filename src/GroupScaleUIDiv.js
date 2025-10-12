@@ -1,5 +1,7 @@
 // src/GroupScaleUIDiv.js
 // Draggable UI div for group coordinate scaling in ortho-top view
+import * as THREE from 'three';
+import { syncMaxDictionaries } from '../maxSync.js';
 
 
 class GroupScaleUIDiv {
@@ -118,6 +120,12 @@ class GroupScaleUIDiv {
                     child.userData._originalPos.copy(child.position);
                 }
             });
+            // Se il gruppo contiene solo altoparlanti, invia update a Max
+            const allSpeakers = this.group.children.length > 0 && this.group.children.every(child => child.name && child.name.toLowerCase().includes('altoparlante'));
+            if (allSpeakers && window.max && window.max.outlet) {
+                // Aggiorna dizionario e invia update finale
+                syncMaxDictionaries('update-altoparlanti');
+            }
         }
     }
 
@@ -133,6 +141,36 @@ class GroupScaleUIDiv {
                 child.position.z = orig.z * scaleY;
             }
         });
+
+        // Aggiorna matrici world per posizioni globali consistenti
+        this.group.updateMatrixWorld(true);
+
+        const children = this.group.children;
+        if (!children.length) return;
+
+        const allOmni = children.every(c => c.name && (c.name.toLowerCase().includes('omnifonte') || c.name.toLowerCase().includes('orifonte')));
+        const allSpeakers = children.every(c => c.name && c.name.toLowerCase().includes('altoparlante'));
+
+        // Solo omnifonti inviano outlet realtime durante scaling
+        if (allOmni && window.max && window.max.outlet) {
+            children.forEach(child => {
+                const worldPos = new THREE.Vector3();
+                child.getWorldPosition(worldPos);
+                let index = 1;
+                const match = child.name.match(/^(.*?)[\s_-]?(\d+)$/);
+                if (match) index = parseInt(match[2], 10);
+                const x = worldPos.x;
+                const z = worldPos.z;
+                const y = worldPos.y;
+                const distanceXY = Math.sqrt(x * x + z * z);
+                let angleDeg = Math.atan2(z, x) * (180 / Math.PI) - 90;
+                if (angleDeg < 0) angleDeg += 360;
+                window.max.outlet('Omnifonte', index, x, z, y, angleDeg, distanceXY);
+            });
+        }
+
+        // Aggiornamento dizionari continuo per riflettere le posizioni dei figli (anche altoparlanti)
+        syncMaxDictionaries();
     }
 
     // Chiamare questa funzione quando gli oggetti vengono riaggiunti alla scena

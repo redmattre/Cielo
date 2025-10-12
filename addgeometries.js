@@ -185,6 +185,13 @@ document.addEventListener('DOMContentLoaded', () => {
       loadObj('./modelli/galleriaOBJ/arrow.obj', nome, goochMaterialArrow, 0.045, 0., 0., 1.2);
       createMenu();
       setTimeout(syncMaxDictionaries, 50);
+      // Invia subito coordinate Orifonte
+      setTimeout(() => {
+        const obj = scene.children.find(o => o.name === nome);
+        if (obj && window.max && window.max.outlet) {
+          sendImmediateOmniLike(obj);
+        }
+      }, 60);
     });
   }
 
@@ -220,6 +227,12 @@ document.addEventListener('DOMContentLoaded', () => {
       objToBeDetected.push(mesh);
       createMenu();
       setTimeout(() => syncMaxDictionaries('omnifonti'), 50);
+      // Invia subito coordinate Omnifonte
+      setTimeout(() => {
+        if (window.max && window.max.outlet) {
+          sendImmediateOmniLike(mesh);
+        }
+      }, 60);
     });
   }
 
@@ -367,7 +380,36 @@ document.addEventListener('DOMContentLoaded', () => {
       objToBeDetected.push(mesh);
       createMenu();
       syncMaxDictionaries();
+      // Se è Omnifonte / Orifonte invia subito coordinate
+      if (/^(Omnifonte|Orifonte)\s/i.test(name)) {
+        setTimeout(() => {
+          if (window.max && window.max.outlet) {
+            sendImmediateOmniLike(mesh);
+          }
+        }, 40);
+      }
   }
+
+// Helper per inviare coordinate iniziali di Omnifonte/Orifonte
+function sendImmediateOmniLike(obj) {
+  if (!obj || !obj.name) return;
+  const lower = obj.name.toLowerCase();
+  if (!(lower.includes('omnifonte') || lower.includes('orifonte'))) return;
+  obj.updateMatrixWorld(true);
+  const pos = new THREE.Vector3();
+  obj.getWorldPosition(pos);
+  // Estrai index
+  let index = 1;
+  const match = obj.name.match(/^(.*?)[\s_-]?(\d+)$/);
+  if (match) index = parseInt(match[2], 10);
+  const x = pos.x;
+  const z = pos.z;
+  const y = pos.y;
+  const distanceXY = Math.sqrt(x * x + z * z);
+  let angleDeg = Math.atan2(z, x) * (180 / Math.PI) - 90;
+  if (angleDeg < 0) angleDeg += 360;
+  window.max.outlet('Omnifonte', index, x, z, y, angleDeg, distanceXY);
+}
 
   // Funzione per rimuovere il modello architettura dalla scena
   function removeArchitetturaModel() {

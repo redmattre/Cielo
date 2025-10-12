@@ -1,5 +1,6 @@
 import { objToBeDetected, scene } from './setup.js';
 import { sendSpeakersLoadedToMax, sendOmnifontesLoadedToMax, sendSpeakersUpdatedToMax } from './max.js';
+import * as THREE from 'three';
 
 function extractDataByPrefix(prefix) {
     const result = {};
@@ -26,50 +27,72 @@ function extractDataByPrefix(prefix) {
 }
 
 function addObjectToResult(obj, result) {
-    // Prendi il parent se è un group, altrimenti l'oggetto stesso
-    const target = obj.parent && obj.parent.type === 'Group' ? obj.parent : obj;
     // Sostituisci gli spazi con underscore nel nome
     const safeName = obj.name.replace(/\s+/g, '_');
-    
+
+    // Distinzione: per Omnifonte (e POV Cursor) manteniamo comportamento precedente (usa parent se group)
+    const isOmniLike = obj.name.startsWith('Omnifonte') || obj.name.startsWith('POV Cursor') || obj.name.startsWith('Orifonte');
+    let target = obj;
+    if (isOmniLike && obj.parent && obj.parent.type === 'Group') {
+        target = obj.parent; // Mantieni semantica esistente per omnifonti/orifonti/pov
+    }
+
+    // Per Altoparlanti dentro un gruppo, vogliamo la loro world position reale (non quella del parent)
+    // Anche per altri tipi non-omni usiamo direttamente l'oggetto.
+    obj.updateMatrixWorld(true);
+    const worldPos = new THREE.Vector3();
+    obj.getWorldPosition(worldPos);
+    const worldQuat = new THREE.Quaternion();
+    const worldScale = new THREE.Vector3();
+    obj.matrixWorld.decompose(worldPos, worldQuat, worldScale);
+
+    // Rotazioni: estrai Euler dallo quaternion (ordine predefinito Three.js)
+    const worldEuler = new THREE.Euler().setFromQuaternion(worldQuat, 'XYZ');
+
+    // Se stiamo usando parent (solo per omni-like), sovrascrivi con parent local transforms come prima
+    let positionSource = worldPos;
+    let rotationSource = worldEuler;
+    let scaleSource = worldScale;
+    if (target !== obj) {
+        // Comportamento legacy per omnifonte/orifonte/pov cursor
+        positionSource = target.position;
+        rotationSource = target.rotation;
+        scaleSource = target.scale;
+    }
+
     const objData = {
         position: {
-            x: target.position.x,
-            y: target.position.z, // invertito
-            z: target.position.y  // invertito
+            x: positionSource.x,
+            y: positionSource.z, // invertito
+            z: positionSource.y  // invertito
         },
         rotation: {
-            x: target.rotation.x,
-            y: target.rotation.z, // invertito
-            z: target.rotation.y  // invertito
+            x: rotationSource.x,
+            y: rotationSource.z, // invertito
+            z: rotationSource.y  // invertito
         },
         scale: {
-            x: target.scale.x,
-            y: target.scale.z, // invertito
-            z: target.scale.y  // invertito
+            x: scaleSource.x,
+            y: scaleSource.z, // invertito
+            z: scaleSource.y  // invertito
         }
     };
-    
-    // Add special properties for certain object types
+
     if (obj.name.startsWith('Omnifonte') || obj.name.startsWith('POV Cursor')) {
-        // Calculate distance from center (0,0,0)
         const distance = Math.sqrt(
-            target.position.x * target.position.x + 
-            target.position.y * target.position.y + 
-            target.position.z * target.position.z
+            positionSource.x * positionSource.x + 
+            positionSource.y * positionSource.y + 
+            positionSource.z * positionSource.z
         );
-        
-        // Calculate angle in XZ plane (Y is up)
-        const angle = Math.atan2(target.position.z, target.position.x) * 180 / Math.PI;
-        
+        const angle = Math.atan2(positionSource.z, positionSource.x) * 180 / Math.PI;
         objData.distance = distance;
         objData.angle = angle;
     }
-    
-    // Add visibility property for POV Cursor
+
     if (obj.name.startsWith('POV Cursor')) {
         objData.visible = target.visible;
     }
-    
+
     result[safeName] = objData;
 }
 

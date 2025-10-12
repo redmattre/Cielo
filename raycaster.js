@@ -640,32 +640,37 @@ renderer.domElement.addEventListener('pointerup', (event) => {
         } else {
             // Click singolo
             const intersected = getIntersectedObject(event);
-            if (intersected) {
-                // Se l'oggetto fa parte di un gruppo di trasformazione, seleziona il gruppo e attacca i transform controls al gruppo
-                if (intersected.parent && intersected.parent.type === 'Group' && intersected.parent.name === 'Gruppo di trasformazione') {
-                    const gruppo = intersected.parent;
-                    // Seleziona il gruppo
-                    selectedObjects = [gruppo];
-                    if (outlinePass) outlinePass.selectedObjects = gruppo.children;
-                    currentSelectedObject = gruppo;
-                    lastHoveredObject = gruppo;
-                    sendLastHoveredObjectToMax(gruppo.name || 'Gruppo di trasformazione');
-                    updateInfoText(gruppo.name || 'Gruppo di trasformazione');
-                    highlightMenuItemByObject(gruppo);
-                    // Attacca i transform controls al gruppo
-                    control.attach(gruppo);
-                    setRaycasterActiveForTransformControls(false);
-                    orbit.enabled = false;
-                    // FIX: pulisci subito l'outline per evitare glitch grafico
-                    if (outlinePass) outlinePass.selectedObjects = [];
-                    if (window.raycasterComposer) window.raycasterComposer.render();
-                    if (window.updateStato) window.updateStato('Spostamento');
-                } else {
-                    // Se non è in gruppo, seleziona normalmente
-                    clearSelection();
-                    selectedObjects = [intersected];
-                    updateTempGroup();
-                }
+                        if (intersected) {
+                            // Risali la gerarchia per trovare il gruppo di trasformazione
+                            let group = null;
+                            let obj = intersected;
+                            while (obj) {
+                                if (obj.parent && obj.parent.type === 'Group' && obj.parent.name === 'Gruppo di trasformazione') {
+                                    group = obj.parent;
+                                    break;
+                                }
+                                obj = obj.parent;
+                            }
+                            if (group) {
+                                selectedObjects = [group];
+                                if (outlinePass) outlinePass.selectedObjects = group.children;
+                                currentSelectedObject = group;
+                                lastHoveredObject = group;
+                                sendLastHoveredObjectToMax(group.name || 'Gruppo di trasformazione');
+                                updateInfoText(group.name || 'Gruppo di trasformazione');
+                                highlightMenuItemByObject(group);
+                                control.attach(group);
+                                setRaycasterActiveForTransformControls(false);
+                                orbit.enabled = false;
+                                if (outlinePass) outlinePass.selectedObjects = [];
+                                if (window.raycasterComposer) window.raycasterComposer.render();
+                                if (window.updateStato) window.updateStato('Spostamento');
+                            } else {
+                                // Se non è in gruppo, seleziona normalmente
+                                clearSelection();
+                                selectedObjects = [intersected];
+                                updateTempGroup();
+                            }
             } else {
                 clearSelection();
             }
@@ -889,49 +894,73 @@ window.addEventListener('beforeunload', () => {
 
 // --- INVIO A MAX/MSP DEL MOVIMENTO MANUALE ---
 if (control) {
-    // Evento change per aggiornamento continuo delle coordinate (senza notifiche)
+    // Listener unico per cambiamenti: solo omnifonti mandano outlet; altoparlanti aggiornano solo dizionari
     control.addEventListener('change', function () {
-        if (control.object) {
-            const obj = control.object;
-            const fullName = obj.name || '';
-            // Estrai nome e index (es: "Omnifonte 1" -> nome: "Omnifonte", index: 1)
-            const match = fullName.match(/^(.*?)[\s_-]?(\d+)$/);
-            let name = fullName;
-            let index = 1;
-            if (match) {
-                name = match[1].trim();
-                index = parseInt(match[2], 10);
+        if (!control.object) return;
+        const target = control.object;
+        // Caso gruppo
+        if (target.type === 'Group' && target.name === 'Gruppo di trasformazione') {
+            const children = target.children || [];
+            const allOmni = children.length > 0 && children.every(ch => ch.name && (ch.name.toLowerCase().includes('omnifonte') || ch.name.toLowerCase().includes('orifonte')));
+            const allSpeakers = children.length > 0 && children.every(ch => ch.name && ch.name.toLowerCase().includes('altoparlante'));
+            if (allOmni && window.max && window.max.outlet) {
+                // Invia realtime solo per omnifonti
+                children.forEach(child => {
+                    const worldPos = new THREE.Vector3();
+                    child.getWorldPosition(worldPos);
+                    let index = 1;
+                    const match = child.name.match(/^(.*?)[\s_-]?(\d+)$/);
+                    if (match) index = parseInt(match[2], 10);
+                    const x = worldPos.x;
+                    const z = worldPos.z;
+                    const y = worldPos.y;
+                    const distanceXY = Math.sqrt(x * x + z * z);
+                    let angleDeg = Math.atan2(z, x) * (180 / Math.PI) - 90;
+                    if (angleDeg < 0) angleDeg += 360;
+                    window.max.outlet('Omnifonte', index, x, z, y, angleDeg, distanceXY);
+                });
             }
-            const x = obj.position.x;
-            const y = obj.position.z;
-            const elevazione = obj.position.y;
-            const distanceXY = Math.sqrt(x * x + y * y);
-            let angleDeg = Math.atan2(y, x) * (180 / Math.PI) - 90;
-            if (angleDeg < 0) angleDeg += 360;
-            if (window.max && window.max.outlet) {
-                window.max.outlet(name, index, x, y, elevazione, angleDeg, distanceXY);
-            }
-            
-            // Solo aggiornamento dizionari senza notifiche speciali durante il movimento
+            // Per altoparlanti nessun outlet realtime
             syncMaxDictionaries();
+            return;
         }
-    });
-    
-    // Evento mouseUp per notifica finale solo per altoparlanti
-    control.addEventListener('mouseUp', function () {
-        if (control.object) {
-            const obj = control.object;
-            const fullName = obj.name || '';
+        // Caso singolo oggetto
+        const fullName = target.name || '';
+        const isOmni = fullName.toLowerCase().includes('omnifonte') || fullName.toLowerCase().includes('orifonte');
+        const isSpeaker = fullName.toLowerCase().includes('altoparlante');
+        if (isOmni && window.max && window.max.outlet) {
+            // Invia dati singolo omnifonte
+            const x = target.position.x;
+            const z = target.position.z;
+            const y = target.position.y;
+            let index = 1;
             const match = fullName.match(/^(.*?)[\s_-]?(\d+)$/);
-            let name = fullName;
-            if (match) {
-                name = match[1].trim();
-            }
-            
-            // Invia notifica "update Altoparlanti" solo alla fine del movimento di un altoparlante
-            if (name === 'Altoparlante') {
+            if (match) index = parseInt(match[2], 10);
+            const distanceXY = Math.sqrt(x * x + z * z);
+            let angleDeg = Math.atan2(z, x) * (180 / Math.PI) - 90;
+            if (angleDeg < 0) angleDeg += 360;
+            window.max.outlet('Omnifonte', index, x, z, y, angleDeg, distanceXY);
+        }
+        // Se è un altoparlante singolo: nessun outlet realtime
+        syncMaxDictionaries();
+    });
+
+    // Listener mouseUp: invia update-altoparlanti solo alla fine per altoparlanti (singolo o gruppo)
+    control.addEventListener('mouseUp', function () {
+        if (!control.object) return;
+        const target = control.object;
+        if (target.type === 'Group' && target.name === 'Gruppo di trasformazione') {
+            const children = target.children || [];
+            const allSpeakers = children.length > 0 && children.every(ch => ch.name && ch.name.toLowerCase().includes('altoparlante'));
+            if (allSpeakers) {
                 syncMaxDictionaries('update-altoparlanti');
             }
+            return;
+        }
+        const fullName = target.name || '';
+        const isSpeaker = fullName.toLowerCase().includes('altoparlante');
+        if (isSpeaker) {
+            syncMaxDictionaries('update-altoparlanti');
         }
     });
 }
@@ -1032,7 +1061,33 @@ function duplicateObject(original) {
         setTimeout(() => syncMaxDictionaries('altoparlanti'), 50);
     } else if (isOmnifonte) {
         setTimeout(() => syncMaxDictionaries('omnifonti'), 50);
+        // Invia subito anche le coordinate dell'omnifonte appena creato
+        if (window.max && window.max.outlet) {
+            sendOmniPosition(clone);
+        }
     } else {
         setTimeout(syncMaxDictionaries, 50);
     }
+}
+
+// Helper per inviare posizione (e angolo/distanza) di un singolo Omnifonte/Orifonte
+function sendOmniPosition(obj) {
+    if (!obj || !obj.name) return;
+    const nameLower = obj.name.toLowerCase();
+    if (!(nameLower.includes('omnifonte') || nameLower.includes('orifonte'))) return;
+    // Calcola index dal nome ("Omnifonte 3" -> 3)
+    let index = 1;
+    const match = obj.name.match(/^(.*?)[\s_-]?(\d+)$/);
+    if (match) index = parseInt(match[2], 10);
+    // Usa world position in caso sia già in gruppo
+    obj.updateMatrixWorld(true);
+    const worldPos = new THREE.Vector3();
+    obj.getWorldPosition(worldPos);
+    const x = worldPos.x;
+    const z = worldPos.z;
+    const y = worldPos.y;
+    const distanceXY = Math.sqrt(x * x + z * z);
+    let angleDeg = Math.atan2(z, x) * (180 / Math.PI) - 90;
+    if (angleDeg < 0) angleDeg += 360;
+    window.max.outlet('Omnifonte', index, x, z, y, angleDeg, distanceXY);
 }

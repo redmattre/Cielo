@@ -121,9 +121,45 @@ export async function loadSourcesPreset() {
       }
       scene.add(mesh);
       objToBeDetected.push(mesh);
+      // Emit outlet for Omnifonte position
+      if (window.max && window.max.outlet) {
+        // Use same logic as sendImmediateOmniLike
+        mesh.updateMatrixWorld(true);
+        const pos = new THREE.Vector3();
+        mesh.getWorldPosition(pos);
+        let index = 1;
+        const match = mesh.name.match(/^(.*?)[\s_-]?(\d+)$/);
+        if (match) index = parseInt(match[2], 10);
+        const x = pos.x;
+        const z = pos.z;
+        const y = pos.y;
+        const distanceXY = Math.sqrt(x * x + z * z);
+        let angleDeg = Math.atan2(z, x) * (180 / Math.PI) - 90;
+        if (angleDeg < 0) angleDeg += 360;
+        window.max.outlet('Omnifonte', index, x, z, y, angleDeg, distanceXY);
+      }
     } else if (objectName.startsWith('Orifonte')) {
       // Freccia
       loadObj('./modelli/galleriaOBJ/arrow.obj', displayName, goochMaterialArrow, 0.045, position.x, position.z, position.y, rotation);
+      // Emit outlet for Orifonte position (after a short delay to ensure object is loaded)
+      setTimeout(() => {
+        const obj = scene.children.find(o => o.name === displayName);
+        if (obj && window.max && window.max.outlet) {
+          obj.updateMatrixWorld(true);
+          const pos = new THREE.Vector3();
+          obj.getWorldPosition(pos);
+          let index = 1;
+          const match = obj.name.match(/^(.*?)[\s_-]?(\d+)$/);
+          if (match) index = parseInt(match[2], 10);
+          const x = pos.x;
+          const z = pos.z;
+          const y = pos.y;
+          const distanceXY = Math.sqrt(x * x + z * z);
+          let angleDeg = Math.atan2(z, x) * (180 / Math.PI) - 90;
+          if (angleDeg < 0) angleDeg += 360;
+          window.max.outlet('Omnifonte', index, x, z, y, angleDeg, distanceXY);
+        }
+      }, 60);
     } else if (objectName.startsWith('Zona')) {
       // Zona (alternanza materiali)
       const index = zoneCount % materials.length;

@@ -58,6 +58,6 @@ Questo modificatore crea praticamente dei particle. Quindi ci sono una serie di 
 	- Velocità (speed): la velocità con cui si muovono
 	- sfasamento (phase): 
 
-
+- modificatore array path cerchio?
 
 dummy

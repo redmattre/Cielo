@@ -239,13 +239,7 @@ export function createMenu() {
         { key: 'povcursor', label: 'P' }
     ];
 
-    let selectedCategory = localStorage.getItem('cielo_menu_category');
-    
-    // Se non esiste o non è valida, usa la prima categoria
-    if (!selectedCategory || !categories.find(c => c.key === selectedCategory)) {
-        selectedCategory = categories[0].key;
-        localStorage.setItem('cielo_menu_category', selectedCategory);
-    }
+    let selectedCategory = localStorage.getItem('cielo_menu_category') || 'fonti';
 
     // --- Creazione barra categorie ---
     const bar = document.createElement('div');
@@ -326,22 +320,7 @@ export function createMenu() {
 
     // Posiziona l'indicatore DOPO che la barra è nel DOM
     requestAnimationFrame(() => {
-        let idx = categories.findIndex(c => c.key === selectedCategory);
-        // Se non trova la categoria, usa il primo elemento
-        if (idx === -1) {
-            idx = 0;
-            selectedCategory = categories[0].key;
-            localStorage.setItem('cielo_menu_category', selectedCategory);
-        }
-        
-        // Aggiorna gli stili dei bottoni per riflettere la selezione corretta
-        btns.forEach((button, buttonIdx) => {
-            const isActive = buttonIdx === idx;
-            button.style.color = isActive ? 'var(--dettaglio)' : 'var(--testo)';
-            button.style.opacity = isActive ? '0.85' : '0.45';
-            button.classList.toggle('menuCatActive', isActive);
-        });
-        
+        const idx = categories.findIndex(c => c.key === selectedCategory);
         if (btns[idx]) {
             const btn = btns[idx];
             const newLeft = btn.offsetLeft + btn.offsetWidth * 0.1;

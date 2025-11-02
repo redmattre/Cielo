@@ -432,11 +432,10 @@ function createRightMenuTabs() {
   
   // Initialize first tab after all tabs are added
   if (firstTab) {
-    // Usa requestAnimationFrame per assicurarsi che il DOM sia completamente renderizzato
-    requestAnimationFrame(() => {
+    setTimeout(() => {
       firstTab.classList.add('right-tab-active');
       updateRightSliderPosition(firstTab, slider);
-    });
+    }, 0);
   }
   
   return tabContainer;
@@ -467,26 +466,14 @@ function updateRightSliderPosition(activeTab, slider) {
   });
   activeTab.classList.add('right-tab-active');
   
-  // Use requestAnimationFrame to ensure DOM is updated
-  requestAnimationFrame(() => {
+  // Use setTimeout to ensure DOM is updated
+  setTimeout(() => {
     const tabWidth = activeTab.offsetWidth;
     const tabLeft = activeTab.offsetLeft;
     
-    // Se è la prima inizializzazione, disabilita temporaneamente la transizione
-    if (!slider.style.width || slider.style.width === '0px') {
-      slider.style.transition = 'none';
-      slider.style.left = tabLeft + 'px';
-      slider.style.width = tabWidth + 'px';
-      
-      // Riattiva la transizione per future animazioni
-      setTimeout(() => {
-        slider.style.transition = 'left 0.28s cubic-bezier(0.4,0,0.2,1), width 0.28s cubic-bezier(0.4,0,0.2,1)';
-      }, 50);
-    } else {
-      slider.style.left = tabLeft + 'px';
-      slider.style.width = tabWidth + 'px';
-    }
-  });
+    slider.style.left = tabLeft + 'px';
+    slider.style.width = tabWidth + 'px';
+  }, 0);
 }
 
 function switchToRightPanel(panelId) {
@@ -567,11 +554,6 @@ function initializeRightMenu() {
     const newTabs = createRightMenuTabs();
     tabsContainer.appendChild(newTabs);
     console.log('New tab system installed');
-    
-    // Assicuriamoci che il primo pannello sia attivo all'inizio
-    setTimeout(() => {
-      switchToRightPanel('generali');
-    }, 100);
   }
   
   // Create all panel contents for future use (not used now, but kept for consistency)

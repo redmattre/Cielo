@@ -3,7 +3,6 @@ import { dashedMaterial, dashedMaterialB, dashedMaterialC, dashedMaterialD, gooc
 import { currentSelectedObject, setRaycasterActive } from "./raycaster";
 import { currentCamera, changeTheme, control, orbit, orbitOrtho, onWindowResize, ssuper, scene, renderer, changeGrid, render, updateStato, transfo, changeTransfo, updateStato1 } from "./setup";
 import { changeNatMatTransparency, toggleMaterial, toggleModelVisibility, toggleTransparency } from './loadersFIX';
-import { createMenu } from './objmenu_new.js';
 
 let scaleMoveSnap = 0.05;
 let rotationSnapDegrees = 15;
@@ -251,9 +250,6 @@ document.getElementById('seeItemsList').addEventListener('click', (event) => {
         menuList.style.color = "var(--testo)";
         menuList.style.pointerEvents = "all";
         event.target.setAttribute('data-active', 'true');
-        
-        // Inizializza il menu quando viene aperto
-        createMenu();
     }
 });
 

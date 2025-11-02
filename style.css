@@ -643,6 +643,134 @@ input[type='number'] {
   z-index: 11;
 }
 
+/* --- Menu centrale per aggiunta elementi 3D --- */
+#addElementCenterMenu {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--fondale);
+  border: 2px solid var(--dettaglio);
+  border-radius: 15px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  padding: 1.5rem;
+  z-index: 10000;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.3s ease;
+  width: 320px;
+  height: 300px;
+}
+
+#addElementCenterMenu.show {
+  opacity: 1;
+  pointer-events: all;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.add-menu-title {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: var(--testo);
+  text-align: center;
+  margin-bottom: 1rem;
+  letter-spacing: 0.02em;
+}
+
+.add-menu-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 0.8rem;
+  height: calc(100% - 80px);
+  width: 100%;
+}
+
+.add-menu-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--dettaglio);
+  border-radius: 10px;
+  color: var(--testo);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  gap: 0.5rem;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+}
+
+.add-menu-item:hover {
+  background: var(--dettaglio);
+  color: var(--fondale);
+  border-color: var(--testo);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Il quinto elemento (zona) occupa entrambe le colonne dell'ultima riga */
+.add-menu-item:nth-child(5) {
+  grid-column: 1 / -1;
+}
+
+.add-menu-icon {
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.add-menu-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-align: center;
+}
+
+.add-menu-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 1.8rem;
+  height: 1.8rem;
+  background: transparent;
+  border: 1px solid var(--dettaglio);
+  border-radius: 50%;
+  color: var(--testo);
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.add-menu-close:hover {
+  background: var(--dettaglio);
+  color: var(--fondale);
+}
+
+/* Stile per le icone SVG nei bottoni della toolbar */
+#addPovCursor svg, #seeItemsList svg, #metroButton svg {
+  width: 24px !important;
+  height: 24px !important;
+  min-width: 24px !important;
+  min-height: 24px !important;
+  color: var(--testo);
+  display: block !important;
+  flex-shrink: 0 !important;
+}
+
+#addElementMenu svg {
+  width: 24px !important;
+  height: 24px !important;
+  min-width: 24px !important;
+  min-height: 24px !important;
+  color: var(--testo);
+  display: block !important;
+  flex-shrink: 0 !important;
+}
+
 @media (max-width: 600px) {
   .panel-tabs {
     flex-wrap: wrap;

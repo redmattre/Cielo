@@ -296,7 +296,7 @@
   /* border: solid var(--dettaglio) .5px; */
   border-radius: 2px;
   color: var(--testo);
-  padding: 1rem;
+  padding: 1rem 5.5rem 1rem 1rem; /* Aggiunto padding destro per evitare sovrapposizione con toolbar */
   pointer-events: none;
 
   transition: all 0.25s ease;

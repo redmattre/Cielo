@@ -3,6 +3,7 @@ import { dashedMaterial, dashedMaterialB, dashedMaterialC, dashedMaterialD, gooc
 import { currentSelectedObject, setRaycasterActive } from "./raycaster";
 import { currentCamera, changeTheme, control, orbit, orbitOrtho, onWindowResize, ssuper, scene, renderer, changeGrid, render, updateStato, transfo, changeTransfo, updateStato1 } from "./setup";
 import { changeNatMatTransparency, toggleMaterial, toggleModelVisibility, toggleTransparency } from './loadersFIX';
+import { createMenu } from './objmenu_new.js';
 
 let scaleMoveSnap = 0.05;
 let rotationSnapDegrees = 15;
@@ -250,28 +251,13 @@ document.getElementById('seeItemsList').addEventListener('click', (event) => {
         menuList.style.color = "var(--testo)";
         menuList.style.pointerEvents = "all";
         event.target.setAttribute('data-active', 'true');
+        
+        // Inizializza il menu quando viene aperto
+        createMenu();
     }
 });
 
-let moveButton = document.getElementById('moveButton');
-let rotateButton = document.getElementById('rotateButton');
-let scaleButton = document.getElementById('scaleButton');
 let toggleTransButton = document.getElementById('toggleTransButton');
-
-moveButton.addEventListener('click', () => {
-    control.setMode('translate');
-    updateStato('Spostamento (g)');
-});
-
-rotateButton.addEventListener('click', () => {
-    control.setMode('rotate');
-	updateStato('Rotazione (r)');
-});
-
-scaleButton.addEventListener('click', () => {
-    control.setMode('scale');
-	updateStato('Scala (s)');
-});
 
 toggleTransButton.addEventListener('click', () => {
     changeTransfo(!transfo);
@@ -292,59 +278,12 @@ openSideMenu.addEventListener('click', () => {
   } else {
     blackPanel.style.opacity = 1;
     blackPanel.style.pointerEvents = 'all';
-    blackPanel.style.width = '35vw';
+    blackPanel.style.width = '25vw';
     blackPanel.style.color = 'var(--testo)';
   }
 });
 
-// Evidenziatore mobile per tasto attivo nella dock
-const dockTasti = document.querySelector('.dockTasti');
-const dockHighlight = document.getElementById('dockTastiHighlight');
-const moveBtn = document.getElementById('moveButton');
-const rotateBtn = document.getElementById('rotateButton');
-const scaleBtn = document.getElementById('scaleButton');
-const toggleTransBtn = document.getElementById('toggleTransButton');
 
-function showDockHighlight(targetBtn) {
-  if (!targetBtn) return;
-  const top = targetBtn.offsetTop;
-  dockHighlight.style.top = top + 'px';
-  dockHighlight.classList.remove('hide');
-}
-
-function hideDockHighlight() {
-  dockHighlight.classList.add('hide');
-}
-
-// Gestione click UI
-moveBtn.addEventListener('click', () => {
-  showDockHighlight(moveBtn);
-});
-rotateBtn.addEventListener('click', () => {
-  showDockHighlight(rotateBtn);
-});
-scaleBtn.addEventListener('click', () => {
-  showDockHighlight(scaleBtn);
-});
-toggleTransBtn.addEventListener('click', () => {
-  hideDockHighlight();
-});
-
-// Gestione shortcut tastiera
-window.addEventListener('keydown', (event) => {
-  if (event.key === 'g') {
-    showDockHighlight(moveBtn);
-  } else if (event.key === 'r') {
-    showDockHighlight(rotateBtn);
-  } else if (event.key === 's') {
-    showDockHighlight(scaleBtn);
-  } else if (event.key === 'Escape') {
-    hideDockHighlight();
-  }
-});
-
-// Nascondi highlight all'avvio
-hideDockHighlight();
 
 //OPTIMIZATION
 

@@ -17,10 +17,6 @@
     </div>
 
     <div class="dockTasti">
-      <div class="dockTastiHighlight hide" id="dockTastiHighlight"></div>
-      <button title="sposta (g); (esc) per uscire" id="moveButton" class="topButtons" style="display: none;">&#10021;</button>
-      <button title="ruota (r); (esc) per uscire" id="rotateButton" class="topButtons" style="display: none;">R</button>
-      <button title="scala (s); (esc) per uscire" id="scaleButton" class="topButtons" style="display: none;">S</button>
       <button title="chiudi trasformazione" id="toggleTransButton" class="topButtons" style="display: none;">⏚</button>
       <button title="aggiungi aureola" id="addHalo">❍</button>
       <button id="addCloudElement" style="display: none;">☁</button>
@@ -33,7 +29,11 @@
     </div>
     
     <div id="black-panel">
-      <div class="panel-tabs">
+      <div id="new-panel-tabs-container">
+        <!-- New tab system will be inserted here -->
+      </div>
+      <!-- Keep original tabs hidden for now -->
+      <div class="panel-tabs" style="display: none;">
         <button class="panel-tab active" data-panel="generali">G</button>
         <button class="panel-tab" data-panel="plastico">P</button>
         <button class="panel-tab" data-panel="carica">C</button>
@@ -43,128 +43,151 @@
       </div>
       <div class="container">
         <div class="panel-section panel-content" data-panel-content="generali" style="display:block;">
-          <div class="panel-title">Generali</div>
-          <div class="switch-wrapper">
-            <label class="switch">
-              <input type="checkbox" data-id="theme"/>
-              <div></div>
-            </label>
-            <span class="switch-label">Tema Eco</span>
-          </div>
-          <div class="switch-wrapper">
-            <label class="switch">
-              <input type="checkbox" data-id="gridSnapState" checked/>
-              <div></div>
-            </label>
-            <span class="switch-label">Aggancio Griglia</span>
-          </div>
-          <div class="input-wrapper">
-            <label class="multitoggle">
-              <input type='range' min='1' max='3' value='2' step='1' class="n n3" data-id="snapDefinition"/>
-            </label>
-          </div>
-          <div class="switch-wrapper">
-            <label class="switch">
-              <input type="checkbox" data-id="lock"/>
-              <div></div>
-            </label>
-            <span class="switch-label">Diorama</span>
-          </div>
-          <div class="switch-wrapper">
-            <label class="switch">
-              <input type="checkbox" data-id="grid" checked/>
-              <div></div>
-            </label>
-            <span class="switch-label">Super Superficie</span>
-          </div>
-          <div class="input-wrapper">
-            <label class="multitoggle">
-              <input type='range' min='1' max='4' value='2' step='1' class="n n4" data-id="gridsize"/>
-            </label>
-          </div>
-          <!-- Bottoni import preset -->
-          <div class="input-wrapper">
-            <button id="loadSpeakersPresetBtn" class="menuButton">Load Speakers</button>
-          </div>
-          <div class="input-wrapper">
-            <button id="saveSpeakersPresetBtn" class="menuButton">Save Speakers</button>
-          </div>
-          <div class="input-wrapper">
-            <button id="loadSourcesPresetBtn" class="menuButton">Load Sources</button>
-          </div>
-          <div class="input-wrapper">
-            <button id="saveSourcesPresetBtn" class="menuButton">Save Sources</button>
-          </div>
-          <div class="input-wrapper">
-            <button id="resetSceneBtn" class="menuButton">Empty</button>
+          <!-- New system will replace this content -->
+          <div id="new-panel-generali-container"></div>
+          
+          <!-- Keep original elements hidden for backward compatibility -->
+          <div style="display: none;">
+            <div class="switch-wrapper">
+              <label class="switch">
+                <input type="checkbox" data-id="theme"/>
+                <div></div>
+              </label>
+              <span class="switch-label">Tema Eco</span>
+            </div>
+            <div class="switch-wrapper">
+              <label class="switch">
+                <input type="checkbox" data-id="gridSnapState" checked/>
+                <div></div>
+              </label>
+              <span class="switch-label">Aggancio Griglia</span>
+            </div>
+            <div class="input-wrapper">
+              <label class="multitoggle">
+                <input type='range' min='1' max='3' value='2' step='1' class="n n3" data-id="snapDefinition"/>
+              </label>
+            </div>
+            <div class="switch-wrapper">
+              <label class="switch">
+                <input type="checkbox" data-id="lock"/>
+                <div></div>
+              </label>
+              <span class="switch-label">Diorama</span>
+            </div>
+            <div class="switch-wrapper">
+              <label class="switch">
+                <input type="checkbox" data-id="grid" checked/>
+                <div></div>
+              </label>
+              <span class="switch-label">Super Superficie</span>
+            </div>
+            <div class="input-wrapper">
+              <label class="multitoggle">
+                <input type='range' min='1' max='4' value='2' step='1' class="n n4" data-id="gridsize"/>
+              </label>
+            </div>
+            <!-- Bottoni import preset -->
+            <div class="input-wrapper">
+              <button id="loadSpeakersPresetBtn" class="menuButton">Load Speakers</button>
+            </div>
+            <div class="input-wrapper">
+              <button id="saveSpeakersPresetBtn" class="menuButton">Save Speakers</button>
+            </div>
+            <div class="input-wrapper">
+              <button id="loadSourcesPresetBtn" class="menuButton">Load Sources</button>
+            </div>
+            <div class="input-wrapper">
+              <button id="saveSourcesPresetBtn" class="menuButton">Save Sources</button>
+            </div>
+            <div class="input-wrapper">
+              <button id="resetSceneBtn" class="menuButton">Empty</button>
+            </div>
           </div>
         </div>
 
         <div class="panel-section panel-content" data-panel-content="plastico" style="display:none;">
-          <div class="panel-title">Plastico</div>
-          <button class="menuButton" id="loadPlastico">Carica</button>
-          <div class="switch-wrapper">
-            <label class="switch">
-              <input type="checkbox" data-id="archVisibility" checked/>
-              <div></div>
+          <!-- New system will replace this content -->
+          <div id="new-panel-plastico-container"></div>
+          
+          <!-- Keep original elements hidden for backward compatibility -->
+          <div style="display: none;">
+            <div class="panel-title">Plastico</div>
+            <button class="menuButton" id="loadPlastico">Carica</button>
+            <div class="switch-wrapper">
+              <label class="switch">
+                <input type="checkbox" data-id="archVisibility" checked/>
+                <div></div>
+              </label>
+              <span class="switch-label">⏿</span>
+            </div>
+            <label class="multitoggle">
+              <span class="slider-label">Threshold</span>
+              <div class="input-wrapper">
+                <input type='range' min='0' max='120' value='60' step='1' class="n n4" id="plasticoThreshold"/>
+              </div>
             </label>
-            <span class="switch-label">⏿</span>
+            <label class="multitoggle">
+              <span class="slider-label">Line Thickness</span>
+              <div class="input-wrapper">
+                <input type='range' min='0.5' max='10' value='2' step='0.1' class="n n4" id="plasticoThickness"/>
+              </div>
+            </label>
+            <label class="multitoggle">
+              <span class="slider-label">Opacity</span>
+              <div class="input-wrapper">
+                <input type='range' min='0.1' max='1.0' value='0.8' step='0.01' class="n n4" id="plasticoOpacity"/>
+              </div>
+            </label>
           </div>
-          <label class="multitoggle">
-            <span class="slider-label">Threshold</span>
-            <div class="input-wrapper">
-              <input type='range' min='0' max='120' value='60' step='1' class="n n4" id="plasticoThreshold"/>
-            </div>
-          </label>
-          <label class="multitoggle">
-            <span class="slider-label">Line Thickness</span>
-            <div class="input-wrapper">
-              <input type='range' min='0.5' max='10' value='2' step='0.1' class="n n4" id="plasticoThickness"/>
-            </div>
-          </label>
-          <label class="multitoggle">
-            <span class="slider-label">Opacity</span>
-            <div class="input-wrapper">
-              <input type='range' min='0.1' max='1.0' value='0.8' step='0.01' class="n n4" id="plasticoOpacity"/>
-            </div>
-          </label>
         </div>
 
         <div class="panel-section panel-content" data-panel-content="carica" style="display:none;">
-          <div class="panel-title">Carica Modello</div>
-          <button class="button menuButton" id="loadGenericGltf">Carica</button>
+          <div id="new-panel-carica-container"></div>
+          <div style="display: none;">
+            <div class="panel-title">Carica Modello</div>
+            <button class="button menuButton" id="loadGenericGltf">Carica</button>
+          </div>
         </div>
 
         <div class="panel-section panel-content" data-panel-content="zone" style="display:none;">
-          <div class="panel-title">Zone</div>
-          <div class="switch-wrapper">
-            <label class="switch">
-              <input type="checkbox" data-id="zoneVisibility" checked/>
-              <div></div>
-            </label>
-            <span class="switch-label">⏿</span>
+          <div id="new-panel-zone-container"></div>
+          <div style="display: none;">
+            <div class="panel-title">Zone</div>
+            <div class="switch-wrapper">
+              <label class="switch">
+                <input type="checkbox" data-id="zoneVisibility" checked/>
+                <div></div>
+              </label>
+              <span class="switch-label">⏿</span>
+            </div>
           </div>
         </div>
 
         <div class="panel-section panel-content" data-panel-content="altoparlanti" style="display:none;">
-          <div class="panel-title">Altoparlanti</div>
-          <div class="switch-wrapper">
-            <label class="switch">
-              <input type="checkbox" data-id="speakersVisibility" checked/>
-              <div></div>
-            </label>
-            <span class="switch-label">⏿</span>
+          <div id="new-panel-altoparlanti-container"></div>
+          <div style="display: none;">
+            <div class="panel-title">Altoparlanti</div>
+            <div class="switch-wrapper">
+              <label class="switch">
+                <input type="checkbox" data-id="speakersVisibility" checked/>
+                <div></div>
+              </label>
+              <span class="switch-label">⏿</span>
+            </div>
           </div>
         </div>
 
         <div class="panel-section panel-content" data-panel-content="corone" style="display:none;">
-          <div class="panel-title">Corone</div>
-          <div class="switch-wrapper">
-            <label class="switch">
-              <input type="checkbox" data-id="speakersVisibility" checked/>
-              <div></div>
-            </label>
-            <span class="switch-label">⏿</span>
+          <div id="new-panel-corone-container"></div>
+          <div style="display: none;">
+            <div class="panel-title">Corone</div>
+            <div class="switch-wrapper">
+              <label class="switch">
+                <input type="checkbox" data-id="speakersVisibility" checked/>
+                <div></div>
+              </label>
+              <span class="switch-label">⏿</span>
+            </div>
           </div>
         </div>
 
@@ -172,9 +195,6 @@
     </div>
 
     <div id="infoDivTopLeft">---</div>
-
-    <div id="infoDivBottomLeft">---</div>
-    <div id="transTriangle"></div>
 
     <div id="infoDivCenter">
       <button id="addZoneCube" class="centeredButton">⬚</button>
@@ -200,24 +220,13 @@
     <script type="module" src="raycaster.js"></script>
     <script type="module" src="UI.js"></script>
     <script type="module" src="addgeometries.js"></script>
-    <script type="module" src="objmenu.js"></script>
+    <script type="module" src="objmenu_new.js"></script>
+    <script type="module" src="rightmenu.js"></script>
     <script type="module" src="navbar.js"></script>
     <script type="module" src="max.js"></script>
     <script>
-      // Gestione selezione tab pannello destro
-      document.addEventListener('DOMContentLoaded', function() {
-        const tabs = document.querySelectorAll('.panel-tab');
-        const panels = document.querySelectorAll('.panel-content');
-        tabs.forEach(tab => {
-          tab.addEventListener('click', function() {
-            tabs.forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            panels.forEach(panel => {
-              panel.style.display = (panel.getAttribute('data-panel-content') === tab.getAttribute('data-panel')) ? 'block' : 'none';
-            });
-          });
-        });
-      });
+      // Old tab system - now handled by rightmenu.js
+      // Keeping this as fallback but it's now managed by the new system
     </script>
   </body>
 </html>

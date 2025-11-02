@@ -1,0 +1,628 @@
+// Right Menu Management System
+// Sistema di gestione del menu destro con controlli modulari
+
+// Configuration for right panel sections and their controls
+const panelConfigs = {
+  generali: {
+    title: 'Generali',
+    controls: [
+      {
+        type: 'toggle',
+        id: 'theme',
+        label: 'Tema Eco',
+        defaultValue: false,
+        action: (value) => {
+          console.log('Theme changed:', value);
+          // Mantiene il collegamento esistente con UI.js
+          document.querySelector('input[data-id="theme"]').checked = value;
+          document.querySelector('input[data-id="theme"]').dispatchEvent(new Event('change'));
+        }
+      },
+      {
+        type: 'toggle',
+        id: 'gridSnapState',
+        label: 'Aggancio Griglia',
+        defaultValue: true,
+        action: (value) => {
+          console.log('Grid snap changed:', value);
+          document.querySelector('input[data-id="gridSnapState"]').checked = value;
+          document.querySelector('input[data-id="gridSnapState"]').dispatchEvent(new Event('change'));
+        }
+      },
+      {
+        type: 'slider',
+        id: 'snapDefinition',
+        label: 'Precisione Snap',
+        min: 1,
+        max: 3,
+        defaultValue: 2,
+        step: 1,
+        action: (value) => {
+          console.log('Snap definition changed:', value);
+          document.querySelector('input[data-id="snapDefinition"]').value = value;
+          document.querySelector('input[data-id="snapDefinition"]').dispatchEvent(new Event('change'));
+        }
+      },
+      {
+        type: 'toggle',
+        id: 'lock',
+        label: 'Diorama',
+        defaultValue: false,
+        action: (value) => {
+          console.log('Lock changed:', value);
+          document.querySelector('input[data-id="lock"]').checked = value;
+          document.querySelector('input[data-id="lock"]').dispatchEvent(new Event('change'));
+        }
+      },
+      {
+        type: 'toggle',
+        id: 'grid',
+        label: 'Super Superficie',
+        defaultValue: true,
+        action: (value) => {
+          console.log('Grid visibility changed:', value);
+          document.querySelector('input[data-id="grid"]').checked = value;
+          document.querySelector('input[data-id="grid"]').dispatchEvent(new Event('change'));
+        }
+      },
+      {
+        type: 'slider',
+        id: 'gridsize',
+        label: 'Dimensione Griglia',
+        min: 1,
+        max: 4,
+        defaultValue: 2,
+        step: 1,
+        action: (value) => {
+          console.log('Grid size changed:', value);
+          document.querySelector('input[data-id="gridsize"]').value = value;
+          document.querySelector('input[data-id="gridsize"]').dispatchEvent(new Event('change'));
+        }
+      },
+      {
+        type: 'button',
+        id: 'loadSpeakersPreset',
+        label: 'Load Speakers',
+        action: () => {
+          console.log('Loading speakers preset');
+          document.getElementById('loadSpeakersPresetBtn')?.click();
+        }
+      },
+      {
+        type: 'button',
+        id: 'saveSpeakersPreset',
+        label: 'Save Speakers',
+        action: () => {
+          console.log('Saving speakers preset');
+          document.getElementById('saveSpeakersPresetBtn')?.click();
+        }
+      },
+      {
+        type: 'button',
+        id: 'loadSourcesPreset',
+        label: 'Load Sources',
+        action: () => {
+          console.log('Loading sources preset');
+          document.getElementById('loadSourcesPresetBtn')?.click();
+        }
+      },
+      {
+        type: 'button',
+        id: 'saveSourcesPreset',
+        label: 'Save Sources',
+        action: () => {
+          console.log('Saving sources preset');
+          document.getElementById('saveSourcesPresetBtn')?.click();
+        }
+      },
+      {
+        type: 'button',
+        id: 'resetScene',
+        label: 'Empty',
+        action: () => {
+          console.log('Resetting scene');
+          document.getElementById('resetSceneBtn')?.click();
+        }
+      }
+    ]
+  },
+  plastico: {
+    title: 'Plastico',
+    controls: [
+      {
+        type: 'button',
+        id: 'loadPlastico',
+        label: 'Carica',
+        action: () => {
+          console.log('Loading plastico');
+          document.getElementById('loadPlastico')?.click();
+        }
+      },
+      {
+        type: 'toggle',
+        id: 'archVisibility',
+        label: '⏿',
+        defaultValue: true,
+        action: (value) => {
+          console.log('Arch visibility changed:', value);
+          document.querySelector('input[data-id="archVisibility"]').checked = value;
+          document.querySelector('input[data-id="archVisibility"]').dispatchEvent(new Event('change'));
+        }
+      },
+      {
+        type: 'slider',
+        id: 'plasticoThreshold',
+        label: 'Threshold',
+        min: 0,
+        max: 120,
+        defaultValue: 60,
+        step: 1,
+        action: (value) => {
+          console.log('Plastico threshold changed:', value);
+          const slider = document.getElementById('plasticoThreshold');
+          if (slider) {
+            slider.value = value;
+            slider.dispatchEvent(new Event('input'));
+          }
+        }
+      },
+      {
+        type: 'slider',
+        id: 'plasticoThickness',
+        label: 'Line Thickness',
+        min: 0.5,
+        max: 10,
+        defaultValue: 2,
+        step: 0.1,
+        action: (value) => {
+          console.log('Plastico thickness changed:', value);
+          const slider = document.getElementById('plasticoThickness');
+          if (slider) {
+            slider.value = value;
+            slider.dispatchEvent(new Event('input'));
+          }
+        }
+      },
+      {
+        type: 'slider',
+        id: 'plasticoOpacity',
+        label: 'Opacity',
+        min: 0.1,
+        max: 1.0,
+        defaultValue: 0.8,
+        step: 0.01,
+        action: (value) => {
+          console.log('Plastico opacity changed:', value);
+          const slider = document.getElementById('plasticoOpacity');
+          if (slider) {
+            slider.value = value;
+            slider.dispatchEvent(new Event('input'));
+          }
+        }
+      }
+    ]
+  },
+  carica: {
+    title: 'Carica Modello',
+    controls: [
+      {
+        type: 'button',
+        id: 'loadGenericGltf',
+        label: 'Carica',
+        action: () => {
+          console.log('Loading GLTF');
+          document.getElementById('loadGenericGltf')?.click();
+        }
+      }
+    ]
+  },
+  zone: {
+    title: 'Zone',
+    controls: [
+      {
+        type: 'toggle',
+        id: 'zoneVisibility',
+        label: '⏿',
+        defaultValue: true,
+        action: (value) => {
+          console.log('Zone visibility changed:', value);
+          document.querySelector('input[data-id="zoneVisibility"]').checked = value;
+          document.querySelector('input[data-id="zoneVisibility"]').dispatchEvent(new Event('change'));
+        }
+      }
+    ]
+  },
+  altoparlanti: {
+    title: 'Altoparlanti',
+    controls: [
+      {
+        type: 'toggle',
+        id: 'speakersVisibility',
+        label: '⏿',
+        defaultValue: true,
+        action: (value) => {
+          console.log('Speakers visibility changed:', value);
+          const elements = document.querySelectorAll('input[data-id="speakersVisibility"]');
+          elements.forEach(el => {
+            el.checked = value;
+            el.dispatchEvent(new Event('change'));
+          });
+        }
+      }
+    ]
+  },
+  corone: {
+    title: 'Corone',
+    controls: [
+      {
+        type: 'toggle',
+        id: 'coronesVisibility',
+        label: '⏿',
+        defaultValue: true,
+        action: (value) => {
+          console.log('Corone visibility changed:', value);
+          // Aggiungi logica per corone quando necessario
+        }
+      }
+    ]
+  }
+};
+
+// Current active panel
+let currentPanel = 'generali';
+
+// Utility functions to create controls (same as left menu)
+function createToggle(config) {
+  const container = document.createElement('div');
+  container.className = 'control-row';
+  
+  const label = document.createElement('label');
+  label.textContent = config.label;
+  
+  const checkbox = document.createElement('input');
+  checkbox.type = 'checkbox';
+  checkbox.checked = config.defaultValue || false;
+  checkbox.addEventListener('change', (e) => {
+    config.action(e.target.checked);
+  });
+  
+  container.appendChild(label);
+  container.appendChild(checkbox);
+  
+  return container;
+}
+
+function createSlider(config) {
+  const container = document.createElement('div');
+  container.className = 'control-row';
+  
+  const label = document.createElement('label');
+  label.textContent = config.label;
+  
+  const sliderContainer = document.createElement('div');
+  sliderContainer.className = 'slider-container';
+  
+  const slider = document.createElement('input');
+  slider.type = 'range';
+  slider.min = config.min;
+  slider.max = config.max;
+  slider.step = config.step || 1;
+  slider.value = config.defaultValue || config.min;
+  
+  slider.addEventListener('input', (e) => {
+    config.action(parseFloat(e.target.value));
+  });
+  
+  sliderContainer.appendChild(slider);
+  
+  container.appendChild(label);
+  container.appendChild(sliderContainer);
+  
+  return container;
+}
+
+function createButton(config) {
+  const container = document.createElement('div');
+  container.className = 'control-row';
+  
+  const button = document.createElement('button');
+  button.className = 'control-button';
+  button.textContent = config.label;
+  button.addEventListener('click', config.action);
+  
+  container.appendChild(button);
+  
+  return container;
+}
+
+function createNumbox(config) {
+  const container = document.createElement('div');
+  container.className = 'control-row';
+  
+  const label = document.createElement('label');
+  label.textContent = config.label;
+  
+  const input = document.createElement('input');
+  input.type = 'number';
+  input.min = config.min;
+  input.max = config.max;
+  input.step = config.step || 1;
+  input.value = config.defaultValue || config.min;
+  
+  input.addEventListener('change', (e) => {
+    config.action(parseFloat(e.target.value));
+  });
+  
+  container.appendChild(label);
+  container.appendChild(input);
+  
+  return container;
+}
+
+// Create panel content
+function createPanelContent(panelId) {
+  const config = panelConfigs[panelId];
+  if (!config) return null;
+  
+  const container = document.createElement('div');
+  container.className = 'new-panel-content';
+  container.id = `new-panel-${panelId}`;
+  
+  const title = document.createElement('h3');
+  title.className = 'panel-title';
+  title.textContent = config.title;
+  container.appendChild(title);
+  
+  config.controls.forEach(controlConfig => {
+    let control;
+    switch (controlConfig.type) {
+      case 'toggle':
+        control = createToggle(controlConfig);
+        break;
+      case 'slider':
+        control = createSlider(controlConfig);
+        break;
+      case 'button':
+        control = createButton(controlConfig);
+        break;
+      case 'numbox':
+        control = createNumbox(controlConfig);
+        break;
+      default:
+        console.warn('Unknown control type:', controlConfig.type);
+        return;
+    }
+    
+    if (control) {
+      container.appendChild(control);
+    }
+  });
+  
+  return container;
+}
+
+// Create tab system similar to left menu
+function createRightMenuTabs() {
+  const tabContainer = document.createElement('div');
+  tabContainer.className = 'right-menu-tabs';
+  
+  const slider = document.createElement('div');
+  slider.className = 'right-tab-slider';
+  tabContainer.appendChild(slider);
+  
+  let firstTab = null;
+  
+  Object.keys(panelConfigs).forEach((panelId, index) => {
+    const tab = document.createElement('button');
+    tab.className = 'right-menu-tab';
+    tab.textContent = getTabLabel(panelId);
+    tab.dataset.panel = panelId;
+    
+    tab.addEventListener('click', () => {
+      switchToRightPanel(panelId);
+      updateRightSliderPosition(tab, slider);
+    });
+    
+    tabContainer.appendChild(tab);
+    
+    if (panelId === 'generali') {
+      firstTab = tab;
+    }
+  });
+  
+  // Initialize first tab after all tabs are added
+  if (firstTab) {
+    // Usa requestAnimationFrame per assicurarsi che il DOM sia completamente renderizzato
+    requestAnimationFrame(() => {
+      firstTab.classList.add('right-tab-active');
+      updateRightSliderPosition(firstTab, slider);
+    });
+  }
+  
+  return tabContainer;
+}
+
+function getTabLabel(panelId) {
+  const labels = {
+    generali: 'G',
+    plastico: 'P',
+    carica: 'C',
+    zone: 'Z',
+    altoparlanti: 'A',
+    corone: 'Co'
+  };
+  return labels[panelId] || panelId.charAt(0).toUpperCase();
+}
+
+function updateRightSliderPosition(activeTab, slider) {
+  if (!activeTab || !activeTab.parentNode || !slider) {
+    console.warn('Invalid elements passed to updateRightSliderPosition');
+    return;
+  }
+  
+  const tabs = activeTab.parentNode.querySelectorAll('.right-menu-tab');
+  
+  tabs.forEach((tab) => {
+    tab.classList.remove('right-tab-active');
+  });
+  activeTab.classList.add('right-tab-active');
+  
+  // Use requestAnimationFrame to ensure DOM is updated
+  requestAnimationFrame(() => {
+    const tabWidth = activeTab.offsetWidth;
+    const tabLeft = activeTab.offsetLeft;
+    
+    // Se è la prima inizializzazione, disabilita temporaneamente la transizione
+    if (!slider.style.width || slider.style.width === '0px') {
+      slider.style.transition = 'none';
+      slider.style.left = tabLeft + 'px';
+      slider.style.width = tabWidth + 'px';
+      
+      // Riattiva la transizione per future animazioni
+      setTimeout(() => {
+        slider.style.transition = 'left 0.28s cubic-bezier(0.4,0,0.2,1), width 0.28s cubic-bezier(0.4,0,0.2,1)';
+      }, 50);
+    } else {
+      slider.style.left = tabLeft + 'px';
+      slider.style.width = tabWidth + 'px';
+    }
+  });
+}
+
+function switchToRightPanel(panelId) {
+  currentPanel = panelId;
+  
+  // Use the existing tab system functionality to switch panels
+  const existingTabs = document.querySelectorAll('.panel-tab');
+  const existingPanels = document.querySelectorAll('.panel-content');
+  
+  // Update existing tabs
+  existingTabs.forEach(tab => {
+    tab.classList.remove('active');
+    if (tab.getAttribute('data-panel') === panelId) {
+      tab.classList.add('active');
+    }
+  });
+  
+  // Update existing panels
+  existingPanels.forEach(panel => {
+    panel.style.display = 'none';
+    if (panel.getAttribute('data-panel-content') === panelId) {
+      panel.style.display = 'block';
+    }
+  });
+}
+
+function switchToPanel(panelId) {
+  // Legacy function - redirect to new function
+  switchToRightPanel(panelId);
+}
+
+// Initialize the new right menu system
+function initializeRightMenu() {
+  const blackPanel = document.getElementById('black-panel');
+  if (!blackPanel) {
+    console.warn('Black panel not found');
+    return;
+  }
+  
+  // Start with gradual migration - replace migrated panels
+  const generaliContainer = document.getElementById('new-panel-generali-container');
+  if (generaliContainer) {
+    const generaliContent = createPanelContent('generali');
+    if (generaliContent) {
+      generaliContent.style.display = 'block';
+      generaliContainer.appendChild(generaliContent);
+      console.log('Generali panel migrated to new system');
+    }
+  }
+  
+  const plasticoContainer = document.getElementById('new-panel-plastico-container');
+  if (plasticoContainer) {
+    const plasticoContent = createPanelContent('plastico');
+    if (plasticoContent) {
+      plasticoContent.style.display = 'block';
+      plasticoContainer.appendChild(plasticoContent);
+      console.log('Plastico panel migrated to new system');
+    }
+  }
+  
+  // Migrate remaining panels
+  const panelIds = ['carica', 'zone', 'altoparlanti', 'corone'];
+  panelIds.forEach(panelId => {
+    const container = document.getElementById(`new-panel-${panelId}-container`);
+    if (container) {
+      const content = createPanelContent(panelId);
+      if (content) {
+        content.style.display = 'block';
+        container.appendChild(content);
+        console.log(`${panelId} panel migrated to new system`);
+      }
+    }
+  });
+  
+  // Insert new tab system
+  const tabsContainer = document.getElementById('new-panel-tabs-container');
+  if (tabsContainer) {
+    const newTabs = createRightMenuTabs();
+    tabsContainer.appendChild(newTabs);
+    console.log('New tab system installed');
+    
+    // Assicuriamoci che il primo pannello sia attivo all'inizio
+    setTimeout(() => {
+      switchToRightPanel('generali');
+    }, 100);
+  }
+  
+  // Create all panel contents for future use (not used now, but kept for consistency)
+  const newContainer = document.createElement('div');
+  newContainer.className = 'new-panels-container';
+  
+  Object.keys(panelConfigs).forEach(panelId => {
+    const panelContent = createPanelContent(panelId);
+    if (panelContent && panelId !== 'generali') { // Generali is already placed
+      if (panelId !== currentPanel) {
+        panelContent.style.display = 'none';
+      }
+      newContainer.appendChild(panelContent);
+    }
+  });
+  
+  // Store references for gradual migration
+  window.rightMenuSystem = {
+    newContainer,
+    switchToPanel: switchToRightPanel,
+    panelConfigs,
+    migratePanel: (panelId) => migratePanel(panelId)
+  };
+  
+  console.log('Right menu system initialized - Generali panel active');
+}
+
+// Function to migrate individual panels gradually
+function migratePanel(panelId) {
+  const panelElement = document.querySelector(`[data-panel-content="${panelId}"]`);
+  if (!panelElement) {
+    console.warn(`Panel ${panelId} not found`);
+    return;
+  }
+  
+  // Create the new panel content
+  const newContent = createPanelContent(panelId);
+  if (!newContent) {
+    console.warn(`Could not create content for panel ${panelId}`);
+    return;
+  }
+  
+  // Replace the existing content
+  panelElement.innerHTML = '';
+  panelElement.appendChild(newContent);
+  newContent.style.display = 'block';
+  
+  console.log(`Panel ${panelId} migrated to new system`);
+}
+
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', initializeRightMenu);
+
+export { panelConfigs, createToggle, createSlider, createButton, createNumbox, switchToPanel };

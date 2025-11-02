@@ -6,7 +6,7 @@ import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js
 import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
 import { standardMat, phongMat, dashedLineMat, dashedMaterial, solidMaterial, goochMaterial, goochMaterialArrow } from './materials.js';
 import { loadObj } from './loaders.js';
-import { updateMenu } from './objmenu.js';
+import { updateMenu } from './objmenu_new.js';
 import groupScaleUIDiv from './src/GroupScaleUIDiv.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
@@ -23,7 +23,6 @@ let rendererBackgoundColor = 0xd6d6d6; //inizia bianco
 let ghostButton = null;
 
 const visualizzazione = document.getElementById("visualizzazione");
-const stato = document.getElementById("infoDivBottomLeft");
 export let transfo = false;
 let ignoreNextEscape = false; // Flag per ignorare Escape dopo attach
 
@@ -419,7 +418,7 @@ export function init() {
 
 let miao;
 let tipo;
-const transTriangle = document.getElementById("transTriangle");
+
 
 export function changeTransfo(state) {
 	transfo = state;
@@ -432,8 +431,6 @@ export function updateStato(type) {
 	} else {
 		miao = "globale";
 	}
-	stato.textContent = type + " " + miao;
-	transTriangle.style.display = "block";
 }
 
 export function updateStato1() {
@@ -442,12 +439,9 @@ export function updateStato1() {
 	} else {
 		miao = "globale";
 	}
-	stato.textContent = tipo + " " + miao;
 }
 
 export function updateStato3() {
-	stato.textContent = "---";
-	transTriangle.style.display = "none";
 }
 
 export function changeTheme(state) {

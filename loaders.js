@@ -6,7 +6,7 @@ import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeome
 import { objToBeDetected, scene } from './setup.js';
 import * as THREE from 'three';
 import { goochMaterial, goochMaterialAlpha, normalMat, phongMat, standardMat } from './materials.js';
-import { createMenu } from './objmenu.js';
+import { createMenu } from './objmenu_new.js';
 
 // Helper per risolvere il percorso asset in modo compatibile con Vite e server statici
 function resolveAssetPath(filename) {

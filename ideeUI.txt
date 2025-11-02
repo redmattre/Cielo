@@ -1,0 +1,63 @@
+Idee UI cielo:
+
+- Progressive disclosure: con i seguenti cambiamenti l’utente appena apre l’interfaccia deve poter aggiungere in ordine, altoparlanti, omnifonte. Successivamente a ciò cliccare su di una di queste e vedere comparire i controlli di trasformazione in basso a sinistra, il nome in alto a sinistra. Vedere che passando sopra il mouse vengono selezionati (in alto a sinistra).
+- Forse la visualizzazione dell’architettura deve stare nella barra degli strumenti perchè dovrebbe essere una cosa fondamentale per la progettazione.
+- il dock laterale o barra degli strumenti deve avere in cima un “+” dove si decide che tipo di oggetto aggiungere da un menu centrale (shortcut tastiera per ogni tipo di oggetto che viene anche mostrato sopra l’oggetto) (con questo si eliminano 5 testi ne rimangono 3) (qui in futuro sarebbero da aggiungere delle possibilità di organizzazione quando si aggiungono gli oggetti)
+
+- il tasto del menu laterale va messo da qualche altra parte secondo me, li fa confusione. Anche se in realtà potrebbe rimanerci con un icona tipo chiave inglese. In questo maniera da la apri sia il menu contestuale degli oggetti di scena che il menu dei modificatori.
+
+- il tasto metro rimane (ma la funzionalità deve crescere)
+
+- il tasto POV può rimanere con un icona cuffie (molto utile come cosa da esporre) all’inizio
+
+- qui poi forse vanno aggiunti i controlli dei modificatori
+
+- quando selezioni cliccando un oggetto in basso a sinistra compaiono le possibilità di trasformazione che hai su quell’oggetto. In questo stesso menu di modifica è possibile anche selezionare il colore:
+
+Il menu è un multimenù con icone a selezione visiva, muovi (come gizmo), ruota (come gizmo), scala (come nell’interfaccia), e un quadratino per il colore dell’oggetto, inoltre ci sono gli switch “globale/locale” e “snap on/snap off”.
+
+Chiaramente nel caso si tratti di un menu il colore va su tutti gli oggetti selezionati
+
+1) Omnifonti e Orifonti: muovi, ruota (globale, locale) / La scalatura può essere interpretata più come blur
+
+2) Point Source (Altoparlanti): muovi, ruota (globale, locale) / La salatura può indicare la potenza? (Quindi una taratura in dB considerando che comunque in realtà tutte le casse per questi setup dovrebbero avere eguale loudness di uscita)
+
+3) Halo: muovi, ruota (in realtà sono solo degli oggetti tracckabili)
+
+4) Zone: muovi, ruota, scala (più complesso)
+
+- Qualcosa che indichi l’attività delle fonti sonore che non sia troppo intenso a livello di CPU
+- Sincronia websocket + osc tra vst, max msp (jweb) e web
+
+Idee VST:
+
+- il vst deve poter controllare in una botta tutti gli altri elementi.
+- bisogna nascondere i parametri “sotto al cofano” e tenere solo le posizioni
+
+- bisogna creare un sistema di modificatori che parta da dei costringimenti su di un singolo oggetto. Quindi in poche parole una cosa che con quattro parametri, a partire da un oggetto e un tot di altri oggetti selezionati crei a cascata sui figli un comportamento nello spazio.
+
+Oggetto: numero oggetto
+Conto: quante copie ne controlla
+
+- praticamente questo modificatore array “forma” ha:
+
+Fit: (on/off/path*) squeeza dentro tot metri gli oggetti ovviamente fino al limite dato dall’offset di questi, quindi il valore offset viene costretto da questo fit eventualmente. Il conflitto si risolve che l’offset rimpicciolisce se alzi troppo il fit.
+Offset: valore in metri che determina l’offset di ogni oggetto copia dal suo centro, ovviamente in x, y, z
+
+* “fit path” significa che le copie distribuiscono equamente su di un percorso, chiuso. Di default i percorsi sono il quadrato, il cerchio. Quando si arriva all’offset massimo non si può più andare oltre significa semplicemente che sei arrivato alla equidistribuzione.
+
+In questo modo dando movimento ad un oggetto dai movimento a tutta una serie di oggetti “costretti” insieme a lui.
+
+- modificatore array “cluster”:
+
+Questo modificatore crea praticamente dei particle. Quindi ci sono una serie di comportamenti cluster da applicare.
+
+1) movimento definito direzionalmente: 
+	- zona di riferimento
+	- Direzione 3D (una freccia?): la direzione in cui si muovo i particle
+	- Velocità (speed): la velocità con cui si muovono
+	- sfasamento (phase): 
+
+
+
+dummy

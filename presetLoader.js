@@ -2,7 +2,7 @@ import { scene, objToBeDetected } from './setup.js';
 import { loadObj } from './loaders.js';
 import { goochMaterialSp, goochMaterialArrow, dashedMaterial, dashedMaterialB, dashedMaterialC, dashedMaterialD } from './materials.js';
 import * as THREE from 'three';
-import { createMenu } from './objmenu.js';
+import { createMenu } from './objmenu_new.js';
 import { syncMaxDictionaries } from './maxSync.js';
 import { sendSpeakersLoadedToMax, sendOmnifontesLoadedToMax } from './max.js'; // <--- aggiunto
 

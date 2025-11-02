@@ -8,7 +8,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { OutlinePass } from 'three/addons/postprocessing/OutlinePass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
-import { createMenu, updateMenu } from './objmenu';
+import { createMenu, updateMenu } from './objmenu_new.js';
 import { syncMaxDictionaries } from './maxSync.js';
 import { sendLastHoveredObjectToMax, resetLastHoveredObject } from './max.js'; // <--- aggiunto
 
@@ -179,7 +179,6 @@ function deleteSelectedObject() {
         objToBeDetected.splice(index, 1);
         disposeObject(targetObject);
         console.log("Eliminato oggetto:", objectName);
-        updateInfoTextBasso(objectName);
         
         // Notifica in base al tipo di oggetto eliminato
         if (isAltoparlante) {
@@ -344,12 +343,7 @@ renderer.domElement.addEventListener('mousemove', (event) => {
     }
 });
 
-// Funzione per aggiornare il div con le informazioni
-const infoDivDown = document.getElementById('infoDivBottomLeft');
-function updateInfoTextBasso(text) {
-    console.log("sto cancellando!");
-    infoDivDown.textContent = "rimosso: " + (text || '---');
-}
+
 
 
 function disposeObject(obj) {
@@ -395,16 +389,31 @@ function updateInfoText(text) {
 
 // Quando il raycaster seleziona un oggetto, evidenzia anche il bordo del relativo elemento menu
 function highlightMenuItemByObject(object) {
-    const menuList = document.getElementById('menuList');
-    if (!menuList) return;
-    const items = menuList.querySelectorAll('.itemList');
-    objToBeDetected.forEach((obj, idx) => {
-        if (obj === object) {
-            items[idx]?.classList.add('itemList-hover');
-        } else {
-            items[idx]?.classList.remove('itemList-hover');
+    // Usa la nuova mappatura per sincronizzare correttamente
+    if (window.menuObjectMap) {
+        // Prima rimuovi tutti gli highlight
+        window.menuObjectMap.forEach((menuItem) => {
+            menuItem.classList.remove('itemList-hover');
+        });
+        
+        // Poi aggiungi highlight all'oggetto corretto
+        if (object && window.menuObjectMap.has(object)) {
+            const menuItem = window.menuObjectMap.get(object);
+            menuItem.classList.add('itemList-hover');
         }
-    });
+    } else {
+        // Fallback al vecchio sistema (compatibilità)
+        const menuList = document.getElementById('menuList');
+        if (!menuList) return;
+        const items = menuList.querySelectorAll('.itemList');
+        objToBeDetected.forEach((obj, idx) => {
+            if (obj === object) {
+                items[idx]?.classList.add('itemList-hover');
+            } else {
+                items[idx]?.classList.remove('itemList-hover');
+            }
+        });
+    }
 }
 
 // --- SELEZIONE MULTIPLA E GRUPPO TEMPORANEO ---
@@ -978,14 +987,8 @@ if (toggleTransButton) {
         // Nascondi ghostButton
         const ghostButton = document.getElementById('ghostButton');
         if (ghostButton) ghostButton.style.display = 'none';
-        // Nascondi infoDivBottomLeft e infoDivTopLeft
-        const infoDivDown = document.getElementById('infoDivBottomLeft');
-        if (infoDivDown) infoDivDown.textContent = '---';
         // const infoDivTop = document.getElementById('infoDivTopLeft');
         // if (infoDivTop) infoDivTop.textContent = '---';
-        // Nascondi anche il triangolino nero
-        const transTriangle = document.getElementById('transTriangle');
-        if (transTriangle) transTriangle.style.display = 'none';
         // Reset variabile di stato per infoDiv
         // if (typeof lastHoveredObject !== 'undefined') {
         //     lastHoveredObject = null;

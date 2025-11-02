@@ -5,7 +5,7 @@ import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js
 import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
 import { dashedMaterial, dashedMaterialB, dashedMaterialC, dashedMaterialD, goochMaterialArrow, goochMaterialSp, standardMat } from './materials.js';
 import { objToBeDetected, scene, renderer } from './setup.js';
-import { createMenu } from './objmenu.js';
+import { createMenu } from './objmenu_new.js';
 import { loadGenericGltf } from './loadersFIX.js';
 import { saveSpeakersPreset, saveSourcesPreset } from './presetSaver.js';
 import { loadSpeakersPreset, loadSourcesPreset } from './presetLoader.js';

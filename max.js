@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { objToBeDetected, scene } from "./setup";
 import { loadObj } from './loaders.js';
 import { goochMaterialSp, goochMaterialArrow } from './materials.js';
-import { createMenu } from './objmenu.js';
+import { createMenu } from './objmenu_new.js';
 
 // Proteggi tutte le chiamate a window.max.bindInlet
 function safeBindInlet(name, fn) {

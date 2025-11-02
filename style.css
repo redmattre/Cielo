@@ -137,31 +137,9 @@ button:active {
              1px 1px var(--fondale), -1px -1px var(--fondale), 1px -1px var(--fondale), -1px 1px var(--fondale);
 }
 
-#infoDivBottomLeft {
-    position: absolute;
-    color: var(--testo);
-    bottom: 1rem;
-    left: 1rem;
-    pointer-events: none;
-    user-select: none;
-    z-index: 500;
-    text-shadow: 2px 0 var(--fondale), -2px 0 var(--fondale), 0 2px var(--fondale), 0 -2px var(--fondale),
-             1px 1px var(--fondale), -1px -1px var(--fondale), 1px -1px var(--fondale), -1px 1px var(--fondale);
-}
 
-#transTriangle {
-  position: absolute;
-  /* top: 50%;
-  left: 50%; */
-  top: 0;
-  left: 0;
-  z-index: 9999;
-  width: 2rem;
-  height: 2rem;
-  clip-path: polygon(0 100%,0 0,100% 0);
-  background-color: var(--testo);
-  display: none;
-}
+
+
 
 #infoDivCenter {
     position: absolute;
@@ -274,9 +252,68 @@ button:active {
   border: 1px solid var(--dettaglio);
   padding: 1rem;
   border-radius: 10px;
-  margin-bottom: 1rem;
+  /* margin-bottom: 1rem; */
   user-select: none;
   cursor: pointer;
+}
+
+/* Stile hover per itemList */
+.itemList-hover {
+  border-color: var(--dettaglio) !important;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.8) !important;
+}
+
+/* Stili per sottomenu espandibili */
+.submenu {
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 300px;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+}
+
+/* Stili per i controlli del sottomenu */
+.submenu input[type="range"] {
+  background: var(--fondale);
+  border: 1px solid var(--dettaglio);
+  border-radius: 3px;
+  height: 6px;
+  outline: none;
+  appearance: none;
+}
+
+.submenu input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--dettaglio);
+  cursor: pointer;
+  border: 2px solid var(--fondale);
+}
+
+.submenu input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--dettaglio);
+  cursor: pointer;
+  border: 2px solid var(--fondale);
+}
+
+.submenu input[type="checkbox"] {
+  accent-color: var(--dettaglio);
 }
 
 .itemList:last-child {
@@ -430,23 +467,7 @@ input[type='number'] {
   box-shadow: #0002 0 0 0.5rem;
 }
 
-/* Evidenziatore mobile per tasto attivo nella dock */
-.dockTastiHighlight {
-  position: absolute;
-  left: 0;
-  width: 100%;
-  height: 2.7rem;
-  background: rgba(120,120,120,0.25);
-  border-radius: 10px;
-  pointer-events: none;
-  z-index: 1;
-  transition: top 0.2s cubic-bezier(0.4,0,0.2,1), opacity 0.2s;
-  opacity: 1;
-}
-.dockTastiHighlight.hide {
-  opacity: 0;
-  transition: opacity 0.15s;
-}
+
 
 /* --- Menu oggetti sinistra: tabs stile originale (slider) --- */
 .menuCatBtn {
@@ -639,4 +660,179 @@ input[type='number'] {
   .panel-section {
     padding: 0.7em 0.3em 0.5em 0.3em;
   }
+}
+
+/* --- New Right Menu System --- */
+.right-menu-tabs {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  background: transparent;
+  padding: 0 0.5em;
+  margin-bottom: 0.3em;
+  min-height: 2.1em;
+  height: 2.1em;
+  position: relative;
+}
+
+.right-menu-tab {
+  background: none;
+  border: none;
+  border-radius: 0;
+  position: relative;
+  color: var(--testo);
+  opacity: 0.45;
+  font-size: 0.95rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: color 0.2s, opacity 0.2s;
+  padding: 0.1em 0.45em;
+  min-width: 1.5em;
+  height: 1.7em;
+  line-height: 1.7em;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  margin: 0;
+}
+
+.right-menu-tab.right-tab-active {
+  color: var(--dettaglio);
+  opacity: 0.85;
+}
+
+.right-menu-tab:active, .right-menu-tab:focus {
+  background: none !important;
+  box-shadow: none !important;
+  outline: none;
+}
+
+.right-tab-slider {
+  position: absolute;
+  height: 0.13rem;
+  background: var(--dettaglio);
+  border-radius: 2px;
+  bottom: -0.25rem;
+  left: 0;
+  width: 0;
+  pointer-events: none;
+  z-index: 2;
+  transition: left 0.28s cubic-bezier(0.4,0,0.2,1), width 0.28s cubic-bezier(0.4,0,0.2,1);
+}
+
+.new-panels-container {
+  background: transparent;
+  border-radius: 0 0 10px 10px;
+  padding: 1em 0.7em 0.7em 0.7em;
+}
+
+.new-panel-content {
+  display: none;
+}
+
+.new-panel-content:first-child {
+  display: block;
+}
+
+.new-panel-content .panel-title {
+  font-size: 1em;
+  font-weight: 600;
+  color: var(--testo);
+  margin-bottom: 0.7em;
+  letter-spacing: 0.03em;
+}
+
+.control-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.7em;
+  gap: 0.5rem;
+}
+
+.control-row:last-child {
+  margin-bottom: 0;
+}
+
+.control-row label {
+  font-size: 0.9em;
+  color: var(--testo);
+  font-weight: normal;
+  flex: 1;
+  min-width: 0;
+}
+
+.control-row input[type="checkbox"] {
+  accent-color: var(--dettaglio);
+  transform: scale(1.2);
+}
+
+.slider-container {
+  flex: 1;
+  max-width: 120px;
+}
+
+.control-row input[type="range"] {
+  width: 100%;
+  background: var(--fondale);
+  border: 1px solid var(--dettaglio);
+  border-radius: 3px;
+  height: 6px;
+  outline: none;
+  appearance: none;
+}
+
+.control-row input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--dettaglio);
+  cursor: pointer;
+  border: 2px solid var(--fondale);
+}
+
+.control-row input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--dettaglio);
+  cursor: pointer;
+  border: 2px solid var(--fondale);
+}
+
+.control-row input[type="number"] {
+  border: 1px solid var(--dettaglio);
+  border-radius: 5px;
+  padding: 0.2rem;
+  text-align: center;
+  background-color: transparent;
+  color: var(--testo);
+  max-width: 80px;
+}
+
+.control-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0.4rem 1rem;
+  margin: 0;
+  width: 100%;
+  height: auto;
+  font-size: 0.9rem;
+  background-color: transparent;
+  border: solid var(--dettaglio) 1px;
+  border-radius: 5px;
+  color: var(--testo);
+  cursor: pointer;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.control-button:hover {
+  background-color: var(--dettaglio);
+  color: var(--fondale);
+}
+
+.control-button:active {
+  background-color: var(--dettaglio);
 }

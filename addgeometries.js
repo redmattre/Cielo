@@ -138,6 +138,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const addGenericModel = document.getElementById('loadGenericGltf');
   const addPovCursor = document.getElementById('addPovCursor');
 
+  // Counters to ensure unique, sequential naming even when loading is async
+  let speakerCounter = 0;
+  // Initialize speakerCounter based on existing scene children (if any)
+  scene.children.forEach((obj) => {
+    if (obj.name && obj.name.startsWith('Altoparlante ')) speakerCounter++;
+  });
+  function getNextSpeakerIndex() {
+    speakerCounter += 1;
+    return speakerCounter;
+  }
+
   //da modificare: fare che sia un tasto nel dock che ogni volta apre finestra di dialogo per importare un modello esterno
   let howManyGenericModels = 0;
   if (addGenericModel) {
@@ -152,14 +163,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (addSpeaker) {
     addSpeaker.addEventListener('click', () => {
-      // Conta solo gli speaker di primo livello nella scena
-      let howManySpeakers = 0;
-      scene.children.forEach((obj) => {
-        if (obj.name && obj.name.startsWith("Altoparlante ")) {
-          howManySpeakers++;
-        }
-      });
-      let nome = `Altoparlante ${howManySpeakers + 1}`;
+      // Use persistent counter to assign a unique sequential name immediately
+      const index = getNextSpeakerIndex();
+      const nome = `Altoparlante ${index}`;
       loadObj('./modelli/galleriaOBJ/speaker3dec.obj', nome, goochMaterialSp, 0.045, 0., 0, 1.2);
       createMenu();
       setTimeout(() => syncMaxDictionaries('altoparlanti'), 50);
@@ -389,6 +395,99 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 40);
       }
   }
+
+  // Funzioni helper per il menu avanzato di aggiunta elementi
+  // Queste funzioni sono esportate globalmente per essere usate dal sistema di menu
+
+  window.addSphereAtPosition = function(x, y, z) {
+    // Conta solo le sfere di primo livello nella scena
+    let howManySpheres = 0;
+    scene.children.forEach((obj) => {
+      if (obj.name && obj.name.startsWith("Omnifonte ")) {
+        howManySpheres++;
+      }
+    });
+    let nome = `Omnifonte ${howManySpheres + 1}`;
+    const geometry = new THREE.SphereGeometry(0.3, 40, 40);
+    const material = goochMaterialArrow;
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.scale.set(0.25, 0.24, 0.25);
+    mesh.name = nome;
+    mesh.isDashed = false;
+    mesh.position.set(x, z, y);
+    scene.add(mesh);
+    objToBeDetected.push(mesh);
+    createMenu();
+    setTimeout(() => syncMaxDictionaries('omnifonti'), 50);
+    // Invia subito coordinate Omnifonte
+    setTimeout(() => {
+      if (window.max && window.max.outlet) {
+        sendImmediateOmniLike(mesh);
+      }
+    }, 60);
+  };
+
+  window.addSpeakerAtPosition = function(x, y, z) {
+    // Use persistent counter to assign unique sequential speaker names
+    const index = getNextSpeakerIndex();
+    const nome = `Altoparlante ${index}`;
+    loadObj('./modelli/galleriaOBJ/speaker3dec.obj', nome, goochMaterialSp, 0.045, x, y, z);
+    createMenu();
+    setTimeout(() => syncMaxDictionaries('altoparlanti'), 50);
+  };
+
+  window.addArrowAtPosition = function(x, y, z) {
+    // Usa il contatore condiviso howManyArrows (dichiarato nello scope superiore)
+    if (typeof howManyArrows === 'undefined') {
+      // fallback: conteggia
+      let tmp = 0;
+      scene.children.forEach((obj) => { if (obj.name && obj.name.startsWith('Orifonte ')) tmp++; });
+      howManyArrows = tmp;
+    }
+    howManyArrows++;
+    const nome = `Orifonte ${howManyArrows}`;
+    loadObj('./modelli/galleriaOBJ/arrow.obj', nome, goochMaterialArrow, 0.045, x, y, z);
+    createMenu();
+    setTimeout(syncMaxDictionaries, 50);
+    // Invia subito coordinate Orifonte
+    setTimeout(() => {
+      const obj = scene.children.find(o => o.name === nome);
+      if (obj && window.max && window.max.outlet) {
+        sendImmediateOmniLike(obj);
+      }
+    }, 60);
+  };
+
+  window.addHaloAtPosition = function(x, y, z) {
+    // Usa il contatore condiviso howManyHalos (dichiarato nello scope superiore)
+    if (typeof howManyHalos === 'undefined') {
+      let tmp = 0;
+      scene.children.forEach((obj) => { if (obj.name && obj.name.startsWith('Aureola-')) tmp++; });
+      howManyHalos = tmp;
+    }
+    howManyHalos++;
+    let nome = `Aureola-${howManyHalos}`;
+    loadObj('./modelli/galleriaOBJ/halo2_lowpoly.obj', nome, goochMaterialSp, 0.15, x, y, z);
+    createMenu();
+    setTimeout(syncMaxDictionaries, 50);
+  };
+
+  window.addZoneAtPosition = function(x, y, z) {
+    // Usa il contatore condiviso howManyZones (dichiarato nello scope superiore)
+    if (typeof howManyZones === 'undefined') {
+      let tmp = 0;
+      scene.children.forEach((obj) => { if (obj.name && obj.name.startsWith('Zona ')) tmp++; });
+      howManyZones = tmp;
+    }
+    howManyZones++;
+    const materials = [dashedMaterial, dashedMaterialB, dashedMaterialC, dashedMaterialD];
+    const index = (howManyZones - 1) % materials.length;
+    const color = materials[index];
+    const nome = `Zona ${howManyZones}`;
+
+    newZone(false, nome, color, x, y, z); // Default a cubo
+    setTimeout(syncMaxDictionaries, 50);
+  };
 
 // Helper per inviare coordinate iniziali di Omnifonte/Orifonte
 function sendImmediateOmniLike(obj) {

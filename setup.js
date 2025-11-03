@@ -536,6 +536,17 @@ function initTransformControls() {
     control.addEventListener( 'dragging-changed', function ( event ) {
         orbit.enabled = ! event.value;
     } );
+    
+    // Listener per auto-rotazione degli altoparlanti dopo movimento
+    control.addEventListener( 'objectChange', function ( event ) {
+        // Ottieni l'oggetto attualmente controllato dai TransformControls
+        const attachedObject = control.object;
+        
+        if (attachedObject && window.applyAutoRotationIfEnabled) {
+            // Applica automaticamente la rotazione se è un altoparlante con flag attivo
+            window.applyAutoRotationIfEnabled(attachedObject);
+        }
+    } );
 
     // Personalizza i colori dei gizmo degli assi (pastello RGB)
     function setGizmoColors() {

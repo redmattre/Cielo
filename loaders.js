@@ -48,6 +48,16 @@ export function loadObj(filename, name, material, scaleFactor, x, y, z, rotation
             // Add the group to the scene and the objects to detect
             scene.add(group);
             objToBeDetected.push(group);
+            
+            // Initialize auto-rotation for new speakers
+            if (name && (/Altoparlante/i).test(name)) {
+                group.userData = group.userData || {};
+                group.userData.autoRotateToCenter = true; // Default: enabled
+                
+                // Apply immediate rotation to center (0, 1.2, 0) - Y is height in Three.js
+                group.lookAt(0, 1.2, 0);
+                console.log(`Auto-rotation initialized for new speaker: ${name}`);
+            }
 
             console.log(`Loaded ${fullPath} successfully.`);
             createMenu();

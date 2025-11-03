@@ -317,7 +317,7 @@ function processMouseRaycasting(event) {
             else if (hovered.parent && hovered.parent.name === 'Gruppo di trasformazione') isGroup = true;
         }
         if (!isGroup && !groupScaleUIDiv.isDragging) {
-            console.log('[Raycaster] Chiamo groupScaleUIDiv.hide() perché nessun gruppo selezionato');
+            // console.log('[Raycaster] Chiamo groupScaleUIDiv.hide() perché nessun gruppo selezionato');
             groupScaleUIDiv.hide();
         }
     }

@@ -63,7 +63,7 @@ class GroupScaleUIDiv {
             console.log('[GroupScaleUIDiv] hide() chiamato ma sto trascinando, IGNORO');
             return;
         }
-        console.log('[GroupScaleUIDiv] hide() chiamato, handle viene nascosto');
+        // console.log('[GroupScaleUIDiv] hide() chiamato, handle viene nascosto');
         this.isActive = false;
         this.group = null;
         this.handle.style.display = 'none';

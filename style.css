@@ -658,8 +658,10 @@ input[type='number'] {
   opacity: 0;
   pointer-events: none;
   transition: all 0.3s ease;
-  width: 320px;
-  height: 300px;
+  width: 480px;
+  height: 350px;
+  display: flex;
+  flex-direction: column;
 }
 
 #addElementCenterMenu.show {
@@ -682,8 +684,9 @@ input[type='number'] {
   grid-template-columns: repeat(2, 1fr);
   grid-template-rows: repeat(3, 1fr);
   gap: 0.8rem;
-  height: calc(100% - 80px);
+  flex: 1;
   width: 100%;
+  margin-bottom: 1.5rem;
 }
 
 .add-menu-item {
@@ -707,14 +710,16 @@ input[type='number'] {
   background: var(--dettaglio);
   color: var(--fondale);
   border-color: var(--testo);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-/* Il quinto elemento (zona) occupa entrambe le colonne dell'ultima riga */
-.add-menu-item:nth-child(5) {
-  grid-column: 1 / -1;
+.add-menu-item.selected {
+  background: var(--testo);
+  color: var(--fondale);
+  border-color: var(--testo);
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
 }
+
+/* Ora abbiamo 6 elementi in griglia 2x3, rimuovo il layout speciale per il quinto elemento */
 
 .add-menu-icon {
   font-size: 1.8rem;
@@ -727,14 +732,139 @@ input[type='number'] {
   text-align: center;
 }
 
+/* Barra di configurazione */
+.add-menu-config-bar {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 1rem;
+  align-items: flex-end;
+  padding: 1rem;
+  background: var(--dettaglioBianco);
+  border-radius: 10px;
+  border: 1px solid var(--dettaglio);
+  width: 95%;
+}
+
+.config-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  flex-shrink: 0;
+  min-width: fit-content;
+}
+
+.config-section label {
+  font-size: 0.8rem;
+  color: var(--testo);
+  font-weight: 500;
+}
+
+.config-input, .config-select {
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--dettaglio);
+  border-radius: 5px;
+  background: var(--fondale);
+  color: var(--testo);
+  font-size: 0.85rem;
+  width: 60px;
+  min-width: 50px;
+  flex-shrink: 1;
+  height: 2rem;
+  box-sizing: border-box;
+}
+
+.config-input-small {
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--dettaglio);
+  border-radius: 5px;
+  background: var(--fondale);
+  color: var(--testo);
+  font-size: 0.85rem;
+  width: 50px;
+  min-width: 40px;
+  flex-shrink: 1;
+  height: 2rem;
+  box-sizing: border-box;
+}
+
+.config-select {
+  width: 100px;
+  min-width: 80px;
+  flex-shrink: 1;
+  height: 2rem;
+  box-sizing: border-box;
+}
+
+#configContextual {
+  display: flex;
+  gap: 0.8rem;
+  flex: 1;
+  min-width: 0;
+}
+
+#squareConfig, #circleConfig, #lineConfig {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-end;
+  flex-wrap: nowrap;
+}
+
+#squareConfig .config-section,
+#circleConfig .config-section,
+#lineConfig .config-section {
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+#squareConfig .config-input-small,
+#circleConfig .config-input-small,
+#lineConfig .config-input-small {
+  width: auto;
+  min-width: 40px;
+  max-width: 60px;
+}
+
+#squareConfig .config-select,
+#circleConfig .config-select,
+#lineConfig .config-select {
+  width: auto;
+  min-width: 80px;
+  max-width: 120px;
+}
+
+.config-add-button {
+  padding: 0.6rem 2.2rem;
+  height: 2rem;
+  background: var(--testo);
+  color: var(--fondale);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  margin-left: auto;
+}
+
+.config-add-button:hover:not(:disabled) {
+  background: var(--dettaglio);
+  transform: translateY(-1px);
+}
+
+.config-add-button:disabled {
+  background: var(--dettaglio);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 .add-menu-close {
   position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
+  top: 0.001rem;
+  right: 0.5rem;
   width: 1.8rem;
   height: 1.8rem;
   background: transparent;
-  border: 1px solid var(--dettaglio);
+  border: none;
   border-radius: 50%;
   color: var(--testo);
   font-size: 0.9rem;
@@ -743,6 +873,7 @@ input[type='number'] {
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
+  z-index: 1;
 }
 
 .add-menu-close:hover {

@@ -242,11 +242,31 @@ const panelConfigs = {
         defaultValue: true,
         action: (value) => {
           console.log('Speakers visibility changed:', value);
+          
+          // Chiama la funzione globale per controllare la visibilità degli altoparlanti
+          if (window.setGlobalSpeakerVisibility) {
+            window.setGlobalSpeakerVisibility(value);
+          }
+          
+          // Mantieni il comportamento esistente per compatibilità
           const elements = document.querySelectorAll('input[data-id="speakersVisibility"]');
           elements.forEach(el => {
             el.checked = value;
             el.dispatchEvent(new Event('change'));
           });
+        }
+      },
+      {
+        type: 'toggle',
+        id: 'speakersGlobalLookAt',
+        label: 'Guarda origine (globale)',
+        defaultValue: true,
+        action: (value) => {
+          console.log('Global speaker look at changed:', value);
+          // Chiama la funzione globale per controllare tutti gli altoparlanti
+          if (window.setGlobalSpeakerLookAt) {
+            window.setGlobalSpeakerLookAt(value);
+          }
         }
       }
     ]

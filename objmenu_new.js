@@ -28,7 +28,8 @@ const submenuConfigs = {
             { type: 'slider', label: 'Delay', min: 0, max: 100, step: 1, value: 0 },
             { type: 'toggle', label: 'Mute', value: false },
             { type: 'numbox', label: 'Output', value: 1, min: 1, max: 32 },
-            { type: 'slider', label: 'EQ High', min: -12, max: 12, step: 0.5, value: 0 }
+            { type: 'slider', label: 'EQ High', min: -12, max: 12, step: 0.5, value: 0 },
+            { type: 'toggle', label: 'Guarda origine', value: true }
         ]
     },
     aureola: {
@@ -68,6 +69,128 @@ function getObjectType(objectName) {
     if (name.includes('pov cursor')) return 'povcursor';
     return 'default';
 }
+
+// Funzione per orientare gli altoparlanti verso il centro rialzato
+function orientSpeakerToCenter(object, enable = true) {
+    if (!object || !object.lookAt) return;
+    
+    if (enable) {
+        // Target: centro rialzato a y = 1.2 (altezza in Three.js)
+        const target = { x: 0, y: 1.2, z: 0 };
+        object.lookAt(target.x, target.y, target.z);
+        
+        // Memorizza che questo oggetto ha la rotazione automatica attiva
+        object.userData = object.userData || {};
+        object.userData.autoRotateToCenter = true;
+        
+        console.log(`${object.name} oriented to center (0, 1.2, 0)`);
+    } else {
+        // Disabilita la rotazione automatica e ripristina rotazione di default
+        if (object.userData) {
+            object.userData.autoRotateToCenter = false;
+        }
+        
+        // Ripristina la rotazione di default (0, 0, 0)
+        object.rotation.set(0, 0, 0);
+        console.log(`${object.name} auto-rotation disabled, reset to default rotation (0, 0, 0)`);
+    }
+}
+
+// Funzione per applicare automaticamente la rotazione dopo movimento
+function applyAutoRotationIfEnabled(object) {
+    if (!object || !object.userData || !object.userData.autoRotateToCenter) return;
+    
+    // Controlla se è un altoparlante
+    if (!object.name || !(/Altoparlante/i).test(object.name)) return;
+    
+    // Applica la rotazione verso il centro rialzato
+    const target = { x: 0, y: 1.2, z: 0 };
+    object.lookAt(target.x, target.y, target.z);
+    
+    console.log(`Auto-rotation applied to ${object.name} -> (0, 1.2, 0)`);
+}
+
+// Funzione per inizializzare il flag "guarda origine" per tutti gli altoparlanti esistenti
+function initializeAutoRotationForExistingSpeakers() {
+    // Ottieni tutti gli oggetti nella scena
+    const allObjects = objToBeDetected || [];
+    
+    allObjects.forEach(object => {
+        // Controlla se è un altoparlante
+        if (object.name && (/Altoparlante/i).test(object.name)) {
+            // Se non ha ancora userData o il flag, imposta il comportamento di default
+            object.userData = object.userData || {};
+            if (object.userData.autoRotateToCenter === undefined) {
+                object.userData.autoRotateToCenter = true; // Default: attivo
+                
+                // Applica immediatamente la rotazione verso il centro
+                orientSpeakerToCenter(object, true);
+                console.log(`Initialized auto-rotation for existing speaker: ${object.name}`);
+            }
+        }
+    });
+}
+
+// Funzione per controllo globale del look at di tutti gli altoparlanti
+function setGlobalSpeakerLookAt(enabled) {
+    // Ottieni tutti gli altoparlanti nella scena
+    const allSpeakers = objToBeDetected.filter(obj => 
+        obj.name && (/Altoparlante/i).test(obj.name)
+    );
+    
+    console.log(`Setting global look at to ${enabled} for ${allSpeakers.length} speakers`);
+    
+    allSpeakers.forEach(speaker => {
+        // Applica la funzione orientSpeakerToCenter a ogni altoparlante
+        orientSpeakerToCenter(speaker, enabled);
+    });
+    
+    // Aggiorna visivamente i toggle individuali nel menu di sinistra
+    updateIndividualTogglesVisually(enabled);
+    
+    console.log(`Global speaker look at ${enabled ? 'enabled' : 'disabled'} for all speakers`);
+}
+
+// Funzione per aggiornare visivamente i toggle individuali nel menu
+function updateIndividualTogglesVisually(globalState) {
+    // Trova tutti i toggle "Guarda origine" nei submenu degli altoparlanti
+    const toggles = document.querySelectorAll('input[type="checkbox"]');
+    
+    toggles.forEach(toggle => {
+        // Trova il toggle che appartiene a un controllo "Guarda origine"
+        const container = toggle.closest('div');
+        if (container) {
+            const label = container.querySelector('label');
+            if (label && label.textContent === 'Guarda origine') {
+                toggle.checked = globalState;
+                console.log(`Updated individual toggle for speaker to: ${globalState}`);
+            }
+        }
+    });
+}
+
+// Funzione per controllo globale della visibilità di tutti gli altoparlanti
+function setGlobalSpeakerVisibility(visible) {
+    // Ottieni tutti gli altoparlanti nella scena
+    const allSpeakers = objToBeDetected.filter(obj => 
+        obj.name && (/Altoparlante/i).test(obj.name)
+    );
+    
+    console.log(`Setting global visibility to ${visible} for ${allSpeakers.length} speakers`);
+    
+    allSpeakers.forEach(speaker => {
+        speaker.visible = visible;
+        console.log(`Speaker ${speaker.name} visibility set to: ${visible}`);
+    });
+    
+    console.log(`Global speaker visibility ${visible ? 'enabled' : 'disabled'} for all speakers`);
+}
+
+// Esporta le funzioni per uso globale
+window.applyAutoRotationIfEnabled = applyAutoRotationIfEnabled;
+window.initializeAutoRotationForExistingSpeakers = initializeAutoRotationForExistingSpeakers;
+window.setGlobalSpeakerLookAt = setGlobalSpeakerLookAt;
+window.setGlobalSpeakerVisibility = setGlobalSpeakerVisibility;
 
 // Funzioni per creare i controlli del sottomenu
 function createSlider(config, object) {
@@ -131,7 +254,13 @@ function createToggle(config, object) {
     
     toggle.addEventListener('change', (e) => {
         console.log(`${object.name} ${config.label}: ${e.target.checked}`);
-        // TODO: Qui collegheremo alla logica dell'oggetto
+        
+        // Gestione speciale per il toggle "Guarda origine" degli altoparlanti
+        if (config.label === 'Guarda origine' && getObjectType(object.name) === 'altoparlante') {
+            orientSpeakerToCenter(object, e.target.checked);
+        }
+        
+        // TODO: Qui collegheremo alla logica dell'oggetto per altri controlli
     });
     
     container.appendChild(label);
@@ -210,6 +339,11 @@ function createSubmenu(object) {
                 break;
             case 'toggle':
                 control = createToggle(controlConfig, object);
+                // Applica automaticamente la rotazione per "Guarda origine" se attivo di default
+                if (controlConfig.label === 'Guarda origine' && controlConfig.value === true && 
+                    getObjectType(object.name) === 'altoparlante') {
+                    orientSpeakerToCenter(object, true);
+                }
                 break;
             case 'numbox':
                 control = createNumbox(controlConfig, object);
@@ -346,6 +480,8 @@ export function createMenu() {
         filterFn = obj => obj.name && (/Aureola|Cloud/i).test(obj.name);
     } else if (selectedCategory === 'altoparlanti') {
         filterFn = obj => obj.name && (/Altoparlante/i).test(obj.name);
+        // Inizializza il comportamento auto-rotazione per tutti gli altoparlanti esistenti
+        initializeAutoRotationForExistingSpeakers();
     } else if (selectedCategory === 'zone') {
         filterFn = obj => obj.name && (/Zona|Zone/i).test(obj.name);
     } else if (selectedCategory === 'povcursor') {

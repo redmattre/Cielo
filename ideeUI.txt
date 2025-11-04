@@ -20,9 +20,9 @@ Chiaramente nel caso si tratti di un menu il colore va su tutti gli oggetti sele
 
 1) Omnifonti e Orifonti: muovi, ruota (globale, locale) / La scalatura può essere interpretata più come blur
 
-2) Point Source (Altoparlanti): muovi, ruota (globale, locale) / La salatura può indicare la potenza? (Quindi una taratura in dB considerando che comunque in realtà tutte le casse per questi setup dovrebbero avere eguale loudness di uscita)
+2) Altoparlanti: muovi, ruota (globale, locale) / La salatura può indicare la potenza? (Quindi una taratura in dB considerando che comunque in realtà tutte le casse per questi setup dovrebbero avere eguale loudness di uscita)
 
-3) Halo: muovi, ruota (in realtà sono solo degli oggetti tracckabili)
+3) Aureola: muovi, ruota (in realtà sono solo degli oggetti tracckabili)
 
 4) Zone: muovi, ruota, scala (più complesso)
 
@@ -61,3 +61,16 @@ Questo modificatore crea praticamente dei particle. Quindi ci sono una serie di 
 - modificatore array path cerchio?
 
 dummy
+
+
+Idea UI:
+
+ma siccome è un sistema che si attacca a cose. Non sarebbe figo fare tipo
+una interfaccia che sia modificabile dall'utente, mettendo slider, Toggle
+e numbox e poi mettendoci il nome Osc della cosa che manda. In questa
+maniera è sempre personalizzabile (e più facile anche per me).
+
+parametri come il lookAtCenter degli altoparlanti ovviamente rimangono.
+Però magari se in un file di testo tipo configurazione posso inserire 
+una voce di menu, il tipo di input UI, lo scaling e il nome OSC sarei
+a cavallo, e non Biagio.

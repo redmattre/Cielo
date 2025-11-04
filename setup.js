@@ -216,6 +216,9 @@ export function init() {
                 break;
 
             case 'g':
+                // IMPORTANTE: Spegni sempre il gizmo custom quando si attiva move
+                groupScaleUIDiv.hide();
+                
                 // Gestione intelligente: setup o raycaster mode
                 const functions_g = getRaycasterFunctions();
                 const targetForTransform_g = functions_g.lastHoveredObject || functions_g.currentSelectedObject;
@@ -252,15 +255,55 @@ export function init() {
                     }
                 }
                 updateStato('Spostamento');
+                
+                // Mostra/aggiorna il menu contestuale se c'è un oggetto attaccato
+                if (targetForTransform_g && window.transformContextMenu) {
+                    const targetObject = targetForTransform_g.parent?.isGroup ? targetForTransform_g.parent : targetForTransform_g;
+                    window.transformContextMenu.show(targetObject);
+                    window.transformContextMenu.updateState('move');
+                } else if (window.transformContextMenu && window.transformContextMenu.isVisible()) {
+                    window.transformContextMenu.updateState('move');
+                }
                 break;
 
             case 'r':
+                // IMPORTANTE: Spegni sempre il gizmo custom quando si attiva rotate
+                groupScaleUIDiv.hide();
+                
                 const functions_r = getRaycasterFunctions();
                 const targetForTransform_r = functions_r.lastHoveredObject || functions_r.currentSelectedObject;
                 
                 if (targetForTransform_r) {
                     // Modalità raycaster: attacca a oggetto selezionato + imposta modalità rotate
                     const targetObject = targetForTransform_r.parent?.isGroup ? targetForTransform_r.parent : targetForTransform_r;
+                    
+                    // GESTIONE SPECIALE ALTOPARLANTI: disabilita lookAt center quando si attiva rotazione
+                    const objectName = targetObject.name || '';
+                    if (objectName.toLowerCase().includes('altoparlante')) {
+                        console.log('Keyboard R: Activating rotation for speaker:', objectName);
+                        
+                        // Controlla se il lookAt center era attivo prima di disabilitarlo
+                        const wasLookAtActive = targetObject.userData?.autoRotateToCenter === true;
+                        console.log('Keyboard R: LookAt was active:', wasLookAtActive);
+                        
+                        if (wasLookAtActive && window.orientSpeakerToCenter) {
+                            // Solo se era attivo, disabilita e resetta a (0,0,0)
+                            window.orientSpeakerToCenter(targetObject, false);
+                        } else if (targetObject.userData) {
+                            // Se non era attivo, disabilita solo il flag senza toccare la rotazione
+                            targetObject.userData.autoRotateToCenter = false;
+                            console.log('Keyboard R: LookAt disabled without resetting rotation - keeping current rotation');
+                        }
+                        
+                        // Aggiorna il toggle nel menu di sinistra se è aperto
+                        if (window.updateMenuForObject) {
+                            window.updateMenuForObject(targetObject);
+                        }
+                        console.log('Keyboard R: LookAt center flag updated to:', targetObject.userData?.autoRotateToCenter);
+                        
+                        console.log('Keyboard R: Speaker rotation mode activated - lookAt center handled based on previous state');
+                    }
+                    
                     control.setMode('rotate'); // IMPORTANTE: Imposta modalità prima di attach
                     control.attach(targetObject);
                     // Usa funzione dedicata per transform controls
@@ -285,27 +328,54 @@ export function init() {
                     }
                 }
                 updateStato('Rotazione');
+                
+                // Mostra/aggiorna il menu contestuale se c'è un oggetto attaccato
+                if (targetForTransform_r && window.transformContextMenu) {
+                    const targetObject = targetForTransform_r.parent?.isGroup ? targetForTransform_r.parent : targetForTransform_r;
+                    window.transformContextMenu.show(targetObject);
+                    window.transformContextMenu.updateState('rotate');
+                } else if (window.transformContextMenu && window.transformContextMenu.isVisible()) {
+                    window.transformContextMenu.updateState('rotate');
+                }
                 break;
 
             case 's':
                 const functions_s = getRaycasterFunctions();
                 const hovered = functions_s.lastHoveredObject;
-                let isGroup = false;
-                if (hovered && hovered.name === 'Gruppo di trasformazione') isGroup = true;
-                // Mostra il handle solo se il gruppo è selezionato e la camera è ortogonale-top
-                if (isGroup && currentCamera && currentCamera.isOrthographicCamera && currentCamera.position.y > Math.abs(currentCamera.position.x) && currentCamera.position.y > Math.abs(currentCamera.position.z)) {
+                
+                // SEMPRE usa il sistema custom invece del gizmo Three.js standard
+                if (hovered) {
+                    // Se c'è un oggetto selezionato, usa sempre il sistema custom
                     if (control && control.object) control.detach();
                     orbit.enabled = true;
                     groupScaleUIDiv.show(hovered);
-                    updateStato('Scala Gruppo XY');
-                } else {
-                    control.setMode('scale');
-                    const ghost = getGhostButton();
-                    if (ghost) {
-                        ghost.style.display = 'block';
-                        ghost.style.right = '11.5rem';
+                    
+                    // Determina il tipo di scala basandosi sull'oggetto e la vista
+                    let isGroup = hovered.name === 'Gruppo di trasformazione';
+                    if (isGroup && currentCamera && currentCamera.isOrthographicCamera && 
+                        currentCamera.position.y > Math.abs(currentCamera.position.x) && 
+                        currentCamera.position.y > Math.abs(currentCamera.position.z)) {
+                        updateStato('Scala Gruppo XY');
+                    } else {
+                        updateStato('Scala');
                     }
-                    updateStato('Scala');
+                    
+                    // Mostra il menu contestuale e seleziona il tool "scale"
+                    if (window.transformContextMenu) {
+                        window.transformContextMenu.show(hovered);
+                        window.transformContextMenu.updateState('scale');
+                    }
+                } else {
+                    // Nessun oggetto selezionato: non fare nulla (non attivare gizmo Three.js)
+                    console.log('Tasto S: nessun oggetto selezionato per la scala');
+                }
+                
+                // Mostra/aggiorna il menu contestuale se c'è un oggetto attaccato (solo se non è gruppo scala)
+                if (hovered && !isGroup && window.transformContextMenu) {
+                    window.transformContextMenu.show(hovered);
+                    window.transformContextMenu.updateState('scale');
+                } else if (window.transformContextMenu && window.transformContextMenu.isVisible() && !isGroup) {
+                    window.transformContextMenu.updateState('scale');
                 }
                 break;
 
@@ -347,6 +417,11 @@ export function init() {
                 // Resetta gli oggetti selezionati/hoverati per ripartire da zero
                 functions_esc.currentSelectedObject = null;
                 functions_esc.lastHoveredObject = null;
+
+                // Nascondi il menu contestuale di trasformazione
+                if (window.transformContextMenu) {
+                    window.transformContextMenu.hide();
+                }
                 
                 functions_esc.updateMenu();
                 groupScaleUIDiv.hide();

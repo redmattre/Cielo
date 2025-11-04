@@ -4,6 +4,7 @@ import { standardMat, phongMat, normalMat, dashedMaterial, solidMaterial, goochM
 import { loadObj, loadObjWithDashedEdges } from './loaders.js';
 import { loadGltfModel, loadObjWithMaterials, toggleTransparency } from './loadersFIX.js';
 import { addMetroButtonToDock } from './metro.js';
+import './transformContextMenu.js';
 
 
 init();

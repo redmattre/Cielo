@@ -674,6 +674,11 @@ renderer.domElement.addEventListener('pointerup', (event) => {
                                 if (outlinePass) outlinePass.selectedObjects = [];
                                 if (window.raycasterComposer) window.raycasterComposer.render();
                                 if (window.updateStato) window.updateStato('Spostamento');
+                                
+                                // Mostra il menu contestuale di trasformazione per il gruppo
+                                if (window.transformContextMenu) {
+                                    window.transformContextMenu.show(group);
+                                }
                             } else {
                                 // Se non è in gruppo, seleziona normalmente
                                 clearSelection();
@@ -809,6 +814,11 @@ function handleTransformClick(event) {
         if (window.updateStato) {
             window.updateStato('Spostamento');
         }
+
+        // Mostra il menu contestuale di trasformazione
+        if (window.transformContextMenu) {
+            window.transformContextMenu.show(targetObject);
+        }
         
     } else {
         // Click nel vuoto: stacca transform controls se attaccati
@@ -837,6 +847,11 @@ function handleTransformClick(event) {
             const ghost = document.getElementById('ghostButton');
             if (ghost) {
                 ghost.style.display = 'none';
+            }
+
+            // Nascondi il menu contestuale di trasformazione
+            if (window.transformContextMenu) {
+                window.transformContextMenu.hide();
             }
             // Nascondi anche l'handle di scala gruppo
             groupScaleUIDiv.hide();

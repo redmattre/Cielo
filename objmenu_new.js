@@ -187,10 +187,50 @@ function setGlobalSpeakerVisibility(visible) {
 }
 
 // Esporta le funzioni per uso globale
+// Funzione per aggiornare l'UI del menu per un oggetto specifico
+function updateMenuForObject(targetObject) {
+    if (!targetObject) return;
+    
+    console.log('Updating menu for:', targetObject.name);
+    
+    // Trova l'header del menu nella menuObjectMap
+    const menuHeader = window.menuObjectMap?.get(targetObject);
+    if (!menuHeader) {
+        console.log('No menu header found for:', targetObject.name);
+        return;
+    }
+    
+    // Il submenu è il fratello successivo del header (dentro item-container)
+    const itemContainer = menuHeader.parentElement;
+    const submenu = itemContainer?.querySelector('.submenu');
+    
+    if (!submenu) {
+        console.log('No submenu found for:', targetObject.name);
+        return;
+    }
+    
+    // Trova tutti i checkbox nel submenu
+    const checkboxes = submenu.querySelectorAll('input[type="checkbox"]');
+    
+    checkboxes.forEach(checkbox => {
+        // Trova il container padre per ottenere la label
+        const container = checkbox.parentElement;
+        const label = container?.querySelector('label');
+        
+        if (label && label.textContent === 'Guarda origine') {
+            const newState = targetObject.userData?.autoRotateToCenter === true;
+            console.log(`Updating "Guarda origine" toggle: ${checkbox.checked} -> ${newState}`);
+            checkbox.checked = newState;
+        }
+    });
+}
+
 window.applyAutoRotationIfEnabled = applyAutoRotationIfEnabled;
 window.initializeAutoRotationForExistingSpeakers = initializeAutoRotationForExistingSpeakers;
 window.setGlobalSpeakerLookAt = setGlobalSpeakerLookAt;
 window.setGlobalSpeakerVisibility = setGlobalSpeakerVisibility;
+window.orientSpeakerToCenter = orientSpeakerToCenter;
+window.updateMenuForObject = updateMenuForObject;
 
 // Funzioni per creare i controlli del sottomenu
 function createSlider(config, object) {
@@ -249,7 +289,21 @@ function createToggle(config, object) {
     
     const toggle = document.createElement('input');
     toggle.type = 'checkbox';
-    toggle.checked = config.value;
+    
+    // Per il toggle "Guarda origine", leggi il valore dall'oggetto, non dalla configurazione
+    if (config.label === 'Guarda origine' && getObjectType(object.name) === 'altoparlante') {
+        // Assicurati che userData esista
+        object.userData = object.userData || {};
+        // Se il flag non esiste, usa il valore di default dalla configurazione
+        if (object.userData.autoRotateToCenter === undefined) {
+            object.userData.autoRotateToCenter = config.value;
+        }
+        toggle.checked = object.userData.autoRotateToCenter;
+        console.log(`Toggle "Guarda origine" for ${object.name} set to: ${toggle.checked}`);
+    } else {
+        toggle.checked = config.value;
+    }
+    
     toggle.style.transform = 'scale(1.2)';
     
     toggle.addEventListener('change', (e) => {

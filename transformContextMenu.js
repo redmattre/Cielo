@@ -3,6 +3,12 @@
 
 import groupScaleUIDiv from './src/GroupScaleUIDiv.js';
 
+// Funzione per calcolare il path corretto per GitHub Pages
+function getAssetPath(path) {
+    const basePath = window.location.pathname.split('/').slice(0, -1).join('/');
+    return basePath + '/' + path;
+}
+
 // Configurazione controlli per tipo di oggetto
 const objectTransformConfigs = {
     omnifonte: {
@@ -87,9 +93,9 @@ function createMenuHTML() {
 
     // Bottoni strumenti
     const tools = [
-        { id: 'move', icon: 'svg/sposta.svg', key: 'G' },
-        { id: 'rotate', icon: 'svg/ruota.svg', key: 'R' },
-        { id: 'scale', icon: 'svg/scala.svg', key: 'S' }
+        { id: 'move', icon: getAssetPath('svg/sposta.svg'), key: 'G' },
+        { id: 'rotate', icon: getAssetPath('svg/ruota.svg'), key: 'R' },
+        { id: 'scale', icon: getAssetPath('svg/scala.svg'), key: 'S' }
     ];
 
     tools.forEach(tool => {
@@ -118,13 +124,13 @@ function createMenuHTML() {
 
     // Toggle Global/Local
     const globalToggle = createToggleButton('global_local', 
-        'svg/global.svg', 'svg/noglobal.svg', isGlobalMode);
+        getAssetPath('svg/global.svg'), getAssetPath('svg/noglobal.svg'), isGlobalMode);
     toggleButtons.global_local = globalToggle;
     togglesGroup.appendChild(globalToggle);
 
     // Toggle Snap
     const snapToggle = createToggleButton('snap',
-        'svg/lock.svg', 'svg/nolock.svg', true); // Default: snap enabled (lock icon)
+        getAssetPath('svg/lock.svg'), getAssetPath('svg/nolock.svg'), true); // Default: snap enabled (lock icon)
     toggleButtons.snap = snapToggle;
     togglesGroup.appendChild(snapToggle);
 

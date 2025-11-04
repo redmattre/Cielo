@@ -821,40 +821,52 @@ function handleTransformClick(event) {
         }
         
     } else {
-        // Click nel vuoto: stacca transform controls se attaccati
-        if (control && control.object) {
-            // Se l'oggetto attaccato è un gruppo di trasformazione, riaggiungi tutti i figli alla scena
-            if (control.object.type === 'Group' && control.object.name === 'Gruppo di trasformazione') {
-                control.object.children.slice().forEach(obj => {
-                    obj.updateMatrixWorld(true);
-                    const worldPos = new THREE.Vector3();
-                    obj.getWorldPosition(worldPos);
-                    control.object.remove(obj);
-                    scene.add(obj);
-                    obj.position.copy(worldPos);
-                });
-                scene.remove(control.object);
+        // Click nel vuoto: stacca transform controls se attaccati OPPURE gizmo custom se attivo
+        const hasThreeJSControls = control && control.object;
+        const hasCustomScale = groupScaleUIDiv && groupScaleUIDiv.isActive;
+        
+        if (hasThreeJSControls || hasCustomScale) {
+            // Gestisci transform controls Three.js se attivi
+            if (hasThreeJSControls) {
+                // Se l'oggetto attaccato è un gruppo di trasformazione, riaggiungi tutti i figli alla scena
+                if (control.object.type === 'Group' && control.object.name === 'Gruppo di trasformazione') {
+                    control.object.children.slice().forEach(obj => {
+                        obj.updateMatrixWorld(true);
+                        const worldPos = new THREE.Vector3();
+                        obj.getWorldPosition(worldPos);
+                        control.object.remove(obj);
+                        scene.add(obj);
+                        obj.position.copy(worldPos);
+                    });
+                    scene.remove(control.object);
+                }
+                control.detach();
+                clearTransformControlsOverride();
+                const ghost = document.getElementById('ghostButton');
+                if (ghost) {
+                    ghost.style.display = 'none';
+                }
             }
-            control.detach();
+            
+            // Gestisci gizmo custom se attivo
+            if (hasCustomScale) {
+                groupScaleUIDiv.hide();
+            }
+            
+            // Operazioni comuni per entrambi
             orbit.enabled = true;
             outlinePass.selectedObjects = [];
             currentSelectedObject = null;
             lastHoveredObject = null;
-            clearTransformControlsOverride();
-            setRaycasterActive(true);
+            clearTransformControlsOverride();  // IMPORTANTE: Pulisci override prima di riattivare
+            setRaycasterActive(true);  // IMPORTANTE: Riattiva sempre il raycaster
             updateMenu();
             updateStato3();
-            const ghost = document.getElementById('ghostButton');
-            if (ghost) {
-                ghost.style.display = 'none';
-            }
-
+            
             // Nascondi il menu contestuale di trasformazione
             if (window.transformContextMenu) {
                 window.transformContextMenu.hide();
             }
-            // Nascondi anche l'handle di scala gruppo
-            groupScaleUIDiv.hide();
         }
     }
 }

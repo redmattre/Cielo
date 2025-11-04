@@ -1,6 +1,8 @@
 // Transform Context Menu System
 // Sistema di menu contestuale per trasformazioni 3D
 
+import groupScaleUIDiv from './src/GroupScaleUIDiv.js';
+
 // Configurazione controlli per tipo di oggetto
 const objectTransformConfigs = {
     omnifonte: {
@@ -85,9 +87,9 @@ function createMenuHTML() {
 
     // Bottoni strumenti
     const tools = [
-        { id: 'move', icon: './svg/sposta.svg', key: 'G' },
-        { id: 'rotate', icon: './svg/ruota.svg', key: 'R' },
-        { id: 'scale', icon: './svg/scala.svg', key: 'S' }
+        { id: 'move', icon: 'svg/sposta.svg', key: 'G' },
+        { id: 'rotate', icon: 'svg/ruota.svg', key: 'R' },
+        { id: 'scale', icon: 'svg/scala.svg', key: 'S' }
     ];
 
     tools.forEach(tool => {
@@ -116,13 +118,13 @@ function createMenuHTML() {
 
     // Toggle Global/Local
     const globalToggle = createToggleButton('global_local', 
-        './svg/global.svg', './svg/noglobal.svg', isGlobalMode);
+        'svg/global.svg', 'svg/noglobal.svg', isGlobalMode);
     toggleButtons.global_local = globalToggle;
     togglesGroup.appendChild(globalToggle);
 
     // Toggle Snap
     const snapToggle = createToggleButton('snap',
-        './svg/lock.svg', './svg/nolock.svg', true); // Default: snap enabled (lock icon)
+        'svg/lock.svg', 'svg/nolock.svg', true); // Default: snap enabled (lock icon)
     toggleButtons.snap = snapToggle;
     togglesGroup.appendChild(snapToggle);
 
@@ -337,9 +339,7 @@ function triggerTransformMode(mode) {
     switch (mode) {
         case 'move':
             // IMPORTANTE: Spegni sempre il gizmo custom quando si attiva move
-            if (window.groupScaleUIDiv) {
-                window.groupScaleUIDiv.hide();
-            }
+            groupScaleUIDiv.hide();
             
             console.log('Setting transform mode to: translate');
             control.setMode('translate');
@@ -353,9 +353,7 @@ function triggerTransformMode(mode) {
             
         case 'rotate':
             // IMPORTANTE: Spegni sempre il gizmo custom quando si attiva rotate
-            if (window.groupScaleUIDiv) {
-                window.groupScaleUIDiv.hide();
-            }
+            groupScaleUIDiv.hide();
             
             console.log('Setting transform mode to: rotate');
             
@@ -399,18 +397,37 @@ function triggerTransformMode(mode) {
             break;
             
         case 'scale':
+            console.log('triggerTransformMode: Executing scale case');
             // SEMPRE usa il sistema custom invece del gizmo Three.js standard
             const attachedObject = control.object;
+            console.log('triggerTransformMode: attachedObject is:', attachedObject?.name || 'null');
             
             if (attachedObject) {
+                console.log('triggerTransformMode: Processing scale for object:', attachedObject.name);
+                
+                // IMPORTANTE: Prima di fare detach, salva l'oggetto per il sistema custom
+                console.log('triggerTransformMode: Saving to raycasterGlobals...');
+                if (window.raycasterGlobals) {
+                    window.raycasterGlobals.lastHoveredObject = attachedObject;
+                    console.log('triggerTransformMode: Saved to raycasterGlobals');
+                } else {
+                    console.log('triggerTransformMode: ERROR - raycasterGlobals not found');
+                }
+                
                 // Stacca sempre i transform controls Three.js
+                console.log('triggerTransformMode: Detaching control...');
                 control.detach();
-                if (window.orbit) window.orbit.enabled = true;
+                console.log('triggerTransformMode: Control detached');
+                
+                if (window.orbit) {
+                    window.orbit.enabled = true;
+                    console.log('triggerTransformMode: Orbit enabled');
+                }
                 
                 // Usa sempre il sistema custom per tutti gli oggetti
-                if (window.groupScaleUIDiv) {
-                    window.groupScaleUIDiv.show(attachedObject);
-                }
+                console.log('triggerTransformMode: Calling groupScaleUIDiv.show...');
+                groupScaleUIDiv.show(attachedObject);
+                console.log('triggerTransformMode: groupScaleUIDiv.show called');
                 
                 // Determina il tipo di stato basandosi sull'oggetto e la vista
                 const isGroup = attachedObject.name === 'Gruppo di trasformazione';

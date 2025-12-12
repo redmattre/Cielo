@@ -4,8 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Cielo</title>
-    <script type="module" crossorigin src="/Cielo/assets/index-CeOy66VK.js"></script>
-    <link rel="stylesheet" crossorigin href="/Cielo/assets/index-HjHSCsOx.css">
+    <script type="module" crossorigin src="/assets/index-oIq62C7O.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-HjHSCsOx.css">
   </head>
   <body>
 
@@ -104,6 +104,17 @@
               <label class="multitoggle">
                 <input type='range' min='1' max='4' value='2' step='1' class="n n4" data-id="gridsize"/>
               </label>
+            </div>
+            <!-- Multi-Client Sync Toggle -->
+            <div class="switch-wrapper">
+              <label class="switch">
+                <input type="checkbox" data-id="multiClient"/>
+                <div></div>
+              </label>
+              <span class="switch-label">Sincronizzazione Multi-Client</span>
+            </div>
+            <div id="multiClientStatus" style="font-size: 0.8em; color: #888; margin: 5px 0; display: none;">
+              Status: Disconnesso
             </div>
             <!-- Bottoni import preset -->
             <div class="input-wrapper">

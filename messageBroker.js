@@ -73,7 +73,8 @@ class MessageBroker {
             type,
             position = { x: 0, y: 0, z: 0 },
             rotation = { x: 0, y: 0, z: 0 },
-            scale = { x: 1, y: 1, z: 1 }
+            scale = { x: 1, y: 1, z: 1 },
+            tags = [0] // Tag di default
         } = data;
 
         if (!this.canSendMessages()) {
@@ -83,17 +84,19 @@ class MessageBroker {
         const index = this.extractIndex(name);
         const objectType = type || this.extractType(name);
 
-        // OSC: Messaggio flat contestuale (senza scale)
+        // OSC: Messaggio di creazione + messaggio tags separato
         if (oscManager.isEnabled) {
-            oscManager.sendOSC('/cielo/added', [
-                objectType,
-                index,
+            // Messaggio added con posizione
+            oscManager.sendOSC(`/cielo/${objectType}/${index}/added`, [
                 name,
                 id,
                 position.x,
                 position.y,
                 position.z
             ]);
+            
+            // Messaggio tags separato
+            oscManager.sendOSC(`/cielo/${objectType}/${index}/tags`, tags);
         }
 
         // Max/MSP: Mantiene comportamento esistente
@@ -114,7 +117,8 @@ class MessageBroker {
             type,
             position = { x: 0, y: 0, z: 0 },
             rotation = { x: 0, y: 0, z: 0 },
-            scale = { x: 1, y: 1, z: 1 }
+            scale = { x: 1, y: 1, z: 1 },
+            tags = [0] // Tag di default
         } = data;
 
         if (!this.canSendMessages()) {
@@ -124,9 +128,9 @@ class MessageBroker {
         const index = this.extractIndex(name);
         const objectType = type || this.extractType(name);
 
-        // OSC: Messaggi gerarchici separati per position e rotation (full rate!)
+        // OSC: Messaggi gerarchici separati per position e rotation
         if (oscManager.isEnabled) {
-            // Position (sempre)
+            // Position
             oscManager.sendOSC(`/cielo/${objectType}/${index}/position`, [
                 position.x,
                 position.y,
@@ -145,6 +149,29 @@ class MessageBroker {
 
         // Max/MSP: Mantiene comportamento esistente tramite syncMaxDictionaries
         // (non facciamo nulla qui, maxSync.js gestisce già tutto)
+    }
+
+    /**
+     * Notifica cambio tags di un oggetto
+     */
+    sendObjectTags(data) {
+        const {
+            name,
+            type,
+            tags = [0]
+        } = data;
+
+        if (!this.canSendMessages()) {
+            return;
+        }
+
+        const index = this.extractIndex(name);
+        const objectType = type || this.extractType(name);
+
+        // OSC: Messaggio tags separato
+        if (oscManager.isEnabled) {
+            oscManager.sendOSC(`/cielo/${objectType}/${index}/tags`, tags);
+        }
     }
 
     /**

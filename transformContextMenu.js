@@ -2,6 +2,7 @@
 // Sistema di menu contestuale per trasformazioni 3D
 
 import groupScaleUIDiv from './src/GroupScaleUIDiv.js';
+import { TAG_COLORS, hasTag, toggleTag, initializeTags } from './tagColors.js';
 
 // Configurazione controlli per tipo di oggetto
 const objectTransformConfigs = {
@@ -37,12 +38,14 @@ let isGlobalMode = true; // true = global, false = local
 let isSnapEnabled = true; // true = snap on, false = snap off (default: ON con lock icon)
 let currentObjectType = null;
 let menuVisible = false;
+let currentObject = null; // Oggetto correntemente selezionato
 
 // Elementi DOM del menu
 let menuContainer = null;
 let toolButtons = {};
 let toggleButtons = {};
 let colorPicker = null;
+let tagsContainer = null;
 
 // Funzione per inizializzare il menu contestuale
 function initTransformContextMenu() {
@@ -133,6 +136,10 @@ function createMenuHTML() {
     // Color picker
     colorPicker = createColorPicker();
     togglesGroup.appendChild(colorPicker);
+
+    // Tags chips
+    tagsContainer = createTagsChips();
+    togglesGroup.appendChild(tagsContainer);
 
     // Assemblaggio
     menuContainer.appendChild(toolsGroup);
@@ -326,6 +333,133 @@ function createColorPicker() {
     container.appendChild(hiddenInput);
 
     return container;
+}
+
+// Crea la sezione Tags chips
+function createTagsChips() {
+    const container = document.createElement('div');
+    container.style.cssText = `
+        display: flex;
+        gap: 0.25rem;
+        margin-left: 0.5rem;
+        overflow-x: auto;
+        overflow-y: hidden;
+        max-width: 120px;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        padding: 0;
+        align-items: center;
+        height: 28px;
+    `;
+
+    // Nascondi scrollbar completamente (CSS trick)
+    const style = document.createElement('style');
+    style.textContent = `
+        .tags-container::-webkit-scrollbar {
+            display: none;
+        }
+    `;
+    document.head.appendChild(style);
+    container.className = 'tags-container';
+
+    // Inizialmente nascosti, verranno mostrati da updateTagsChips
+    container.style.display = 'none';
+    
+    return container;
+}
+
+// Aggiorna i chips dei tag per l'oggetto corrente
+function updateTagsChips(object) {
+    if (!tagsContainer || !object) return;
+    
+    // Inizializza tag se non presenti
+    initializeTags(object);
+    
+    // Pulisci container
+    tagsContainer.innerHTML = '';
+    
+    // Crea chip per ogni tag (0-16)
+    for (let tagNum = 0; tagNum <= 16; tagNum++) {
+        const chip = document.createElement('button');
+        chip.className = 'tag-chip';
+        chip.textContent = tagNum;
+        chip.dataset.tag = tagNum;
+        
+        const isActive = hasTag(object, tagNum);
+        const color = TAG_COLORS[tagNum];
+        
+        // Stile chip: QUADRATO 28x28px come color picker, NO BORDO, solo sfondo colorato, numero nero
+        chip.style.cssText = `
+            width: 28px;
+            height: 28px;
+            min-width: 28px;
+            min-height: 28px;
+            border-radius: 4px;
+            border: none;
+            margin: 0;
+            padding: 0;
+            font-size: 0.75rem;
+            font-weight: bold;
+            line-height: 1;
+            cursor: ${tagNum === 0 ? 'not-allowed' : 'pointer'};
+            transition: all 0.15s ease;
+            flex-shrink: 0;
+            background-color: ${color};
+            color: #000;
+            opacity: ${isActive ? '1' : '0.3'};
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+        `;
+        
+        // Tag 0 sempre attivo (disabilitato)
+        if (tagNum === 0) {
+            chip.disabled = true;
+        }
+        
+        // Click handler per toggle
+        chip.addEventListener('click', () => {
+            if (tagNum === 0) return;
+            
+            // Richiedi Master se multi-client attivo
+            if (window.multiClientManager?.isEnabled && !window.multiClientManager?.isMaster) {
+                window.multiClientManager.requestMaster();
+            }
+            
+            // Toggle tag
+            const toggled = toggleTag(object, tagNum);
+            if (toggled) {
+                // Aggiorna visivamente il chip (cambia solo opacità)
+                const newState = hasTag(object, tagNum);
+                chip.style.opacity = newState ? '1' : '0.3';
+                
+                // Invia messaggio tags separato
+                if (window.messageBroker) {
+                    window.messageBroker.sendObjectTags({
+                        name: object.name,
+                        type: null,
+                        tags: object.userData.tags || [0]
+                    });
+                }
+            }
+        });
+        
+        // Hover effects (solo cambio di brightness)
+        if (tagNum !== 0) {
+            chip.addEventListener('mouseenter', () => {
+                chip.style.filter = 'brightness(1.2)';
+            });
+            chip.addEventListener('mouseleave', () => {
+                chip.style.filter = 'brightness(1)';
+            });
+        }
+        
+        tagsContainer.appendChild(chip);
+    }
+    
+    // Mostra il container
+    tagsContainer.style.display = 'flex';
 }
 
 // Setup event listeners
@@ -560,6 +694,9 @@ function getObjectType(object) {
 function showMenu(object) {
     if (!menuContainer) return;
     
+    // Traccia l'oggetto corrente
+    currentObject = object;
+    
     currentObjectType = getObjectType(object);
     const config = objectTransformConfigs[currentObjectType];
     
@@ -590,6 +727,9 @@ function showMenu(object) {
         setActiveTool(config.tools[0]);
     }
 
+    // Aggiorna i tag chips per l'oggetto corrente
+    updateTagsChips(object);
+
     // Mostra il menu con animazione
     menuContainer.style.opacity = '1';
     menuContainer.style.transform = 'translateY(0)';
@@ -608,6 +748,12 @@ function hideMenu() {
     menuContainer.style.pointerEvents = 'none';
     menuVisible = false;
     currentObjectType = null;
+    currentObject = null;
+
+    // Nascondi i tag chips
+    if (tagsContainer) {
+        tagsContainer.style.display = 'none';
+    }
 
     console.log('Transform menu hidden');
 }

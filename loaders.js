@@ -54,6 +54,9 @@ export function loadObj(filename, name, material, scaleFactor, x, y, z, rotation
             if (rotation) {
                 group.rotation.set(rotation.x, rotation.y, rotation.z);
             }
+            
+            // Inizializza tag di default
+            group.userData.tags = [0];
 
             // Add the group to the scene and the objects to detect
             scene.add(group);
@@ -91,7 +94,8 @@ export function loadObj(filename, name, material, scaleFactor, x, y, z, rotation
                     type: objectType,
                     position: { x: x, y: y, z: z },  // Coordinate applicazione
                     rotation: rotation ? { x: rotation.x, y: rotation.y, z: rotation.z } : { x: 0, y: 0, z: 0 },
-                    scale: { x: scaleFactor, y: scaleFactor, z: scaleFactor }
+                    scale: { x: scaleFactor, y: scaleFactor, z: scaleFactor },
+                    tags: group.userData.tags || [0]
                 });
             }
             

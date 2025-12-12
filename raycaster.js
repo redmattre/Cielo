@@ -1024,7 +1024,8 @@ function sendTransformToSlaves(object) {
             x: scale.x,
             y: scale.y,
             z: scale.z
-        }
+        },
+        tags: targetObject.userData?.tags || [0]
     });
 }
 

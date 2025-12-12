@@ -240,6 +240,7 @@ document.addEventListener('DOMContentLoaded', () => {
       mesh.scale.set(0.25, 0.24, 0.25);
       mesh.name = nome;
       mesh.userData.id = generateUniqueId();
+      mesh.userData.tags = [0]; // Tag di default
       mesh.isDashed = false;
       mesh.position.set(0., 1.2, 0.);
       scene.add(mesh);
@@ -264,7 +265,8 @@ document.addEventListener('DOMContentLoaded', () => {
         type: 'omnifonte',
         position: { x: 0, y: 1.2, z: 0 },
         rotation: { x: 0, y: 0, z: 0 },
-        scale: { x: 0.25, y: 0.24, z: 0.25 }
+        scale: { x: 0.25, y: 0.24, z: 0.25 },
+        tags: mesh.userData.tags || [0]
       });
       
       createMenu();
@@ -462,6 +464,7 @@ document.addEventListener('DOMContentLoaded', () => {
     mesh.scale.set(0.25, 0.24, 0.25);
     mesh.name = nome;
     mesh.userData.id = uniqueId;
+    mesh.userData.tags = [0]; // Tag di default
     mesh.isDashed = false;
     mesh.position.set(x, z, y);
     scene.add(mesh);
@@ -486,7 +489,8 @@ document.addEventListener('DOMContentLoaded', () => {
       type: 'omnifonte',
       position: { x: x, y: y, z: z },  // Coordinate applicazione
       rotation: { x: 0, y: 0, z: 0 },
-      scale: { x: 0.25, y: 0.24, z: 0.25 }
+      scale: { x: 0.25, y: 0.24, z: 0.25 },
+      tags: mesh.userData.tags || [0]
     });
     
     createMenu();

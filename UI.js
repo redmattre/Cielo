@@ -109,6 +109,12 @@ function toggleSwitch(id, state) {
             toggleModelVisibility('architettura-edges', state);
             toggleModelVisibility('architettura-conditional', state);
             break;
+        case 'multiClient':
+            if (window.multiClientManager) {
+                window.multiClientManager.setEnabled(state);
+                updateMultiClientStatusDisplay();
+            }
+            break;
 		default:
 			console.log('Switch non riconosciuto');
 	}
@@ -280,6 +286,270 @@ openSideMenu.addEventListener('click', () => {
 });
 
 
+
+//MULTI-CLIENT INTEGRATION
+
+/**
+ * Aggiorna il display dello status multi-client
+ */
+function updateMultiClientStatusDisplay() {
+    const statusDiv = document.getElementById('multiClientStatus');
+    if (!statusDiv || !window.multiClientManager) return;
+
+    const status = window.multiClientManager.getStatus();
+    let statusText = '';
+    let statusColor = '#888';
+
+    if (!status.isEnabled) {
+        statusText = 'Status: Disattivato';
+        statusDiv.style.display = 'none';
+    } else if (!status.isConnected) {
+        statusText = 'Status: Connessione...';
+        statusColor = '#ff9500';
+        statusDiv.style.display = 'block';
+    } else {
+        const role = status.isMaster ? 'MASTER' : 'SLAVE';
+        statusText = `Status: Connesso (${role})`;
+        statusColor = status.isMaster ? '#00ff00' : '#0077ff';
+        statusDiv.style.display = 'block';
+    }
+
+    statusDiv.textContent = statusText;
+    statusDiv.style.color = statusColor;
+}
+
+// Esponi la funzione globalmente per il rightmenu.js
+window.updateMultiClientStatusDisplay = updateMultiClientStatusDisplay;
+
+/**
+ * Inizializza l'integrazione multi-client
+ */
+function initMultiClientIntegration() {
+    if (!window.multiClientManager) return;
+
+    // Setup callbacks per eventi multi-client
+    window.multiClientManager.onStateChange = updateMultiClientStatusDisplay;
+    
+    window.multiClientManager.onMasterChange = (isMaster) => {
+        console.log(`Ruolo cambiato: ${isMaster ? 'MASTER' : 'SLAVE'}`);
+        updateMultiClientStatusDisplay();
+    };
+    
+    window.multiClientManager.onTransformReceived = (data) => {
+        // Applica trasformazione ricevuta dal master
+        applyTransformFromMultiClient(data);
+    };
+    
+    window.multiClientManager.onObjectCreatedReceived = (data) => {
+        // Crea oggetto ricevuto dal master
+        createObjectFromMultiClient(data);
+    };
+
+    // Hook nel sistema di trasformazioni esistente
+    setupTransformSyncHooks();
+}
+
+/**
+ * Applica trasformazione ricevuta da altro client
+ */
+function applyTransformFromMultiClient(data) {
+    // Cerca l'oggetto per ID in tutti gli oggetti della scena
+    let targetObject = null;
+    
+    scene.traverse(function(child) {
+        if (child.userData && child.userData.id === data.objectId) {
+            targetObject = child;
+        }
+    });
+    
+    if (!targetObject) {
+        console.warn('Oggetto non trovato per ID:', data.objectId, '- Ritentativo in 100ms...');
+        
+        // Ritenta dopo un breve delay (per oggetti in caricamento)
+        setTimeout(() => {
+            scene.traverse(function(child) {
+                if (child.userData && child.userData.id === data.objectId) {
+                    targetObject = child;
+                }
+            });
+            
+            if (targetObject) {
+                console.log('Oggetto trovato al secondo tentativo:', targetObject.name);
+                applyTransformToObject(targetObject, data);
+            } else {
+                console.error('Oggetto definitivamente non trovato per ID:', data.objectId);
+            }
+        }, 100);
+        return;
+    }
+    
+    applyTransformToObject(targetObject, data);
+}
+
+/**
+ * Applica le trasformazioni a un oggetto
+ */
+function applyTransformToObject(targetObject, data) {
+    console.log('Applicando trasformazione da master a:', targetObject.name);
+
+    // Applica posizione, rotazione, scala
+    if (data.position) {
+        targetObject.position.set(data.position.x, data.position.y, data.position.z);
+    }
+    if (data.rotation) {
+        targetObject.rotation.set(data.rotation.x, data.rotation.y, data.rotation.z);
+    }
+    if (data.scale) {
+        targetObject.scale.set(data.scale.x, data.scale.y, data.scale.z);
+    }
+    
+    // Forza aggiornamento matrice
+    targetObject.updateMatrixWorld(true);
+}
+
+/**
+ * Crea oggetto ricevuto da altro client
+ */
+function createObjectFromMultiClient(data) {
+    console.log('Creando oggetto da master:', data.objectType, data.name, data.objectId);
+    
+    // Mappa tipi di oggetto alle funzioni di creazione
+    const position = data.position || { x: 0, y: 1.2, z: 0 };
+    
+    // Scambia Y e Z perché arrivano in ordine Three.js (x, z, y) ma servono in ordine app (x, y, z)
+    const appPos = { x: position.x, y: position.z, z: position.y };
+    
+    switch (data.objectType) {
+        case 'sphere':
+        case 'omnifonte':
+            if (window.addSphereAtPosition) {
+                console.log('Creando omnifonte da sync:', data.name, 'alle coordinate:', appPos, 'con ID:', data.objectId);
+                
+                // Temporaneamente disattiva sync per evitare loop
+                const wasEnabled = window.multiClientManager.isEnabled;
+                window.multiClientManager.isEnabled = false;
+                
+                // Crea l'omnifonte con ID e nome dal master
+                window.addSphereAtPosition(appPos.x, appPos.y, appPos.z, data.objectId, data.name);
+                
+                // Riattiva sync dopo un breve delay
+                setTimeout(() => {
+                    window.multiClientManager.isEnabled = wasEnabled;
+                    console.log('Omnifonte creato correttamente con ID:', data.objectId);
+                }, 100);
+            }
+            break;
+            
+        case 'speaker':
+        case 'altoparlante':
+            if (window.addSpeakerAtPosition) {
+                console.log('Creando altoparlante da sync:', data.name, 'alle coordinate:', appPos, 'con ID:', data.objectId);
+                
+                // Temporaneamente disattiva sync per evitare loop
+                const wasEnabled = window.multiClientManager.isEnabled;
+                window.multiClientManager.isEnabled = false;
+                
+                // Crea l'altoparlante con ID e nome dal master
+                window.addSpeakerAtPosition(appPos.x, appPos.y, appPos.z, data.objectId, data.name);
+                
+                // Riattiva sync dopo un breve delay
+                setTimeout(() => {
+                    window.multiClientManager.isEnabled = wasEnabled;
+                }, 100);
+                
+                // Monitora la scena per assicurarsi che l'oggetto sia stato creato correttamente
+                let callbackTriggered = false;
+                const checkForNewSpeaker = () => {
+                    scene.traverse(child => {
+                        if (child.userData.id === data.objectId) {
+                            console.log('Altoparlante creato correttamente con ID:', data.objectId);
+                            callbackTriggered = true;
+                            return true;
+                        }
+                    });
+                    
+                    // Se non è stato trovato, riprova (massimo 10 tentativi)
+                    if (!callbackTriggered && checkForNewSpeaker.attempts < 10) {
+                        checkForNewSpeaker.attempts++;
+                        setTimeout(checkForNewSpeaker, 50);
+                    }
+                };
+                checkForNewSpeaker.attempts = 0;
+                
+                // Inizia il controllo
+                setTimeout(checkForNewSpeaker, 50);
+            }
+            break;
+            
+        case 'arrow':
+        case 'orifonte':
+            if (window.addArrowAtPosition) {
+                console.log('Creando orifonte da sync:', data.name, 'alle coordinate:', appPos, 'con ID:', data.objectId);
+                
+                // Temporaneamente disattiva sync per evitare loop
+                const wasEnabled = window.multiClientManager.isEnabled;
+                window.multiClientManager.isEnabled = false;
+                
+                // Crea l'orifonte con ID e nome dal master
+                window.addArrowAtPosition(appPos.x, appPos.y, appPos.z, data.objectId, data.name);
+                
+                // Riattiva sync dopo un breve delay
+                setTimeout(() => {
+                    window.multiClientManager.isEnabled = wasEnabled;
+                    console.log('Orifonte creato correttamente con ID:', data.objectId);
+                }, 100);
+            }
+            break;
+            
+        default:
+            console.warn('Tipo oggetto non supportato per sync:', data.objectType);
+    }
+}
+
+/**
+ * Setup hooks per sincronizzare trasformazioni
+ */
+function setupTransformSyncHooks() {
+    if (!window.setupGlobals?.control) return;
+
+    const originalControl = window.setupGlobals.control;
+    
+    // Hook evento 'objectChange' per sincronizzare trasformazioni
+    originalControl.addEventListener('objectChange', (event) => {
+        if (!window.multiClientManager?.isMaster || !window.multiClientManager?.isEnabled) {
+            return;
+        }
+
+        const object = event.target.object;
+        if (!object || !object.userData.id) return;
+
+        // Invia trasformazione ai client slave
+        window.multiClientManager.sendTransform(
+            object.userData.id,
+            {
+                x: object.position.x,
+                y: object.position.y,
+                z: object.position.z
+            },
+            {
+                x: object.rotation.x,
+                y: object.rotation.y,
+                z: object.rotation.z
+            },
+            {
+                x: object.scale.x,
+                y: object.scale.y,
+                z: object.scale.z
+            }
+        );
+    });
+}
+
+// Inizializza integrazione quando DOM è pronto
+document.addEventListener('DOMContentLoaded', () => {
+    // Ritarda l'inizializzazione per permettere al multiClientManager di essere disponibile
+    setTimeout(initMultiClientIntegration, 100);
+});
 
 //OPTIMIZATION
 

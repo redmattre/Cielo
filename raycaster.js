@@ -84,6 +84,20 @@ export function clearTransformControlsOverride() {
     transformControlsOverride = false;
 }
 
+// Helper per attach con richiesta master automatica
+function attachControlWithMasterRequest(object) {
+    console.log('attachControlWithMasterRequest chiamato');
+    
+    // Richiedi ruolo master se slave e multi-client attivo
+    if (window.multiClientManager?.isEnabled && !window.multiClientManager?.isMaster) {
+        console.log('Richiedendo ruolo master prima di attach...');
+        window.multiClientManager.requestMaster();
+    }
+    
+    // Attacca il control
+    control.attach(object);
+}
+
 export let outlinePass;
 let composer;
 
@@ -668,7 +682,8 @@ renderer.domElement.addEventListener('pointerup', (event) => {
                                 sendLastHoveredObjectToMax(group.name || 'Gruppo di trasformazione');
                                 updateInfoText(group.name || 'Gruppo di trasformazione');
                                 highlightMenuItemByObject(group);
-                                control.attach(group);
+                                
+                                attachControlWithMasterRequest(group);
                                 setRaycasterActiveForTransformControls(false);
                                 orbit.enabled = false;
                                 if (outlinePass) outlinePass.selectedObjects = [];
@@ -784,8 +799,8 @@ function handleTransformClick(event) {
         // Click su oggetto: attacca transform controls
         const targetObject = intersected.parent?.isGroup ? intersected.parent : intersected;
         
-        // Attacca i transform controls all'oggetto
-        control.attach(targetObject);
+        // Attacca i transform controls all'oggetto (con richiesta master automatica)
+        attachControlWithMasterRequest(targetObject);
         
         // IMPORTANTE: Usa funzione dedicata per transform controls
         setRaycasterActiveForTransformControls(false);
@@ -928,6 +943,59 @@ window.addEventListener('beforeunload', () => {
     disposePostProcessing();
 });
 
+// --- FUNZIONI MULTI-CLIENT SYNC ---
+function sendTransformToSlaves(object) {
+    if (!object || !window.multiClientManager) return;
+    
+    // Trova l'ID dell'oggetto
+    let objectId = null;
+    let targetObject = object;
+    
+    // Se è un gruppo di trasformazione, prendi il primo figlio per l'ID
+    if (object.type === 'Group' && object.name === 'Gruppo di trasformazione') {
+        const children = object.children || [];
+        if (children.length > 0) {
+            targetObject = children[0];
+        }
+    }
+    
+    objectId = targetObject.userData?.id;
+    
+    if (!objectId) {
+        console.warn('Oggetto senza ID per sync multi-client:', targetObject.name);
+        return;
+    }
+    
+    // Calcola posizione globale
+    object.updateMatrixWorld(true);
+    const position = new THREE.Vector3();
+    const quaternion = new THREE.Quaternion();  
+    const scale = new THREE.Vector3();
+    object.matrixWorld.decompose(position, quaternion, scale);
+    
+    // Converti quaternion in eulero
+    const euler = new THREE.Euler().setFromQuaternion(quaternion);
+    
+    window.multiClientManager.sendTransform(
+        objectId,
+        {
+            x: position.x,
+            y: position.y,
+            z: position.z
+        },
+        {
+            x: euler.x,
+            y: euler.y,  
+            z: euler.z
+        },
+        {
+            x: scale.x,
+            y: scale.y,
+            z: scale.z
+        }
+    );
+}
+
 // --- INVIO A MAX/MSP DEL MOVIMENTO MANUALE ---
 if (control) {
     // Listener unico per cambiamenti: solo omnifonti mandano outlet; altoparlanti aggiornano solo dizionari
@@ -979,6 +1047,12 @@ if (control) {
         }
         // Se è un altoparlante singolo: nessun outlet realtime
         syncMaxDictionaries();
+        
+        // --- INTEGRAZIONE MULTI-CLIENT SYNC ---
+        // Invia trasformazione ai client slave se siamo master
+        if (window.multiClientManager?.isMaster && window.multiClientManager?.isEnabled) {
+            sendTransformToSlaves(target);
+        }
     });
 
     // Listener mouseUp: invia update-altoparlanti solo alla fine per altoparlanti (singolo o gruppo)
@@ -997,6 +1071,20 @@ if (control) {
         const isSpeaker = fullName.toLowerCase().includes('altoparlante');
         if (isSpeaker) {
             syncMaxDictionaries('update-altoparlanti');
+        }
+    });
+    
+    // Listener mouseDown: richiedi ruolo master quando si inizia a trascinare
+    control.addEventListener('mouseDown', function () {
+        console.log('control.mouseDown - multiClientManager:', {
+            exists: !!window.multiClientManager,
+            isEnabled: window.multiClientManager?.isEnabled,
+            isMaster: window.multiClientManager?.isMaster
+        });
+        
+        if (window.multiClientManager?.isEnabled && !window.multiClientManager?.isMaster) {
+            console.log('Richiedendo ruolo master per trascinamento...');
+            window.multiClientManager.requestMaster();
         }
     });
 }

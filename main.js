@@ -5,6 +5,8 @@ import { loadObj, loadObjWithDashedEdges } from './loaders.js';
 import { loadGltfModel, loadObjWithMaterials, toggleTransparency } from './loadersFIX.js';
 import { addMetroButtonToDock } from './metro.js';
 import './transformContextMenu.js';
+import multiClientManager from './multiClientManager.js';
+import './rightmenu.js';
 
 
 init();

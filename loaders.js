@@ -18,7 +18,8 @@ function resolveAssetPath(filename) {
 }
 
 //questa è la funzione utilizzata per caricare tutti gli obj
-export function loadObj(filename, name, material, scaleFactor, x, y, z, rotation) {
+export function loadObj(filename, name, material, scaleFactor, x, y, z, rotation, uniqueId) {
+    console.log('loadObj chiamata con:', { name, uniqueId, x, y, z });
     const loader = new OBJLoader();
 
     const fullPath = resolveAssetPath(filename);
@@ -29,6 +30,14 @@ export function loadObj(filename, name, material, scaleFactor, x, y, z, rotation
             // Create a group to handle transformations
             const group = new THREE.Group();
             group.name = name; // Assign a name to the group
+            
+            // Assign unique ID for multi-client synchronization
+            if (uniqueId) {
+                group.userData.id = uniqueId;
+                console.log('ID assegnato al gruppo:', name, 'ID:', uniqueId);
+            } else {
+                console.warn('Nessun ID fornito per:', name);
+            }
 
             object.traverse(function (child) {
                 if (child.isMesh) {
@@ -48,6 +57,25 @@ export function loadObj(filename, name, material, scaleFactor, x, y, z, rotation
             // Add the group to the scene and the objects to detect
             scene.add(group);
             objToBeDetected.push(group);
+            
+            console.log('Oggetto caricato:', name, 'ID assegnato:', group.userData.id);
+            
+            // Notifica creazione oggetto al multi-client manager se ha ID univoco
+            if (uniqueId && window.multiClientManager?.isMaster && window.multiClientManager?.isEnabled) {
+                const objectType = name.toLowerCase().includes('altoparlante') ? 'altoparlante' : 
+                                 name.toLowerCase().includes('orifonte') ? 'orifonte' : 'object';
+                
+                console.log('Notificando creazione oggetto:', objectType, name, uniqueId);
+                
+                window.multiClientManager.notifyObjectCreated(
+                    uniqueId,
+                    objectType, 
+                    name,
+                    { x: x, y: z, z: y },
+                    rotation ? { x: rotation.x, y: rotation.y, z: rotation.z } : { x: 0, y: 0, z: 0 },
+                    { x: scaleFactor, y: scaleFactor, z: scaleFactor }
+                );
+            }
             
             // Initialize auto-rotation for new speakers
             if (name && (/Altoparlante/i).test(name)) {

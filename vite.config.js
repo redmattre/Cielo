@@ -1,8 +1,19 @@
 import { defineConfig } from "vite";
+import { websocketPlugin } from "./plugins/websocket-plugin.js";
 
 export default defineConfig({
-    base: "/Cielo/", 
-    
+    // base: "/Cielo/",
+    server: {
+        host: '0.0.0.0', // Accetta connessioni da qualsiasi IP
+        port: 5173,
+    },
+    plugins: [
+        websocketPlugin({
+            port: 8080,
+            path: '/ws',
+            host: '0.0.0.0' // WebSocket accetta connessioni da qualsiasi IP
+        })
+    ]
 });
 
 /*

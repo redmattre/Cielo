@@ -1,0 +1,662 @@
+================================================================================
+SISTEMA DI SINCRONIZZAZIONE MULTI-CLIENT PER CIELO
+================================================================================
+Data: 12 Dicembre 2025
+Stato: Funzionante - Versione Base Completa
+
+================================================================================
+PANORAMICA GENERALE
+================================================================================
+
+Il sistema di sincronizzazione multi-client permette a più utenti di visualizzare
+e manipolare la stessa scena 3D in tempo reale su computer diversi (anche sulla
+stessa rete locale).
+
+CARATTERISTICHE PRINCIPALI:
+- Architettura Master/Slave con cambio dinamico di ruolo
+- Sincronizzazione in tempo reale di creazione oggetti e trasformazioni
+- Supporto per tutti i tipi di oggetti (Altoparlanti, Omnifonti, Orifonti)
+- Funziona sia su localhost che su rete locale (LAN)
+- WebSocket integrato nel dev server Vite
+
+================================================================================
+ARCHITETTURA DEL SISTEMA
+================================================================================
+
+RUOLI:
+1. MASTER: 
+   - Il primo client che si connette
+   - Può creare oggetti e muoverli
+   - Invia aggiornamenti a tutti gli Slave
+   - Il ruolo può essere trasferito ad altri client
+
+2. SLAVE:
+   - Clients successivi al primo
+   - Ricevono e applicano gli aggiornamenti dal Master
+   - Possono richiedere di diventare Master cliccando su un oggetto
+   - Una volta Master, possono manipolare gli oggetti
+
+FLUSSO DI COMUNICAZIONE:
+Client → WebSocket Server (porta 8080) → Altri Clients
+
+TIPI DI MESSAGGI:
+- 'init': Inizializzazione client e assegnazione ruolo
+- 'role_change': Cambio di ruolo Master/Slave
+- 'object_created': Notifica creazione nuovo oggetto 3D
+- 'transform': Aggiornamento posizione/rotazione/scala oggetto
+- 'request_master': Richiesta di diventare Master
+- 'ping'/'pong': Keep-alive per mantenere la connessione
+
+================================================================================
+FILE COINVOLTI E MODIFICHE
+================================================================================
+
+1. plugins/websocket-plugin.js (NUOVO FILE)
+   ----------------------------------------
+   Ruolo: Plugin Vite che integra il WebSocket Server
+   
+   Funzioni chiave:
+   - websocketPlugin(options): Crea e configura il server WebSocket
+   - handleConnection(ws, request): Gestisce nuove connessioni client
+   - handleClientMessage(clientId, message): Router dei messaggi
+   - assignMaster(clientId): Assegna ruolo Master a un client
+   - broadcastToSlaves(message): Invia messaggi a tutti gli Slave
+   
+   Configurazione:
+   - host: '0.0.0.0' (accetta connessioni da qualsiasi IP)
+   - port: 8080
+   - path: '/ws'
+   
+   State Management:
+   - connectedClients: Map di tutti i client connessi
+   - currentMaster: ID del client Master corrente
+   - stateStore.objects: Mappa degli oggetti 3D creati
+
+2. multiClientManager.js (NUOVO FILE)
+   ------------------------------------
+   Ruolo: Client WebSocket che gestisce la sincronizzazione lato browser
+   
+   Classe: MultiClientManager
+   
+   Proprietà principali:
+   - ws: WebSocket connection
+   - clientId: ID univoco del client
+   - isMaster: true se questo client è Master
+   - isEnabled: true se la sincronizzazione è attiva
+   
+   Metodi pubblici:
+   - setEnabled(enabled): Attiva/disattiva la modalità multi-client
+   - sendTransform(objectId, position, rotation, scale): Invia trasformazione
+   - notifyObjectCreated(...): Notifica creazione nuovo oggetto
+   - requestMaster(): Richiede di diventare Master
+   
+   Callbacks (registrati in UI.js):
+   - onStateChange: Chiamato quando cambia lo stato della connessione
+   - onMasterChange: Chiamato quando cambia il ruolo Master/Slave
+   - onTransformReceived: Chiamato quando arriva una trasformazione
+   - onObjectCreatedReceived: Chiamato quando arriva un nuovo oggetto
+   
+   Throttling:
+   - Le trasformazioni sono limitate a 20 FPS (50ms) per oggetto
+   - Previene sovraccarico della rete
+
+3. vite.config.js (MODIFICATO)
+   -----------------------------
+   Aggiunte:
+   
+   server: {
+     host: '0.0.0.0',  // Accetta connessioni da rete locale
+     port: 5173,
+   },
+   plugins: [
+     websocketPlugin({
+       port: 8080,
+       path: '/ws',
+       host: '0.0.0.0'  // WebSocket accessibile da rete locale
+     })
+   ]
+
+4. UI.js (MODIFICATO)
+   -------------------
+   Nuove funzioni:
+   
+   - createObjectFromMultiClient(data):
+     * Riceve dati dal Master
+     * Mappa il tipo di oggetto alla funzione di creazione corretta
+     * Gestisce lo scambio coordinate Y-Z tra Master e Slave
+     * Disabilita temporaneamente sync per evitare loop
+   
+   - applyTransformFromMultiClient(data):
+     * Cerca l'oggetto nella scena per ID
+     * Applica trasformazione ricevuta dal Master
+     * Ha retry logic per oggetti in caricamento asincrono
+   
+   - applyTransformToObject(targetObject, data):
+     * Applica position, rotation, scale all'oggetto Three.js
+   
+   Callback registrati al multiClientManager:
+   - onMasterChange: Aggiorna UI e status display
+   - onTransformReceived: Applica trasformazioni ricevute
+   - onObjectCreatedReceived: Crea oggetti ricevuti dal Master
+   
+   IMPORTANTE - Gestione Coordinate:
+   Le coordinate vengono scambiate Y-Z quando inviate dal Master perché:
+   - Master invia in formato Three.js (x, z, y)
+   - Slave deve ricevere in formato applicazione (x, y, z)
+   - createObjectFromMultiClient fa lo swap: { x: pos.x, y: pos.z, z: pos.y }
+
+5. addgeometries.js (MODIFICATO)
+   --------------------------------
+   Funzioni modificate per accettare ID e nome dal Master:
+   
+   - window.addSpeakerAtPosition(x, y, z, providedId=null, providedName=null)
+   - window.addArrowAtPosition(x, y, z, providedId=null, providedName=null)
+   - window.addSphereAtPosition(x, y, z, providedId=null, providedName=null)
+   
+   Nuova funzione:
+   - generateUniqueId(): Genera ID univoco formato obj_timestamp_counter
+   
+   Logica:
+   - Se providedId è fornito (chiamata da Slave), usa quello
+   - Altrimenti genera nuovo ID (chiamata da Master)
+   - Dopo creazione, notifica il multiClientManager se Master
+   
+   NOTA COORDINATE:
+   Quando notifica la creazione, invia coordinate in formato Three.js:
+   { x: x, y: z, z: y }  // Scambio Y-Z per Three.js
+
+6. loaders.js (MODIFICATO)
+   -------------------------
+   Funzione: loadObj(filename, name, material, scaleFactor, x, y, z, rotation, uniqueId)
+   
+   Modifiche:
+   - Aggiunto parametro 'uniqueId' alla fine
+   - Assegna group.userData.id = uniqueId dentro il callback load
+   - Notifica multiClientManager dopo il caricamento (se Master)
+   
+   IMPORTANTE:
+   L'ID viene assegnato DENTRO il callback perché il caricamento è asincrono.
+   Tutte le chiamate a loadObj devono passare 'null' per rotation se non usato:
+   loadObj(file, name, mat, scale, x, y, z, null, uniqueId)
+
+7. raycaster.js (MODIFICATO)
+   ---------------------------
+   Nuove funzioni:
+   
+   - attachControlWithMasterRequest(object):
+     * Wrapper per control.attach()
+     * Richiede automaticamente ruolo Master se Slave
+     * Usato ovunque si attacca il TransformControl
+   
+   - sendTransformToSlaves(object):
+     * Estrae ID, posizione, rotazione, scala dall'oggetto
+     * Chiama multiClientManager.sendTransform()
+   
+   Modifiche ai listener:
+   
+   - control.addEventListener('change'):
+     * Dopo ogni cambio di trasformazione
+     * Chiama sendTransformToSlaves() se Master
+     * Throttling gestito dal multiClientManager
+   
+   - control.addEventListener('mouseDown'):
+     * Quando si inizia a trascinare il gizmo
+     * Richiede Master se Slave (backup, di solito già richiesto prima)
+   
+   Sostituzioni:
+   - Tutte le chiamate a control.attach(obj) sono state sostituite con
+     attachControlWithMasterRequest(obj)
+
+8. rightmenu.js (MODIFICATO)
+   ---------------------------
+   Aggiunte al pannello 'generali':
+   
+   Toggle 'multiClient':
+   {
+     type: 'toggle',
+     id: 'multiClient',
+     label: 'Sincronizzazione Multi-Client',
+     defaultValue: false,
+     action: (value) => {
+       window.multiClientManager.setEnabled(value);
+       window.updateMultiClientStatusDisplay();
+     }
+   }
+   
+   Status display 'multiClientStatus':
+   {
+     type: 'status',
+     id: 'multiClientStatus',
+     defaultText: 'Status: Disattivato',
+     hidden: true
+   }
+   
+   Modifica a createToggle():
+   - Usa 'click' invece di 'change' per gestire meglio lo stato iniziale
+
+9. main.js (MODIFICATO)
+   ----------------------
+   Aggiunte:
+   import multiClientManager from './multiClientManager.js';
+   import './rightmenu.js';
+   
+   L'ordine è importante: multiClientManager prima di rightmenu
+   così il toggle può accedere a window.multiClientManager
+
+================================================================================
+FORMATO DATI
+================================================================================
+
+MESSAGGIO: object_created
+--------------------------
+Inviato quando il Master crea un nuovo oggetto
+
+Struttura:
+{
+  type: 'object_created',
+  fromMaster: true,
+  objectId: 'obj_1765551234567_1',
+  objectType: 'altoparlante' | 'omnifonte' | 'orifonte',
+  name: 'Altoparlante 1',
+  position: { x: 0, y: 1.2, z: 0 },    // Formato Three.js (y e z scambiati)
+  rotation: { x: 0, y: 0, z: 0 },
+  scale: { x: 0.045, y: 0.045, z: 0.045 },
+  properties: {}  // Opzionale, per dati aggiuntivi
+}
+
+MESSAGGIO: transform
+--------------------
+Inviato quando il Master muove/ruota/scala un oggetto
+
+Struttura:
+{
+  type: 'transform',
+  fromMaster: true,
+  objectId: 'obj_1765551234567_1',
+  position: { x: 1.5, y: 1.2, z: 2.0 },
+  rotation: { x: 0, y: 1.57, z: 0 },
+  scale: { x: 1, y: 1, z: 1 }
+}
+
+MESSAGGIO: request_master
+--------------------------
+Inviato da uno Slave che vuole diventare Master
+
+Struttura:
+{
+  type: 'request_master'
+}
+
+MESSAGGIO: init
+---------------
+Inviato dal server al client appena si connette
+
+Struttura:
+{
+  type: 'init',
+  clientId: 'client_1765551234567_abc123',
+  isMaster: true | false,
+  state: {}  // Attualmente non usato (loadInitialState commentato)
+}
+
+MESSAGGIO: role_change
+----------------------
+Inviato dal server quando cambia il ruolo di un client
+
+Struttura:
+{
+  type: 'role_change',
+  isMaster: true | false
+}
+
+================================================================================
+FLUSSO DI LAVORO TIPICO
+================================================================================
+
+SCENARIO 1: Avvio e Connessione
+--------------------------------
+1. Utente 1 apre http://localhost:5173/Cielo/
+2. Attiva toggle "Sincronizzazione Multi-Client" nel menu Generali
+3. multiClientManager.setEnabled(true) → connect()
+4. WebSocket si connette a ws://localhost:8080/ws
+5. Server invia messaggio 'init' con isMaster: true
+6. Client diventa MASTER
+
+7. Utente 2 apre http://localhost:5173/Cielo/ (altro tab o computer)
+8. Attiva toggle "Sincronizzazione Multi-Client"
+9. WebSocket si connette
+10. Server invia messaggio 'init' con isMaster: false
+11. Client diventa SLAVE
+
+SCENARIO 2: Master Crea Oggetto
+--------------------------------
+1. Master clicca per creare Altoparlante
+2. addSpeakerAtPosition(x, y, z) viene chiamato SENZA providedId
+3. Viene generato nuovo uniqueId: obj_1765551234567_1
+4. loadObj() viene chiamato con questo ID
+5. Quando caricamento completo, group.userData.id = uniqueId
+6. multiClientManager.notifyObjectCreated() invia messaggio al server
+7. Server broadcast a tutti gli Slave
+
+8. Slave riceve messaggio 'object_created'
+9. UI.js → createObjectFromMultiClient() viene chiamato
+10. Scambia coordinate Y-Z: { x: pos.x, y: pos.z, z: pos.y }
+11. Chiama addSpeakerAtPosition(x, y, z, objectId, name) CON providedId
+12. Oggetto creato nello Slave con STESSO ID del Master
+13. Oggetto appare nella stessa posizione in entrambi i client
+
+SCENARIO 3: Slave Vuole Muovere Oggetto
+----------------------------------------
+1. Slave clicca su un oggetto
+2. handleTransformClick() → attachControlWithMasterRequest(object)
+3. Verifica: isEnabled=true E isMaster=false
+4. Chiama multiClientManager.requestMaster()
+5. Invia messaggio 'request_master' al server
+
+6. Server riceve richiesta
+7. Rimuove Master al client corrente (ex-Master)
+8. Assegna Master al client richiedente (ex-Slave)
+9. Invia 'role_change' a entrambi i client
+
+10. Ex-Slave riceve isMaster: true → diventa MASTER
+11. Ex-Master riceve isMaster: false → diventa SLAVE
+12. Nuovo Master può ora muovere l'oggetto
+
+SCENARIO 4: Master Muove Oggetto
+---------------------------------
+1. Master trascina oggetto con TransformControls
+2. control.addEventListener('change') si attiva
+3. Chiama sendTransformToSlaves(object)
+4. Estrae objectId da object.userData.id
+5. Decompone world matrix per position, rotation, scale
+6. multiClientManager.sendTransform(...) con throttling (50ms)
+7. Invia messaggio 'transform' al server
+8. Server broadcast a tutti gli Slave
+
+9. Slave riceve messaggio 'transform'
+10. UI.js → applyTransformFromMultiClient(data)
+11. Cerca oggetto per ID nella scena
+12. Se trovato, applica trasformazione
+13. Se non trovato (caricamento asincrono), riprova dopo 100ms
+14. Oggetto si muove in tempo reale sullo Slave
+
+================================================================================
+GESTIONE COORDINATE - IMPORTANTE!
+================================================================================
+
+PROBLEMA:
+Three.js usa un sistema di coordinate dove Y è "su", ma l'applicazione
+internamente tratta le coordinate in modo diverso quando crea oggetti.
+
+SOLUZIONE:
+Due sistemi di coordinate:
+
+1. FORMATO APPLICAZIONE (usato nelle funzioni di creazione):
+   - addSpeakerAtPosition(x, y, z)
+   - x = sinistra/destra
+   - y = altezza
+   - z = avanti/indietro
+
+2. FORMATO THREE.JS (usato nella scena 3D):
+   - mesh.position.set(x, z, y)  // Nota lo scambio!
+   - x = sinistra/destra
+   - y (diventato z) = avanti/indietro
+   - z (diventato y) = altezza
+
+REGOLA:
+- Quando Master INVIA coordinate: usa formato Three.js { x: x, y: z, z: y }
+- Quando Slave RICEVE coordinate: scambia di nuovo { x: x, y: z, z: y }
+- Risultato: coordinate corrette in entrambi i client
+
+ESEMPIO:
+Master crea speaker a posizione (2, 1.2, 3) in formato app
+→ Mesh ha position (2, 3, 1.2) in Three.js
+→ Invia al server { x: 2, y: 3, z: 1.2 }
+→ Slave riceve { x: 2, y: 3, z: 1.2 }
+→ Slave converte in { x: 2, y: 1.2, z: 3 } per la funzione di creazione
+→ Slave crea mesh con position (2, 3, 1.2) in Three.js
+→ ✓ Stessa posizione in entrambi i client!
+
+================================================================================
+PROBLEMI RISOLTI DURANTE LO SVILUPPO
+================================================================================
+
+1. OGGETTI NON SI SINCRONIZZAVANO
+   Problema: Solo Omnifonti si sincronizzavano, Altoparlanti no
+   Causa: Mancava il sistema di notifica object_created
+   Soluzione: Aggiunto tipo messaggio 'object_created' e handler
+
+2. ID MISMATCH TRA MASTER E SLAVE
+   Problema: Slave generava nuovi ID invece di usare quelli del Master
+   Causa: Funzioni di creazione non accettavano providedId
+   Soluzione: Modificate tutte le funzioni per accettare providedId opzionale
+
+3. COORDINATE SBAGLIATE NELLA CREAZIONE
+   Problema: Y del Master diventava Z dello Slave
+   Causa: Doppio scambio Y-Z non gestito correttamente
+   Soluzione: Swap coordinato in notifyObjectCreated e createObjectFromMultiClient
+
+4. OGGETTI A CASO ALL'AVVIO
+   Problema: 4 oggetti random apparivano quando si attivava il toggle
+   Causa: loadInitialState() caricava dati di sessioni precedenti
+   Soluzione: Commentato il caricamento dello stato iniziale
+
+5. TOGGLE RICHIEDE DOPPIO CLICK
+   Problema: Primo click non attivava la sincronizzazione
+   Causa: Guard clause if (this.isEnabled === enabled) return;
+   Soluzione: Rimosso il guard clause in setEnabled()
+
+6. SLAVE NON DIVENTA MASTER AUTOMATICAMENTE
+   Problema: Click su oggetto non richiedeva ruolo Master
+   Causa: requestMaster() chiamato solo su mouseDown del control (troppo tardi)
+   Soluzione: Creato attachControlWithMasterRequest() che richiede Master prima di attach
+
+7. PARAMETRO ORDER BUG IN loadObj
+   Problema: uniqueId passato come rotation parameter
+   Causa: loadObj aveva signature (file, name, mat, scale, x, y, z, uniqueId)
+           ma doveva essere (..., rotation, uniqueId)
+   Soluzione: Aggiunto parametro rotation, tutte le chiamate passano null
+
+================================================================================
+CONFIGURAZIONE PER USO SU RETE LOCALE (LAN)
+================================================================================
+
+SETUP:
+1. vite.config.js → server.host: '0.0.0.0'
+2. vite.config.js → websocketPlugin({ host: '0.0.0.0' })
+3. multiClientManager.js → usa window.location.hostname per WebSocket URL
+
+UTILIZZO:
+1. Sul computer host (Mac): npm run dev
+2. Trova IP del Mac: Impostazioni → Rete → IP (es. 192.168.1.100)
+3. Dall'altro computer: apri http://192.168.1.100:5173/Cielo/
+4. Attiva toggle multi-client su entrambi i computer
+
+FIREWALL:
+Se il firewall macOS blocca le connessioni:
+- Impostazioni → Rete → Firewall
+- Aggiungi eccezioni per porte 5173 (Vite) e 8080 (WebSocket)
+
+================================================================================
+LIMITAZIONI E FUTURE IMPROVEMENTS
+================================================================================
+
+LIMITAZIONI ATTUALI:
+1. ❌ Nessuna persistenza dello stato tra disconnessioni
+2. ❌ Eliminazione oggetti non sincronizzata
+3. ❌ Nessuna gestione conflitti (es. due Master contemporanei)
+4. ❌ Nessuna sicurezza/autenticazione
+5. ❌ Maximum 1 Master alla volta (no collaborative editing)
+6. ❌ Cambio materiali/proprietà non sincronizzato
+7. ❌ Nessuna sincronizzazione camera/viewport
+8. ❌ Nessun feedback visivo di chi sta controllando cosa
+
+POSSIBILI MIGLIORAMENTI FUTURI:
+1. ✨ Sincronizzare eliminazione oggetti (delete key, menu contestuale)
+2. ✨ Sincronizzare cambio materiali e proprietà degli oggetti
+3. ✨ Indicatori visivi: colori diversi per oggetti controllati da altri
+4. ✨ Sistema di "ownership" temporaneo degli oggetti (locking)
+5. ✨ Sincronizzazione selezione oggetti (outline condiviso)
+6. ✨ History/Undo-Redo distribuito tra client
+7. ✨ Persistenza stato su database (es. Redis) per recupero dopo crash
+8. ✨ Sistema di autenticazione (token, password room)
+9. ✨ Room/Stanze multiple per progetti diversi
+10. ✨ Chat testuale tra utenti connessi
+11. ✨ Modalità "Observer" (visualizzazione senza modifica)
+12. ✨ Sincronizzazione viewport/camera per "follow mode"
+13. ✨ Compressione messaggi per banda ottimizzata
+14. ✨ Delta encoding (invia solo i cambiamenti)
+15. ✨ Riconnessione automatica con retry exponential backoff
+
+================================================================================
+DEBUGGING E TROUBLESHOOTING
+================================================================================
+
+CONSOLE LOGS UTILI:
+
+Master:
+- "Modalità multi-client: ATTIVA"
+- "WebSocket connesso"
+- "Inizializzato come MASTER"
+- "MASTER invia creazione oggetto: [id] [tipo]"
+- "MASTER invia trasformazione: [id]"
+
+Slave:
+- "Modalità multi-client: ATTIVA"
+- "WebSocket connesso"
+- "Inizializzato come SLAVE"
+- "SLAVE riceve creazione oggetto: [id] [tipo]"
+- "Creando [tipo] da sync: [nome] alle coordinate: [pos]"
+- "SLAVE riceve trasformazione: [id]"
+- "Applicando trasformazione da master a: [nome]"
+
+Richiesta Master:
+- "attachControlWithMasterRequest chiamato"
+- "Richiedendo ruolo master prima di attach..."
+- "Ruolo cambiato: MASTER" (su entrambi i client)
+
+PROBLEMI COMUNI:
+
+1. "WebSocket già connesso" ripetuto
+   → Normale, è il guard che previene connessioni multiple
+
+2. "Applicando trasformazione ma oggetto non trovato"
+   → Oggetto ancora in caricamento, retry automatico dopo 100ms
+
+3. "SLAVE riceve ma non crea oggetto"
+   → Verifica scambio coordinate in createObjectFromMultiClient
+
+4. "Oggetti si creano ma non si muovono"
+   → Verifica che objectId sia uguale su Master e Slave
+   → Log: console.log(object.userData.id)
+
+5. "Toggle non si attiva al primo click"
+   → Verificare che il guard in setEnabled() sia commentato
+
+6. "Slave non diventa Master quando clicca oggetto"
+   → Verificare attachControlWithMasterRequest sia usato
+   → Verificare isEnabled sia true
+
+COMANDI DEBUG CONSOLE BROWSER:
+
+// Verifica multiClientManager
+window.multiClientManager
+
+// Stato corrente
+window.multiClientManager.isMaster
+window.multiClientManager.isEnabled
+window.multiClientManager.clientId
+
+// Lista oggetti nella scena con ID
+scene.children.forEach(obj => {
+  if (obj.userData.id) console.log(obj.name, obj.userData.id);
+});
+
+// Forza riconnessione
+window.multiClientManager.disconnect();
+window.multiClientManager.connect();
+
+================================================================================
+TESTING CHECKLIST
+================================================================================
+
+□ Test Base:
+  □ Attivare toggle su primo client → diventa Master
+  □ Attivare toggle su secondo client → diventa Slave
+  □ Status display mostra ruolo corretto
+
+□ Test Creazione Oggetti:
+  □ Master crea Altoparlante → appare su Slave nella stessa posizione
+  □ Master crea Omnifonte → appare su Slave nella stessa posizione
+  □ Master crea Orifonte → appare su Slave nella stessa posizione
+  □ Verificare coordinate corrette (Y=altezza, non profondità)
+
+□ Test Trasformazioni:
+  □ Master muove oggetto → si muove in real-time su Slave
+  □ Master ruota oggetto → ruota in real-time su Slave
+  □ Master scala oggetto → scala in real-time su Slave
+
+□ Test Cambio Ruolo:
+  □ Slave clicca su oggetto → diventa Master
+  □ Ex-Master diventa Slave
+  □ Nuovo Master può muovere oggetti
+  □ Ex-Master riceve aggiornamenti dal nuovo Master
+
+□ Test Rete Locale:
+  □ Computer 1: npm run dev
+  □ Computer 2: apri http://[IP_COMPUTER_1]:5173/Cielo/
+  □ Entrambi si connettono al WebSocket
+  □ Sincronizzazione funziona tra computer diversi
+
+□ Test Disconnessione:
+  □ Disattivare toggle → WebSocket si disconnette
+  □ Riattivare toggle → WebSocket si riconnette
+  □ Chiudere tab Slave → Master rimane funzionante
+  □ Chiudere tab Master → Slave riceve errore (atteso)
+
+================================================================================
+RIFERIMENTI CODICE
+================================================================================
+
+ENTRY POINTS:
+- vite.config.js:5 → Configurazione Vite e WebSocket
+- main.js:8 → Import multiClientManager
+- UI.js:334-457 → Setup callbacks e handlers multi-client
+- rightmenu.js:84-102 → UI toggle e status
+
+FUNZIONI CHIAVE DA RICORDARE:
+- attachControlWithMasterRequest() → Usa SEMPRE questa invece di control.attach()
+- generateUniqueId() → Genera ID per nuovi oggetti
+- sendTransformToSlaves() → Chiama dopo ogni modifica oggetto
+- notifyObjectCreated() → Chiama dopo creazione oggetto
+
+COORDINATE SWAPPING:
+- addgeometries.js:462 → Swap quando INVIA: { x: x, y: z, z: y }
+- loaders.js:73 → Swap quando INVIA: { x: x, y: z, z: y }
+- UI.js:417 → Swap quando RICEVE: { x: pos.x, y: pos.z, z: pos.y }
+
+THROTTLING:
+- multiClientManager.js:229 → Trasformazioni throttled a 50ms
+- raycaster.js:1061 → Control.change listener invia trasformazioni
+
+================================================================================
+CONCLUSIONI
+================================================================================
+
+Il sistema di sincronizzazione multi-client è ora FUNZIONANTE nella sua
+versione base. Permette a più utenti di collaborare sulla stessa scena 3D
+in tempo reale, sia su localhost che su rete locale.
+
+Lo sviluppo ha richiesto particolare attenzione a:
+- Sistema di ID univoci condivisi tra client
+- Gestione coordinate Three.js vs coordinate applicazione
+- Throttling per performance di rete
+- Architettura Master/Slave con cambio dinamico
+- Integrazione seamless con Vite dev server
+
+Il sistema è pronto per essere usato ed esteso con le funzionalità aggiuntive
+elencate nella sezione "Future Improvements".
+
+================================================================================
+Fine Documento
+================================================================================

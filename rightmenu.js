@@ -80,6 +80,34 @@ const panelConfigs = {
         }
       },
       {
+        type: 'toggle',
+        id: 'multiClient',
+        label: 'Sincronizzazione Multi-Client',
+        defaultValue: false,
+        action: (value) => {
+          console.log('=== Multi-client action chiamato ===');
+          console.log('Valore ricevuto:', value);
+          console.log('window.multiClientManager esiste:', !!window.multiClientManager);
+          
+          if (window.multiClientManager) {
+            console.log('Chiamando setEnabled con:', value);
+            window.multiClientManager.setEnabled(value);
+            // Aggiorna status display
+            if (window.updateMultiClientStatusDisplay) {
+              window.updateMultiClientStatusDisplay();
+            }
+          } else {
+            console.error('window.multiClientManager non trovato!');
+          }
+        }
+      },
+      {
+        type: 'status',
+        id: 'multiClientStatus',
+        defaultText: 'Status: Disattivato',
+        hidden: true
+      },
+      {
         type: 'button',
         id: 'loadSpeakersPreset',
         label: 'Load Speakers',
@@ -302,7 +330,10 @@ function createToggle(config) {
   const checkbox = document.createElement('input');
   checkbox.type = 'checkbox';
   checkbox.checked = config.defaultValue || false;
-  checkbox.addEventListener('change', (e) => {
+  
+  // Aggiungi listener per click invece di change
+  checkbox.addEventListener('click', (e) => {
+    console.log('Toggle clicked:', config.id, 'checked:', e.target.checked);
     config.action(e.target.checked);
   });
   
@@ -355,6 +386,26 @@ function createButton(config) {
   return container;
 }
 
+function createStatus(config) {
+  const container = document.createElement('div');
+  container.className = 'control-row status-row';
+  
+  const statusDiv = document.createElement('div');
+  statusDiv.className = 'status-display';
+  statusDiv.id = config.id;
+  statusDiv.textContent = config.defaultText || 'Status';
+  statusDiv.style.fontSize = '0.8em';
+  statusDiv.style.color = '#888';
+  statusDiv.style.padding = '4px 8px';
+  statusDiv.style.backgroundColor = 'rgba(255,255,255,0.1)';
+  statusDiv.style.borderRadius = '4px';
+  statusDiv.style.display = config.hidden ? 'none' : 'block';
+  
+  container.appendChild(statusDiv);
+  
+  return container;
+}
+
 function createNumbox(config) {
   const container = document.createElement('div');
   container.className = 'control-row';
@@ -393,7 +444,7 @@ function createPanelContent(panelId) {
   title.textContent = config.title;
   container.appendChild(title);
   
-  config.controls.forEach(controlConfig => {
+    config.controls.forEach(controlConfig => {
     let control;
     switch (controlConfig.type) {
       case 'toggle':
@@ -408,12 +459,13 @@ function createPanelContent(panelId) {
       case 'numbox':
         control = createNumbox(controlConfig);
         break;
+      case 'status':
+        control = createStatus(controlConfig);
+        break;
       default:
         console.warn('Unknown control type:', controlConfig.type);
         return;
-    }
-    
-    if (control) {
+    }    if (control) {
       container.appendChild(control);
     }
   });

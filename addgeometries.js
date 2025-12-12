@@ -20,6 +20,12 @@ let currentPlasticoControl = null;
 // POV Cursor global variables
 let povCursorModel = null;
 
+// Sistema ID univoci per oggetti 3D
+let objectIdCounter = 0;
+function generateUniqueId() {
+  return `obj_${Date.now()}_${++objectIdCounter}`;
+}
+
 // Load the POV Cursor model at initialization (invisible)
 function initializePovCursor() {
   const loader = new GLTFLoader();
@@ -166,7 +172,9 @@ document.addEventListener('DOMContentLoaded', () => {
       // Use persistent counter to assign a unique sequential name immediately
       const index = getNextSpeakerIndex();
       const nome = `Altoparlante ${index}`;
-      loadObj('./modelli/galleriaOBJ/speaker3dec.obj', nome, goochMaterialSp, 0.045, 0., 0, 1.2);
+      const uniqueId = generateUniqueId();
+      console.log('Creando altoparlante:', nome, 'con ID:', uniqueId);
+      loadObj('./modelli/galleriaOBJ/speaker3dec.obj', nome, goochMaterialSp, 0.045, 0., 0, 1.2, null, uniqueId);
       createMenu();
       setTimeout(() => syncMaxDictionaries('altoparlanti'), 50);
     });
@@ -188,7 +196,8 @@ document.addEventListener('DOMContentLoaded', () => {
     addArrow.addEventListener('click', () => {
       howManyArrows++;
       const nome = `Orifonte ${howManyArrows}`;
-      loadObj('./modelli/galleriaOBJ/arrow.obj', nome, goochMaterialArrow, 0.045, 0., 0., 1.2);
+      const uniqueId = generateUniqueId();
+      loadObj('./modelli/galleriaOBJ/arrow.obj', nome, goochMaterialArrow, 0.045, 0., 0., 1.2, null, uniqueId);
       createMenu();
       setTimeout(syncMaxDictionaries, 50);
       // Invia subito coordinate Orifonte
@@ -227,10 +236,24 @@ document.addEventListener('DOMContentLoaded', () => {
       const mesh = new THREE.Mesh(geometry, material);
       mesh.scale.set(0.25, 0.24, 0.25);
       mesh.name = nome;
+      mesh.userData.id = generateUniqueId();
       mesh.isDashed = false;
       mesh.position.set(0., 1.2, 0.);
       scene.add(mesh);
       objToBeDetected.push(mesh);
+      
+      // Notifica creazione oggetto al multi-client manager
+      if (window.multiClientManager?.isMaster && window.multiClientManager?.isEnabled) {
+        window.multiClientManager.notifyObjectCreated(
+          mesh.userData.id,
+          'omnifonte', 
+          nome,
+          { x: 0, y: 1.2, z: 0 },
+          { x: 0, y: 0, z: 0 },
+          { x: 0.25, y: 0.24, z: 0.25 }
+        );
+      }
+      
       createMenu();
       setTimeout(() => syncMaxDictionaries('omnifonti'), 50);
       // Invia subito coordinate Omnifonte
@@ -399,24 +422,50 @@ document.addEventListener('DOMContentLoaded', () => {
   // Funzioni helper per il menu avanzato di aggiunta elementi
   // Queste funzioni sono esportate globalmente per essere usate dal sistema di menu
 
-  window.addSphereAtPosition = function(x, y, z) {
-    // Conta solo le sfere di primo livello nella scena
-    let howManySpheres = 0;
-    scene.children.forEach((obj) => {
-      if (obj.name && obj.name.startsWith("Omnifonte ")) {
-        howManySpheres++;
-      }
-    });
-    let nome = `Omnifonte ${howManySpheres + 1}`;
+  window.addSphereAtPosition = function(x, y, z, providedId = null, providedName = null) {
+    // Use provided values or generate new ones
+    let nome, uniqueId;
+    
+    if (providedName && providedId) {
+      nome = providedName;
+      uniqueId = providedId;
+      console.log('addSphereAtPosition:', nome, 'ID:', uniqueId, 'pos:', x, y, z, '(from master)');
+    } else {
+      // Conta solo le sfere di primo livello nella scena
+      let howManySpheres = 0;
+      scene.children.forEach((obj) => {
+        if (obj.name && obj.name.startsWith("Omnifonte ")) {
+          howManySpheres++;
+        }
+      });
+      nome = `Omnifonte ${howManySpheres + 1}`;
+      uniqueId = generateUniqueId();
+      console.log('addSphereAtPosition:', nome, 'ID:', uniqueId, 'pos:', x, y, z, '(generated)');
+    }
+    
     const geometry = new THREE.SphereGeometry(0.3, 40, 40);
     const material = goochMaterialArrow;
     const mesh = new THREE.Mesh(geometry, material);
     mesh.scale.set(0.25, 0.24, 0.25);
     mesh.name = nome;
+    mesh.userData.id = uniqueId;
     mesh.isDashed = false;
     mesh.position.set(x, z, y);
     scene.add(mesh);
     objToBeDetected.push(mesh);
+    
+    // Notifica creazione oggetto al multi-client manager
+    if (window.multiClientManager?.isMaster && window.multiClientManager?.isEnabled) {
+      window.multiClientManager.notifyObjectCreated(
+        mesh.userData.id,
+        'omnifonte', 
+        nome,
+        { x: x, y: z, z: y },
+        { x: 0, y: 0, z: 0 },
+        { x: 0.25, y: 0.24, z: 0.25 }
+      );
+    }
+    
     createMenu();
     setTimeout(() => syncMaxDictionaries('omnifonti'), 50);
     // Invia subito coordinate Omnifonte
@@ -427,26 +476,40 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 60);
   };
 
-  window.addSpeakerAtPosition = function(x, y, z) {
-    // Use persistent counter to assign unique sequential speaker names
-    const index = getNextSpeakerIndex();
-    const nome = `Altoparlante ${index}`;
-    loadObj('./modelli/galleriaOBJ/speaker3dec.obj', nome, goochMaterialSp, 0.045, x, y, z);
+  window.addSpeakerAtPosition = function(x, y, z, providedId = null, providedName = null) {
+    // Use provided values or generate new ones
+    const index = providedName ? parseInt(providedName.split(' ')[1]) || getNextSpeakerIndex() : getNextSpeakerIndex();
+    const nome = providedName || `Altoparlante ${index}`;
+    const uniqueId = providedId || generateUniqueId();
+    console.log('addSpeakerAtPosition:', nome, 'ID:', uniqueId, 'pos:', x, y, z, providedId ? '(from master)' : '(generated)');
+    loadObj('./modelli/galleriaOBJ/speaker3dec.obj', nome, goochMaterialSp, 0.045, x, y, z, null, uniqueId);
     createMenu();
     setTimeout(() => syncMaxDictionaries('altoparlanti'), 50);
   };
 
-  window.addArrowAtPosition = function(x, y, z) {
-    // Usa il contatore condiviso howManyArrows (dichiarato nello scope superiore)
-    if (typeof howManyArrows === 'undefined') {
-      // fallback: conteggia
-      let tmp = 0;
-      scene.children.forEach((obj) => { if (obj.name && obj.name.startsWith('Orifonte ')) tmp++; });
-      howManyArrows = tmp;
+  window.addArrowAtPosition = function(x, y, z, providedId = null, providedName = null) {
+    // Use provided values or generate new ones
+    let nome, uniqueId;
+    
+    if (providedName && providedId) {
+      nome = providedName;
+      uniqueId = providedId;
+      console.log('addArrowAtPosition:', nome, 'ID:', uniqueId, 'pos:', x, y, z, '(from master)');
+    } else {
+      // Usa il contatore condiviso howManyArrows (dichiarato nello scope superiore)
+      if (typeof howManyArrows === 'undefined') {
+        // fallback: conteggia
+        let tmp = 0;
+        scene.children.forEach((obj) => { if (obj.name && obj.name.startsWith('Orifonte ')) tmp++; });
+        howManyArrows = tmp;
+      }
+      howManyArrows++;
+      nome = `Orifonte ${howManyArrows}`;
+      uniqueId = generateUniqueId();
+      console.log('addArrowAtPosition:', nome, 'ID:', uniqueId, 'pos:', x, y, z, '(generated)');
     }
-    howManyArrows++;
-    const nome = `Orifonte ${howManyArrows}`;
-    loadObj('./modelli/galleriaOBJ/arrow.obj', nome, goochMaterialArrow, 0.045, x, y, z);
+    
+    loadObj('./modelli/galleriaOBJ/arrow.obj', nome, goochMaterialArrow, 0.045, x, y, z, null, uniqueId);
     createMenu();
     setTimeout(syncMaxDictionaries, 50);
     // Invia subito coordinate Orifonte

@@ -189,6 +189,16 @@ function deleteSelectedObject() {
         const isAltoparlante = targetObject.name && targetObject.name.startsWith('Altoparlante');
         const isOmnifonte = targetObject.name && targetObject.name.startsWith('Omnifonte');
         const objectName = targetObject.name; // Salva il nome prima di rimuovere
+        const objectId = targetObject.userData?.id; // Salva l'ID prima di rimuovere
+        
+        // Notifica eliminazione oggetto (OSC + Multi-Client + Max)
+        if (objectId && window.messageBroker) {
+            window.messageBroker.sendObjectDeleted({
+                id: objectId,
+                name: objectName,
+                type: null // messageBroker estrarrà il tipo dal nome
+            });
+        }
         
         objToBeDetected.splice(index, 1);
         disposeObject(targetObject);
@@ -994,6 +1004,28 @@ function sendTransformToSlaves(object) {
             z: scale.z
         }
     );
+    
+    // Invia anche al message broker (OSC + Max) - FULL RATE!
+    window.messageBroker.sendObjectTransform({
+        id: objectId,
+        name: targetObject.name,
+        type: null, // Verrà estratto dal nome nel broker
+        position: {
+            x: position.x,
+            y: position.y,
+            z: position.z
+        },
+        rotation: {
+            x: euler.x,
+            y: euler.y,
+            z: euler.z
+        },
+        scale: {
+            x: scale.x,
+            y: scale.y,
+            z: scale.z
+        }
+    });
 }
 
 // --- INVIO A MAX/MSP DEL MOVIMENTO MANUALE ---
@@ -1051,6 +1083,13 @@ if (control) {
         // --- INTEGRAZIONE MULTI-CLIENT SYNC ---
         // Invia trasformazione ai client slave se siamo master
         if (window.multiClientManager?.isMaster && window.multiClientManager?.isEnabled) {
+            sendTransformToSlaves(target);
+        }
+        
+        // --- INTEGRAZIONE OSC ---
+        // Invia trasformazione OSC anche se multi-client è disabilitato
+        // messageBroker gestisce internamente se inviare o meno basato su role/force
+        if (window.messageBroker) {
             sendTransformToSlaves(target);
         }
     });

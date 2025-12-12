@@ -322,6 +322,36 @@ function updateMultiClientStatusDisplay() {
 window.updateMultiClientStatusDisplay = updateMultiClientStatusDisplay;
 
 /**
+ * Aggiorna il display dello status OSC
+ */
+function updateOSCStatusDisplay() {
+    const statusDiv = document.getElementById('oscStatus');
+    if (!statusDiv || !window.oscManager) return;
+
+    let statusText = '';
+    let statusColor = '#888';
+
+    if (!window.oscManager.isEnabled) {
+        statusText = 'Status: Disattivato';
+        statusDiv.style.display = 'none';
+    } else if (!window.oscManager.ws || window.oscManager.ws.readyState !== WebSocket.OPEN) {
+        statusText = 'Status: Connessione...';
+        statusColor = '#ff9500';
+        statusDiv.style.display = 'block';
+    } else {
+        statusText = `Status: Attivo → ${window.oscManager.host}:${window.oscManager.port}`;
+        statusColor = '#00ff00';
+        statusDiv.style.display = 'block';
+    }
+
+    statusDiv.textContent = statusText;
+    statusDiv.style.color = statusColor;
+}
+
+// Esponi la funzione globalmente
+window.updateOSCStatusDisplay = updateOSCStatusDisplay;
+
+/**
  * Inizializza l'integrazione multi-client
  */
 function initMultiClientIntegration() {
@@ -347,6 +377,30 @@ function initMultiClientIntegration() {
 
     // Hook nel sistema di trasformazioni esistente
     setupTransformSyncHooks();
+}
+
+/**
+ * Inizializza l'integrazione OSC
+ */
+function initOSCIntegration() {
+    if (!window.oscManager) return;
+
+    // Setup callbacks per eventi OSC
+    window.oscManager.onConnectionChange = (isConnected) => {
+        console.log(`OSC connessione: ${isConnected ? 'CONNESSO' : 'DISCONNESSO'}`);
+        updateOSCStatusDisplay();
+    };
+    
+    window.oscManager.onConfigChange = (host, port) => {
+        console.log(`OSC configurazione aggiornata: ${host}:${port}`);
+        updateOSCStatusDisplay();
+        
+        // Aggiorna anche i campi input nel menu
+        const hostInput = document.getElementById('oscHost');
+        const portInput = document.getElementById('oscPort');
+        if (hostInput) hostInput.value = host;
+        if (portInput) portInput.value = port;
+    };
 }
 
 /**
@@ -547,8 +601,11 @@ function setupTransformSyncHooks() {
 
 // Inizializza integrazione quando DOM è pronto
 document.addEventListener('DOMContentLoaded', () => {
-    // Ritarda l'inizializzazione per permettere al multiClientManager di essere disponibile
-    setTimeout(initMultiClientIntegration, 100);
+    // Ritarda l'inizializzazione per permettere ai manager di essere disponibili
+    setTimeout(() => {
+        initMultiClientIntegration();
+        initOSCIntegration();
+    }, 100);
 });
 
 //OPTIMIZATION

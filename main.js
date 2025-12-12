@@ -6,6 +6,8 @@ import { loadGltfModel, loadObjWithMaterials, toggleTransparency } from './loade
 import { addMetroButtonToDock } from './metro.js';
 import './transformContextMenu.js';
 import multiClientManager from './multiClientManager.js';
+import oscManager from './oscManager.js';
+import messageBroker from './messageBroker.js';
 import './rightmenu.js';
 
 

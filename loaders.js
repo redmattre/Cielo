@@ -7,6 +7,7 @@ import { objToBeDetected, scene } from './setup.js';
 import * as THREE from 'three';
 import { goochMaterial, goochMaterialAlpha, normalMat, phongMat, standardMat } from './materials.js';
 import { createMenu } from './objmenu_new.js';
+import messageBroker from './messageBroker.js';
 
 // Helper per risolvere il percorso asset in modo compatibile con Vite e server statici
 function resolveAssetPath(filename) {
@@ -63,7 +64,8 @@ export function loadObj(filename, name, material, scaleFactor, x, y, z, rotation
             // Notifica creazione oggetto al multi-client manager se ha ID univoco
             if (uniqueId && window.multiClientManager?.isMaster && window.multiClientManager?.isEnabled) {
                 const objectType = name.toLowerCase().includes('altoparlante') ? 'altoparlante' : 
-                                 name.toLowerCase().includes('orifonte') ? 'orifonte' : 'object';
+                                 name.toLowerCase().includes('orifonte') ? 'orifonte' :
+                                 name.toLowerCase().includes('aureola') ? 'aureola' : 'object';
                 
                 console.log('Notificando creazione oggetto:', objectType, name, uniqueId);
                 
@@ -75,6 +77,22 @@ export function loadObj(filename, name, material, scaleFactor, x, y, z, rotation
                     rotation ? { x: rotation.x, y: rotation.y, z: rotation.z } : { x: 0, y: 0, z: 0 },
                     { x: scaleFactor, y: scaleFactor, z: scaleFactor }
                 );
+            }
+            
+            // Notifica creazione oggetto al message broker (OSC + Max)
+            if (uniqueId) {
+                const objectType = name.toLowerCase().includes('altoparlante') ? 'altoparlante' : 
+                                 name.toLowerCase().includes('orifonte') ? 'orifonte' :
+                                 name.toLowerCase().includes('aureola') ? 'aureola' : 'object';
+                
+                window.messageBroker.sendObjectCreated({
+                    id: uniqueId,
+                    name: name,
+                    type: objectType,
+                    position: { x: x, y: y, z: z },  // Coordinate applicazione
+                    rotation: rotation ? { x: rotation.x, y: rotation.y, z: rotation.z } : { x: 0, y: 0, z: 0 },
+                    scale: { x: scaleFactor, y: scaleFactor, z: scaleFactor }
+                });
             }
             
             // Initialize auto-rotation for new speakers

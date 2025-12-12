@@ -108,6 +108,62 @@ const panelConfigs = {
         hidden: true
       },
       {
+        type: 'toggle',
+        id: 'oscOutput',
+        label: 'OSC Output',
+        defaultValue: true, // OSC attivo di default
+        action: (value) => {
+          if (window.oscManager) {
+            window.oscManager.setEnabled(value);
+            if (window.updateOSCStatusDisplay) {
+              window.updateOSCStatusDisplay();
+            }
+          }
+        }
+      },
+      {
+        type: 'input',
+        id: 'oscHost',
+        label: 'OSC IP',
+        defaultValue: '127.0.0.1',
+        action: (value) => {
+          if (window.oscManager) {
+            const port = window.oscManager.port;
+            window.oscManager.updateConfig(value, port);
+          }
+        }
+      },
+      {
+        type: 'input',
+        id: 'oscPort',
+        label: 'OSC Port',
+        defaultValue: '8000',
+        action: (value) => {
+          if (window.oscManager) {
+            const host = window.oscManager.host;
+            const port = parseInt(value) || 8000;
+            window.oscManager.updateConfig(host, port);
+          }
+        }
+      },
+      {
+        type: 'status',
+        id: 'oscStatus',
+        defaultText: 'Status: Disattivato',
+        hidden: true
+      },
+      {
+        type: 'toggle',
+        id: 'oscForceOutput',
+        label: 'Force OSC Output (ignora ruolo Master)',
+        defaultValue: false,
+        action: (value) => {
+          if (window.messageBroker) {
+            window.messageBroker.setOSCForceOutput(value);
+          }
+        }
+      },
+      {
         type: 'button',
         id: 'loadSpeakersPreset',
         label: 'Load Speakers',
@@ -406,6 +462,34 @@ function createStatus(config) {
   return container;
 }
 
+function createInput(config) {
+  const container = document.createElement('div');
+  container.className = 'control-row';
+  
+  const label = document.createElement('label');
+  label.textContent = config.label;
+  
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.id = config.id;
+  input.value = config.defaultValue || '';
+  input.style.flex = '1';
+  input.style.padding = '4px 8px';
+  input.style.backgroundColor = 'rgba(255,255,255,0.1)';
+  input.style.border = '1px solid rgba(255,255,255,0.3)';
+  input.style.borderRadius = '4px';
+  input.style.color = '#fff';
+  
+  input.addEventListener('change', (e) => {
+    config.action(e.target.value);
+  });
+  
+  container.appendChild(label);
+  container.appendChild(input);
+  
+  return container;
+}
+
 function createNumbox(config) {
   const container = document.createElement('div');
   container.className = 'control-row';
@@ -461,6 +545,9 @@ function createPanelContent(panelId) {
         break;
       case 'status':
         control = createStatus(controlConfig);
+        break;
+      case 'input':
+        control = createInput(controlConfig);
         break;
       default:
         console.warn('Unknown control type:', controlConfig.type);

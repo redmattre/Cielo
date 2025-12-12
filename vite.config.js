@@ -1,5 +1,6 @@
 import { defineConfig } from "vite";
 import { websocketPlugin } from "./plugins/websocket-plugin.js";
+import { oscPlugin } from "./plugins/osc-plugin.js";
 
 export default defineConfig({
     // base: "/Cielo/",
@@ -12,6 +13,12 @@ export default defineConfig({
             port: 8080,
             path: '/ws',
             host: '0.0.0.0' // WebSocket accetta connessioni da qualsiasi IP
+        }),
+        oscPlugin({
+            wsPort: 8081,
+            wsPath: '/osc',
+            defaultOscHost: '127.0.0.1',
+            defaultOscPort: 8000
         })
     ]
 });

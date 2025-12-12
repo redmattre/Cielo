@@ -12,6 +12,7 @@ import { loadSpeakersPreset, loadSourcesPreset } from './presetLoader.js';
 import { syncMaxDictionaries } from './maxSync.js';
 import { sendSpeakersLoadedToMax, sendOmnifontesLoadedToMax } from './max.js'; // <--- aggiunto
 import { ConditionalLinesManager } from './ConditionalLinesManager.js';
+import messageBroker from './messageBroker.js';
 
 // Initialize ConditionalLinesManager
 let conditionalLinesManager;
@@ -184,8 +185,10 @@ document.addEventListener('DOMContentLoaded', () => {
   if (addHalo) {
     addHalo.addEventListener('click', () => {
       howManyHalos++;
-      let nome = `Aureola-${howManyHalos}`
-      loadObj('./modelli/galleriaOBJ/halo2_lowpoly.obj', nome, goochMaterialSp, 0.15, 0., 0, 1.2);
+      let nome = `Aureola ${howManyHalos}`;
+      const uniqueId = generateUniqueId();
+      console.log('Creando aureola:', nome, 'con ID:', uniqueId);
+      loadObj('./modelli/galleriaOBJ/halo2_lowpoly.obj', nome, goochMaterialSp, 0.15, 0., 0, 1.2, null, uniqueId);
       createMenu();
       setTimeout(syncMaxDictionaries, 50);
     });
@@ -253,6 +256,16 @@ document.addEventListener('DOMContentLoaded', () => {
           { x: 0.25, y: 0.24, z: 0.25 }
         );
       }
+      
+      // Notifica creazione oggetto al message broker (OSC + Max)
+      window.messageBroker.sendObjectCreated({
+        id: mesh.userData.id,
+        name: nome,
+        type: 'omnifonte',
+        position: { x: 0, y: 1.2, z: 0 },
+        rotation: { x: 0, y: 0, z: 0 },
+        scale: { x: 0.25, y: 0.24, z: 0.25 }
+      });
       
       createMenu();
       setTimeout(() => syncMaxDictionaries('omnifonti'), 50);
@@ -466,6 +479,16 @@ document.addEventListener('DOMContentLoaded', () => {
       );
     }
     
+    // Notifica creazione oggetto al message broker (OSC + Max)
+    window.messageBroker.sendObjectCreated({
+      id: mesh.userData.id,
+      name: nome,
+      type: 'omnifonte',
+      position: { x: x, y: y, z: z },  // Coordinate applicazione
+      rotation: { x: 0, y: 0, z: 0 },
+      scale: { x: 0.25, y: 0.24, z: 0.25 }
+    });
+    
     createMenu();
     setTimeout(() => syncMaxDictionaries('omnifonti'), 50);
     // Invia subito coordinate Omnifonte
@@ -525,12 +548,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Usa il contatore condiviso howManyHalos (dichiarato nello scope superiore)
     if (typeof howManyHalos === 'undefined') {
       let tmp = 0;
-      scene.children.forEach((obj) => { if (obj.name && obj.name.startsWith('Aureola-')) tmp++; });
+      scene.children.forEach((obj) => { if (obj.name && obj.name.startsWith('Aureola')) tmp++; });
       howManyHalos = tmp;
     }
     howManyHalos++;
-    let nome = `Aureola-${howManyHalos}`;
-    loadObj('./modelli/galleriaOBJ/halo2_lowpoly.obj', nome, goochMaterialSp, 0.15, x, y, z);
+    let nome = `Aureola ${howManyHalos}`;
+    const uniqueId = generateUniqueId();
+    console.log('Creando aureola:', nome, 'con ID:', uniqueId);
+    loadObj('./modelli/galleriaOBJ/halo2_lowpoly.obj', nome, goochMaterialSp, 0.15, x, y, z, null, uniqueId);
     createMenu();
     setTimeout(syncMaxDictionaries, 50);
   };

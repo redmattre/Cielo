@@ -112,6 +112,19 @@ export function init() {
 
     // Listener consolidato per tutti i tasti
     window.addEventListener('keydown', function(event) {
+        // Ignora input numerici (1,2,3,4) se l'utente sta scrivendo in un campo di testo
+        const activeElement = document.activeElement;
+        const isTyping = activeElement && (
+            activeElement.tagName === 'INPUT' || 
+            activeElement.tagName === 'TEXTAREA' ||
+            activeElement.isContentEditable
+        );
+        
+        // Se sta scrivendo e il tasto è un numero (1-4), ignora l'evento
+        if (isTyping && ['1', '2', '3', '4'].includes(event.key)) {
+            return;
+        }
+        
         // Importa le funzioni necessarie per evitare circular imports
         const getRaycasterFunctions = () => {
             return {

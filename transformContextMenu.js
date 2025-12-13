@@ -133,8 +133,9 @@ function createMenuHTML() {
     toggleButtons.snap = snapToggle;
     togglesGroup.appendChild(snapToggle);
 
-    // Color picker
+    // Color picker (temporaneamente nascosto)
     colorPicker = createColorPicker();
+    colorPicker.style.display = 'none';
     togglesGroup.appendChild(colorPicker);
 
     // Tags chips
@@ -335,37 +336,137 @@ function createColorPicker() {
     return container;
 }
 
-// Crea la sezione Tags chips
+// Crea la sezione Tags chips con pagination
 function createTagsChips() {
-    const container = document.createElement('div');
-    container.style.cssText = `
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = `
         display: flex;
-        gap: 0.25rem;
+        flex-direction: row;
+        gap: 0.3rem;
         margin-left: 0.5rem;
-        overflow-x: auto;
-        overflow-y: hidden;
-        max-width: 120px;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-        padding: 0;
         align-items: center;
-        height: 28px;
+    `;
+    
+    // Container per i chips (2 righe x 4 colonne = 8 chips visibili)
+    const container = document.createElement('div');
+    container.className = 'tags-container';
+    container.style.cssText = `
+        display: grid;
+        grid-template-columns: repeat(4, 18px);
+        grid-template-rows: repeat(2, 18px);
+        gap: 0.15rem;
     `;
 
-    // Nascondi scrollbar completamente (CSS trick)
-    const style = document.createElement('style');
-    style.textContent = `
-        .tags-container::-webkit-scrollbar {
-            display: none;
-        }
+    // Pagination dots (2 pallini a destra)
+    const paginationDots = document.createElement('div');
+    paginationDots.className = 'tags-pagination';
+    paginationDots.style.cssText = `
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+        cursor: pointer;
     `;
-    document.head.appendChild(style);
-    container.className = 'tags-container';
+    
+    // Crea 2 pallini
+    const dot1 = document.createElement('div');
+    dot1.className = 'pagination-dot';
+    dot1.style.cssText = `
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background-color: #fff;
+        opacity: 1;
+        transition: opacity 0.2s ease;
+    `;
+    
+    const dot2 = document.createElement('div');
+    dot2.className = 'pagination-dot';
+    dot2.style.cssText = `
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background-color: #fff;
+        opacity: 0.3;
+        transition: opacity 0.2s ease;
+    `;
+    
+    paginationDots.appendChild(dot1);
+    paginationDots.appendChild(dot2);
+    
+    // Store reference per update
+    wrapper.appendChild(container);
+    wrapper.appendChild(paginationDots);
+    wrapper._container = container;
+    wrapper._dot1 = dot1;
+    wrapper._dot2 = dot2;
+    wrapper._currentPage = 0; // 0 = tags 1-8, 1 = tags 9-16
+    
+    // Funzione per switchare pagina
+    const switchPage = () => {
+        wrapper._currentPage = (wrapper._currentPage + 1) % 2;
+        // Aggiorna opacity dei pallini
+        if (wrapper._currentPage === 0) {
+            dot1.style.opacity = '1';
+            dot2.style.opacity = '0.3';
+        } else {
+            dot1.style.opacity = '0.3';
+            dot2.style.opacity = '1';
+        }
+        updateTagsChips(currentObject); // Refresh chips
+    };
+    
+    // Click sui dots per switchare pagina
+    paginationDots.addEventListener('click', switchPage);
+    
+    // Swipe verticale sul container dei chips
+    let touchStartY = 0;
+    let touchEndY = 0;
+    
+    container.addEventListener('touchstart', (e) => {
+        touchStartY = e.changedTouches[0].screenY;
+    }, { passive: true });
+    
+    container.addEventListener('touchend', (e) => {
+        touchEndY = e.changedTouches[0].screenY;
+        handleSwipe();
+    }, { passive: true });
+    
+    // Wheel event per scroll con mouse/trackpad
+    container.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const deltaY = e.deltaY;
+        
+        // Swipe down (pagina 0 -> 1) o up (pagina 1 -> 0)
+        if (Math.abs(deltaY) > 10) {
+            if (deltaY > 0 && wrapper._currentPage === 0) {
+                // Scroll giù, vai a pagina 2
+                switchPage();
+            } else if (deltaY < 0 && wrapper._currentPage === 1) {
+                // Scroll su, torna a pagina 1
+                switchPage();
+            }
+        }
+    }, { passive: false });
+    
+    const handleSwipe = () => {
+        const swipeDistance = touchStartY - touchEndY;
+        const minSwipeDistance = 30;
+        
+        if (Math.abs(swipeDistance) > minSwipeDistance) {
+            if (swipeDistance > 0 && wrapper._currentPage === 0) {
+                // Swipe up (dito va su), vai a pagina 2
+                switchPage();
+            } else if (swipeDistance < 0 && wrapper._currentPage === 1) {
+                // Swipe down (dito va giù), torna a pagina 1
+                switchPage();
+            }
+        }
+    };
 
     // Inizialmente nascosti, verranno mostrati da updateTagsChips
-    container.style.display = 'none';
+    wrapper.style.display = 'none';
     
-    return container;
+    return wrapper;
 }
 
 // Aggiorna i chips dei tag per l'oggetto corrente
@@ -375,11 +476,20 @@ function updateTagsChips(object) {
     // Inizializza tag se non presenti
     initializeTags(object);
     
-    // Pulisci container
-    tagsContainer.innerHTML = '';
+    // Get container e current page dal wrapper
+    const container = tagsContainer._container;
+    const currentPage = tagsContainer._currentPage || 0;
     
-    // Crea chip per ogni tag (0-16)
-    for (let tagNum = 0; tagNum <= 16; tagNum++) {
+    // Pulisci container
+    container.innerHTML = '';
+    
+    // Determina range di tag da mostrare (SENZA tag 0)
+    // Pagina 0: tag 1-8, Pagina 1: tag 9-16
+    const startTag = currentPage === 0 ? 1 : 9;
+    const endTag = currentPage === 0 ? 8 : 16;
+    
+    // Crea chip per ogni tag della pagina corrente
+    for (let tagNum = startTag; tagNum <= endTag; tagNum++) {
         const chip = document.createElement('button');
         chip.className = 'tag-chip';
         chip.textContent = tagNum;
@@ -388,20 +498,20 @@ function updateTagsChips(object) {
         const isActive = hasTag(object, tagNum);
         const color = TAG_COLORS[tagNum];
         
-        // Stile chip: QUADRATO 28x28px come color picker, NO BORDO, solo sfondo colorato, numero nero
+        // Stile chip: QUADRATO 18x18px, 2 righe x 4 colonne, NO BORDO, solo sfondo colorato, numero nero
         chip.style.cssText = `
-            width: 28px;
-            height: 28px;
-            min-width: 28px;
-            min-height: 28px;
-            border-radius: 4px;
+            width: 18px;
+            height: 18px;
+            min-width: 18px;
+            min-height: 18px;
+            border-radius: 3px;
             border: none;
             margin: 0;
             padding: 0;
-            font-size: 0.75rem;
+            font-size: 0.6rem;
             font-weight: bold;
             line-height: 1;
-            cursor: ${tagNum === 0 ? 'not-allowed' : 'pointer'};
+            cursor: pointer;
             transition: all 0.15s ease;
             flex-shrink: 0;
             background-color: ${color};
@@ -413,14 +523,8 @@ function updateTagsChips(object) {
             box-sizing: border-box;
         `;
         
-        // Tag 0 sempre attivo (disabilitato)
-        if (tagNum === 0) {
-            chip.disabled = true;
-        }
-        
-        // Click handler per toggle
+        // Click handler per toggle (tutti i tag sono cliccabili ora, no tag 0)
         chip.addEventListener('click', () => {
-            if (tagNum === 0) return;
             
             // Richiedi Master se multi-client attivo
             if (window.multiClientManager?.isEnabled && !window.multiClientManager?.isMaster) {
@@ -445,20 +549,18 @@ function updateTagsChips(object) {
             }
         });
         
-        // Hover effects (solo cambio di brightness)
-        if (tagNum !== 0) {
-            chip.addEventListener('mouseenter', () => {
-                chip.style.filter = 'brightness(1.2)';
-            });
-            chip.addEventListener('mouseleave', () => {
-                chip.style.filter = 'brightness(1)';
-            });
-        }
+        // Hover effects
+        chip.addEventListener('mouseenter', () => {
+            chip.style.filter = 'brightness(1.2)';
+        });
+        chip.addEventListener('mouseleave', () => {
+            chip.style.filter = 'brightness(1)';
+        });
         
-        tagsContainer.appendChild(chip);
+        container.appendChild(chip);
     }
     
-    // Mostra il container
+    // Mostra il wrapper
     tagsContainer.style.display = 'flex';
 }
 

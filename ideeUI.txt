@@ -74,3 +74,9 @@ parametri come il lookAtCenter degli altoparlanti ovviamente rimangono.
 Però magari se in un file di testo tipo configurazione posso inserire 
 una voce di menu, il tipo di input UI, lo scaling e il nome OSC sarei
 a cavallo, e non Biagio.
+
+Cose da sistemare:
+
+- Quando si fanno le modifiche al gruppo bisogna mandare i cambi di tutti (come in max)
+
+- Decidere cosa fare dei tag quando li metti o togli sul gruppo

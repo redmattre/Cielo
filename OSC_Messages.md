@@ -81,9 +81,11 @@ Inviato alla creazione dell'oggetto e ogni volta che i tag vengono modificati.
 - Un oggetto può avere più tag attivi contemporaneamente
 
 **UI:**
-- 17 chip colorati (0-16) nel menu contestuale di trasformazione (bottom-left)
-- Click per attivare/disattivare un tag
-- Tag 0 è sempre attivo e non può essere disattivato
+- 16 chip colorati (1-16) nel menu contestuale di trasformazione (bottom-left)
+- Layout: 2 righe × 4 colonne, 2 pagine (1-8, 9-16)
+- Navigazione: click su pallini laterali o swipe/scroll verticale
+- Tag 0 sempre attivo (nascosto dall'UI)
+- Palette: colori tecnici ispirati a banco da disegno (rosso carminio, blu cobalto, verde smeraldo, ecc.)
 - Opacità 1.0 = attivo, 0.3 = inattivo
 
 ---

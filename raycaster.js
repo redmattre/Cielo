@@ -957,22 +957,80 @@ window.addEventListener('beforeunload', () => {
 function sendTransformToSlaves(object) {
     if (!object || !window.multiClientManager) return;
     
-    // Trova l'ID dell'oggetto
-    let objectId = null;
-    let targetObject = object;
-    
-    // Se è un gruppo di trasformazione, prendi il primo figlio per l'ID
+    // Se è un gruppo di trasformazione, invia messaggi per OGNI oggetto dentro
     if (object.type === 'Group' && object.name === 'Gruppo di trasformazione') {
         const children = object.children || [];
-        if (children.length > 0) {
-            targetObject = children[0];
-        }
+        
+        // Itera su ogni figlio e invia i suoi dati individuali
+        children.forEach(child => {
+            const childId = child.userData?.id;
+            if (!childId) {
+                console.warn('Figlio del gruppo senza ID:', child.name);
+                return;
+            }
+            
+            // Calcola posizione GLOBALE del figlio
+            child.updateMatrixWorld(true);
+            const position = new THREE.Vector3();
+            const quaternion = new THREE.Quaternion();
+            const scale = new THREE.Vector3();
+            child.matrixWorld.decompose(position, quaternion, scale);
+            
+            // Converti quaternion in eulero
+            const euler = new THREE.Euler().setFromQuaternion(quaternion);
+            
+            // Invia al multi-client
+            window.multiClientManager.sendTransform(
+                childId,
+                {
+                    x: position.x,
+                    y: position.y,
+                    z: position.z
+                },
+                {
+                    x: euler.x,
+                    y: euler.y,
+                    z: euler.z
+                },
+                {
+                    x: scale.x,
+                    y: scale.y,
+                    z: scale.z
+                }
+            );
+            
+            // Invia al message broker (OSC) per ogni figlio
+            window.messageBroker.sendObjectTransform({
+                id: childId,
+                name: child.name,
+                type: null,
+                position: {
+                    x: position.x,
+                    y: position.y,
+                    z: position.z
+                },
+                rotation: {
+                    x: euler.x,
+                    y: euler.y,
+                    z: euler.z
+                },
+                scale: {
+                    x: scale.x,
+                    y: scale.y,
+                    z: scale.z
+                },
+                tags: child.userData?.tags || [0]
+            });
+        });
+        
+        return; // Exit dopo aver processato il gruppo
     }
     
-    objectId = targetObject.userData?.id;
+    // Oggetto singolo - comportamento originale
+    let objectId = object.userData?.id;
     
     if (!objectId) {
-        console.warn('Oggetto senza ID per sync multi-client:', targetObject.name);
+        console.warn('Oggetto senza ID per sync multi-client:', object.name);
         return;
     }
     
@@ -1008,7 +1066,7 @@ function sendTransformToSlaves(object) {
     // Invia anche al message broker (OSC + Max) - FULL RATE!
     window.messageBroker.sendObjectTransform({
         id: objectId,
-        name: targetObject.name,
+        name: object.name,
         type: null, // Verrà estratto dal nome nel broker
         position: {
             x: position.x,
@@ -1025,7 +1083,7 @@ function sendTransformToSlaves(object) {
             y: scale.y,
             z: scale.z
         },
-        tags: targetObject.userData?.tags || [0]
+        tags: object.userData?.tags || [0]
     });
 }
 

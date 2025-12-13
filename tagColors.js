@@ -1,26 +1,27 @@
 /**
- * Palette colori pastello per i tag (0-16)
- * Colori sobri e distinguibili per UI
+ * Palette colori tecnica per i tag (0-16)
+ * Ispirata a banco da disegno tecnico / architetto
+ * 17 colori TUTTI distintivi e facilmente riconoscibili
  */
 
 export const TAG_COLORS = [
-    '#B0B0B0', // 0 - Grigio neutro (sempre attivo)
-    '#FFB3BA', // 1 - Rosa pastello
-    '#FFDFBA', // 2 - Pesca
-    '#FFFFBA', // 3 - Giallo tenue
-    '#BAFFC9', // 4 - Verde menta
-    '#BAE1FF', // 5 - Azzurro
-    '#D4BAFF', // 6 - Lavanda
-    '#FFB3E6', // 7 - Rosa chiaro
-    '#C9E4CA', // 8 - Verde salvia
-    '#F4C2C2', // 9 - Rosa salmone
-    '#FFE5B4', // 10 - Albicocca
-    '#B4D7EB', // 11 - Celeste
-    '#D4A5A5', // 12 - Malva
-    '#A5D4D4', // 13 - Turchese pastello
-    '#E5C8E5', // 14 - Lilla
-    '#C8E5C8', // 15 - Verde chiaro
-    '#E5D4C8'  // 16 - Beige rosato
+    '#808080', // 0 - Grigio grafite (sempre attivo)
+    '#E74C3C', // 1 - Rosso carminio (matita rossa)
+    '#3498DB', // 2 - Blu cobalto (china blu)
+    '#2ECC71', // 3 - Verde smeraldo (matita verde)
+    '#F39C12', // 4 - Arancione ambra (pennarello arancio)
+    '#9B59B6', // 5 - Viola ametista (matita viola)
+    '#1ABC9C', // 6 - Turchese (acqua)
+    '#E67E22', // 7 - Arancio bruciato (terra)
+    '#F1C40F', // 8 - Giallo oro (matita gialla)
+    '#E91E63', // 9 - Magenta (pennarello fucsia)
+    '#C0392B', // 10 - Rosso mattone
+    '#16A085', // 11 - Verde petrolio
+    '#8E44AD', // 12 - Porpora (inchiostro viola)
+    '#D35400', // 13 - Arancio terracotta
+    '#27AE60', // 14 - Verde bosco
+    '#34495E', // 15 - Blu ardesia
+    '#00BCD4'  // 16 - Ciano (matita celeste)
 ];
 
 /**

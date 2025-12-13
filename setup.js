@@ -382,14 +382,6 @@ export function init() {
                     // Nessun oggetto selezionato: non fare nulla (non attivare gizmo Three.js)
                     console.log('Tasto S: nessun oggetto selezionato per la scala');
                 }
-                
-                // Mostra/aggiorna il menu contestuale se c'è un oggetto attaccato (solo se non è gruppo scala)
-                if (hovered && !isGroup && window.transformContextMenu) {
-                    window.transformContextMenu.show(hovered);
-                    window.transformContextMenu.updateState('scale');
-                } else if (window.transformContextMenu && window.transformContextMenu.isVisible() && !isGroup) {
-                    window.transformContextMenu.updateState('scale');
-                }
                 break;
 
             case 'Escape':

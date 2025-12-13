@@ -60,6 +60,9 @@ document.addEventListener('DOMContentLoaded', () => {
         backdrop.addEventListener('click', closeAddMenu);
         document.body.appendChild(backdrop);
         
+        // Aggiungi listener per tasto Enter
+        document.addEventListener('keydown', handleEnterKey);
+        
         console.log('Add element menu opened');
     }
 
@@ -73,10 +76,21 @@ document.addEventListener('DOMContentLoaded', () => {
             backdrop.remove();
         }
         
+        // Rimuovi listener per tasto Enter
+        document.removeEventListener('keydown', handleEnterKey);
+        
         // Reset selezione
         resetSelection();
         
         console.log('Add element menu closed');
+    }
+    
+    // Handler per tasto Enter
+    function handleEnterKey(e) {
+        if (e.key === 'Enter' && !executeButton.disabled) {
+            e.preventDefault();
+            executeAddElements();
+        }
     }
 
     // Reset della selezione

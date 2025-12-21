@@ -76,7 +76,8 @@ class MultiClientManager {
             };
             
             this.ws.onmessage = (event) => {
-                this.handleMessage(JSON.parse(event.data));
+                const message = JSON.parse(event.data);
+                this.handleMessage(message);
             };
             
             this.ws.onclose = () => {
@@ -141,10 +142,7 @@ class MultiClientManager {
 
             case 'transform':
                 if (!this.isMaster && message.fromMaster) {
-                    console.log('SLAVE riceve trasformazione:', message.objectId, message.position);
                     this.handleTransformMessage(message);
-                } else {
-                    console.log('Transform IGNORATO - isMaster:', this.isMaster, 'fromMaster:', message.fromMaster);
                 }
                 break;
 
@@ -171,12 +169,17 @@ class MultiClientManager {
      */
     handleTransformMessage(message) {
         if (this.onTransformReceived) {
-            this.onTransformReceived({
+            const data = {
                 objectId: message.objectId,
                 position: message.position,
                 rotation: message.rotation,
                 scale: message.scale
-            });
+            };
+            // Includi tags se presenti nel messaggio
+            if (message.tags) {
+                data.tags = message.tags;
+            }
+            this.onTransformReceived(data);
         }
     }
 
@@ -192,7 +195,8 @@ class MultiClientManager {
                 position: message.position,
                 rotation: message.rotation,
                 scale: message.scale,
-                properties: message.properties
+                properties: message.properties,
+                tags: message.tags || [0] // Includi tags con default [0]
             });
         }
     }
@@ -236,23 +240,24 @@ class MultiClientManager {
     /**
      * Invia trasformazione (solo se master) con throttling
      */
-    sendTransform(objectId, position, rotation, scale) {
+    sendTransform(objectId, position, rotation, scale, tags = null) {
         if (!this.isMaster || !this.isEnabled) {
             console.log('sendTransform BLOCKED - isMaster:', this.isMaster, 'isEnabled:', this.isEnabled);
             return;
         }
 
         // Throttling: massimo 20 FPS per oggetto
+        // ECCEZIONE: se ci sono tags, forza l'invio (cambio tags esplicito)
         const now = Date.now();
         const throttleKey = `transform_${objectId}`;
         
         if (!this.lastSent) this.lastSent = {};
-        if (this.lastSent[throttleKey] && now - this.lastSent[throttleKey] < 50) {
-            return; // Skip se troppo frequente
+        
+        // Se non ci sono tags espliciti, applica throttling normale
+        if (tags === null && this.lastSent[throttleKey] && now - this.lastSent[throttleKey] < 50) {
+            return; // Skip se troppo frequente (solo per transform senza tags)
         }
         this.lastSent[throttleKey] = now;
-
-        console.log('MASTER invia trasformazione:', objectId, position);
 
         const message = {
             type: 'transform',
@@ -261,6 +266,11 @@ class MultiClientManager {
             rotation: rotation,
             scale: scale
         };
+        
+        // Aggiungi tags solo se specificati (evita di inviare tags ad ogni frame)
+        if (tags !== null) {
+            message.tags = tags;
+        }
 
         this.sendMessage(message);
     }
@@ -268,13 +278,13 @@ class MultiClientManager {
     /**
      * Notifica creazione oggetto (solo se master)
      */
-    notifyObjectCreated(objectId, objectType, name, position, rotation, scale, properties = {}) {
+    notifyObjectCreated(objectId, objectType, name, position, rotation, scale, properties = {}, tags = [0]) {
         if (!this.isMaster || !this.isEnabled) {
             console.log('notifyObjectCreated BLOCKED - isMaster:', this.isMaster, 'isEnabled:', this.isEnabled);
             return;
         }
 
-        console.log('MASTER notifica creazione oggetto:', objectId, objectType, name);
+        console.log('MASTER notifica creazione oggetto:', objectId, objectType, name, 'tags:', tags);
 
         const message = {
             type: 'object_created',
@@ -284,7 +294,8 @@ class MultiClientManager {
             position: position,
             rotation: rotation,
             scale: scale,
-            properties: properties
+            properties: properties,
+            tags: tags
         };
 
         this.sendMessage(message);

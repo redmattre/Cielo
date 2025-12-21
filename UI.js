@@ -457,6 +457,11 @@ function applyTransformToObject(targetObject, data) {
         targetObject.scale.set(data.scale.x, data.scale.y, data.scale.z);
     }
     
+    // Applica tags se presenti
+    if (data.tags) {
+        targetObject.userData.tags = data.tags;
+    }
+    
     // Forza aggiornamento matrice
     targetObject.updateMatrixWorld(true);
 }
@@ -486,6 +491,17 @@ function createObjectFromMultiClient(data) {
                 // Crea l'omnifonte con ID e nome dal master
                 window.addSphereAtPosition(appPos.x, appPos.y, appPos.z, data.objectId, data.name);
                 
+                // Applica tags se presenti
+                if (data.tags) {
+                    setTimeout(() => {
+                        scene.traverse(child => {
+                            if (child.userData.id === data.objectId) {
+                                child.userData.tags = data.tags;
+                            }
+                        });
+                    }, 50);
+                }
+                
                 // Riattiva sync dopo un breve delay
                 setTimeout(() => {
                     window.multiClientManager.isEnabled = wasEnabled;
@@ -505,6 +521,17 @@ function createObjectFromMultiClient(data) {
                 
                 // Crea l'altoparlante con ID e nome dal master
                 window.addSpeakerAtPosition(appPos.x, appPos.y, appPos.z, data.objectId, data.name);
+                
+                // Applica tags se presenti
+                if (data.tags) {
+                    setTimeout(() => {
+                        scene.traverse(child => {
+                            if (child.userData.id === data.objectId) {
+                                child.userData.tags = data.tags;
+                            }
+                        });
+                    }, 50);
+                }
                 
                 // Riattiva sync dopo un breve delay
                 setTimeout(() => {
@@ -546,6 +573,17 @@ function createObjectFromMultiClient(data) {
                 
                 // Crea l'orifonte con ID e nome dal master
                 window.addArrowAtPosition(appPos.x, appPos.y, appPos.z, data.objectId, data.name);
+                
+                // Applica tags se presenti
+                if (data.tags) {
+                    setTimeout(() => {
+                        scene.traverse(child => {
+                            if (child.userData.id === data.objectId) {
+                                child.userData.tags = data.tags;
+                            }
+                        });
+                    }, 50);
+                }
                 
                 // Riattiva sync dopo un breve delay
                 setTimeout(() => {

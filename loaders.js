@@ -78,7 +78,9 @@ export function loadObj(filename, name, material, scaleFactor, x, y, z, rotation
                     name,
                     { x: x, y: z, z: y },
                     rotation ? { x: rotation.x, y: rotation.y, z: rotation.z } : { x: 0, y: 0, z: 0 },
-                    { x: scaleFactor, y: scaleFactor, z: scaleFactor }
+                    { x: scaleFactor, y: scaleFactor, z: scaleFactor },
+                    {},
+                    group.userData.tags || [0]
                 );
             }
             

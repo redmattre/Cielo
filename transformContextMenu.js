@@ -1,6 +1,7 @@
 // Transform Context Menu System
 // Sistema di menu contestuale per trasformazioni 3D
 
+import * as THREE from 'three';
 import groupScaleUIDiv from './src/GroupScaleUIDiv.js';
 import { TAG_COLORS, hasTag, toggleTag, initializeTags } from './tagColors.js';
 
@@ -538,13 +539,28 @@ function updateTagsChips(object) {
                 const newState = hasTag(object, tagNum);
                 chip.style.opacity = newState ? '1' : '0.3';
                 
-                // Invia messaggio tags separato
+                // Invia messaggio tags separato (OSC)
                 if (window.messageBroker) {
                     window.messageBroker.sendObjectTags({
                         name: object.name,
                         type: null,
                         tags: object.userData.tags || [0]
                     });
+                }
+                
+                // Invia anche a multi-client se abilitato
+                if (window.multiClientManager?.isMaster && window.multiClientManager?.isEnabled) {
+                    const worldPos = new THREE.Vector3();
+                    object.getWorldPosition(worldPos);
+                    const euler = new THREE.Euler().setFromQuaternion(object.quaternion);
+                    
+                    window.multiClientManager.sendTransform(
+                        object.userData.id,
+                        { x: worldPos.x, y: worldPos.y, z: worldPos.z },
+                        { x: euler.x, y: euler.y, z: euler.z },
+                        { x: object.scale.x, y: object.scale.y, z: object.scale.z },
+                        object.userData.tags || [0]
+                    );
                 }
             }
         });

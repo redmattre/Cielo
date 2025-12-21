@@ -254,7 +254,9 @@ document.addEventListener('DOMContentLoaded', () => {
           nome,
           { x: 0, y: 1.2, z: 0 },
           { x: 0, y: 0, z: 0 },
-          { x: 0.25, y: 0.24, z: 0.25 }
+          { x: 0.25, y: 0.24, z: 0.25 },
+          {},
+          mesh.userData.tags || [0]
         );
       }
       

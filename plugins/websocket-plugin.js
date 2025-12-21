@@ -103,6 +103,7 @@ export function websocketPlugin(options = {}) {
             position: message.position,
             rotation: message.rotation,
             scale: message.scale,
+            tags: message.tags, // Inoltra i tags se presenti
             fromMaster: true
           });
         }
@@ -121,6 +122,7 @@ export function websocketPlugin(options = {}) {
             rotation: message.rotation,
             scale: message.scale,
             properties: message.properties,
+            tags: message.tags || [0], // Salva tags nello state
             timestamp: Date.now()
           });
 
@@ -134,6 +136,7 @@ export function websocketPlugin(options = {}) {
             rotation: message.rotation,
             scale: message.scale,
             properties: message.properties,
+            tags: message.tags || [0], // Inoltra tags agli slaves
             fromMaster: true
           });
         }

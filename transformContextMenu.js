@@ -275,12 +275,12 @@ function createToggleButton(id, iconOn, iconOff, initialState) {
     // Stati hover
     button.addEventListener('mouseenter', () => {
         button.style.background = 'rgba(255, 255, 255, 0.1)';
-        icon.style.filter = 'brightness(1)';
+        iconContainer.style.filter = 'brightness(1)';
     });
 
     button.addEventListener('mouseleave', () => {
         button.style.background = 'transparent';
-        icon.style.filter = 'brightness(0.8)';
+        iconContainer.style.filter = 'brightness(0.8)';
     });
 
     return button;
@@ -548,6 +548,11 @@ function updateTagsChips(object) {
                     });
                 }
                 
+                // Sync con submenu
+                if (window.updateSubmenuTags) {
+                    window.updateSubmenuTags(object);
+                }
+                
                 // Invia anche a multi-client se abilitato
                 if (window.multiClientManager?.isMaster && window.multiClientManager?.isEnabled) {
                     const worldPos = new THREE.Vector3();
@@ -579,6 +584,9 @@ function updateTagsChips(object) {
     // Mostra il wrapper
     tagsContainer.style.display = 'flex';
 }
+
+// Esponi funzione per sync esterno
+window.updateTagsChipsExternal = updateTagsChips;
 
 // Setup event listeners
 function setupEventListeners() {

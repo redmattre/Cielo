@@ -1,0 +1,28 @@
+{
+  "title": "Zone Settings",
+  "controls": [
+    {
+      "label": "Active",
+      "oscName": "active",
+      "type": "toggle",
+      "defaultValue": true
+    },
+    {
+      "label": "Size",
+      "oscName": "size",
+      "type": "slider",
+      "min": 0.1,
+      "max": 5,
+      "step": 0.1,
+      "defaultValue": 1.0
+    },
+    {
+      "label": "Priority",
+      "oscName": "priority",
+      "type": "numbox",
+      "min": 1,
+      "max": 10,
+      "defaultValue": 1
+    }
+  ]
+}

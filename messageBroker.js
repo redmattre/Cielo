@@ -236,6 +236,33 @@ class MessageBroker {
 
         // Max mantiene il suo comportamento in max.js (sendLastHoveredObjectToMax)
     }
+
+    /**
+     * Invia parametro personalizzato dal menu
+     * @param {Object} data - { type, index, paramName, value }
+     */
+    sendCustomParameter(data) {
+        const {
+            type,
+            index,
+            paramName,
+            value
+        } = data;
+
+        if (!this.canSendMessages()) {
+            return;
+        }
+
+        // OSC: /cielo/{type}/{index}/{paramName} value
+        if (oscManager.isEnabled) {
+            oscManager.sendOSC(`/cielo/${type}/${index}/${paramName}`, [value]);
+        }
+
+        // Max: outlet con pattern simile
+        if (window.max && window.max.outlet) {
+            window.max.outlet(type, index, paramName, value);
+        }
+    }
 }
 
 // Crea istanza globale

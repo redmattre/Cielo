@@ -3,7 +3,7 @@ import { websocketPlugin } from "./plugins/websocket-plugin.js";
 import { oscPlugin } from "./plugins/osc-plugin.js";
 
 export default defineConfig({
-    base: "/Cielo/",
+    // base: "/Cielo/",
     server: {
         host: '0.0.0.0', // Accetta connessioni da qualsiasi IP
         port: 5173,

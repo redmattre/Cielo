@@ -460,6 +460,14 @@ function applyTransformToObject(targetObject, data) {
     // Applica tags se presenti
     if (data.tags) {
         targetObject.userData.tags = data.tags;
+        
+        // Aggiorna visualmente i tag nei menu
+        if (window.updateSubmenuTags) {
+            window.updateSubmenuTags(targetObject);
+        }
+        if (window.updateTagsChipsExternal) {
+            window.updateTagsChipsExternal(targetObject);
+        }
     }
     
     // Forza aggiornamento matrice

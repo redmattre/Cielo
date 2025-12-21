@@ -1,7 +1,200 @@
 import { scene, objToBeDetected } from './setup.js';
+import { TAG_COLORS, hasTag, toggleTag, initializeTags } from './tagColors.js';
+
+// Stili CSS minimali per i controlli del menu
+const existingStyle = document.getElementById('objmenu-styles');
+if (existingStyle) {
+    existingStyle.remove();
+}
+
+const style = document.createElement('style');
+style.id = 'objmenu-styles';
+style.textContent = `
+        /* Stile base per tutti gli input */
+        .menu-control-row {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.25rem 0;
+        }
+        
+        .menu-label {
+            font-size: 0.75rem;
+            min-width: 50px;
+            flex-shrink: 0;
+            color: var(--testo);
+        }
+        
+        /* Slider */
+        .menu-slider {
+            flex: 1;
+            min-width: 0;
+            max-width: 100%;
+            height: 4px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: var(--dettaglio);
+            border-radius: 2px;
+            outline: none;
+            cursor: pointer;
+        }
+        
+        .menu-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            background: var(--testo);
+            border-radius: 2px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .menu-slider::-webkit-slider-thumb:hover {
+            background: var(--fondale);
+            outline: 2px solid var(--testo);
+        }
+        
+        .menu-slider::-moz-range-thumb {
+            width: 14px;
+            height: 14px;
+            background: var(--testo);
+            border: none;
+            border-radius: 2px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .menu-slider::-moz-range-thumb:hover {
+            background: var(--fondale);
+            outline: 2px solid var(--testo);
+        }
+        
+        .menu-value {
+            font-size: 0.7rem;
+            min-width: 40px;
+            flex-shrink: 0;
+            text-align: right;
+            color: var(--testo);
+        }
+        
+        /* Checkbox */
+        .menu-checkbox {
+            width: 14px;
+            height: 14px;
+            flex-shrink: 0;
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+            border: 1px solid var(--dettaglio);
+            border-radius: 3px;
+            background: transparent;
+            position: relative;
+            transition: all 0.15s;
+        }
+        
+        .menu-checkbox:hover {
+            border-color: var(--testo);
+        }
+        
+        .menu-checkbox:checked {
+            background: transparent;
+            border-color: var(--testo);
+        }
+        
+        .menu-checkbox:checked::after {
+            content: '✕';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--testo);
+            font-size: 11px;
+            font-weight: bold;
+            line-height: 1;
+        }
+        
+        /* Numbox */
+        .menu-numbox {
+            width: 50px;
+            flex-shrink: 0;
+            padding: 0.2rem 0.3rem;
+            background: transparent;
+            border: 1px solid var(--dettaglio);
+            border-radius: 4px;
+            color: var(--testo);
+            font-size: 0.75rem;
+            outline: none;
+        }
+        
+        .menu-numbox:focus {
+            border-color: var(--testo);
+        }
+        
+        /* Multitoggle */
+        .menu-multitoggle {
+            display: flex;
+            gap: 0.25rem;
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .menu-multitoggle-btn {
+            flex: 1;
+            // min-width: 0;
+            height: auto;
+            width: auto;
+            padding: none;
+            margin: 0;
+            background: transparent;
+            border: 1px solid var(--dettaglio);
+            border-radius: 4px;
+            color: var(--testo);
+            font-size: 0.7rem;
+            // line-height: 0;
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            // box-sizing: border-box;
+        }
+        
+        .menu-multitoggle-btn:hover {
+            background: var(--dettaglio);
+        }
+        
+        .menu-multitoggle-btn.active {
+            background: var(--testo);
+            color: var(--fondale);
+            border-color: var(--testo);
+        }
+        
+        /* Tags section */
+        .submenu-tags-wrapper {
+            margin-top: 0.5rem;
+            padding-top: 0.5rem;
+            border-top: 1px solid var(--dettaglio);
+        }
+        
+        .submenu-tags-label {
+            font-size: 0.75rem;
+            color: var(--testo);
+            margin-bottom: 0.3rem;
+        }
+        
+        .submenu-tags-container {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(2, 18px);
+            gap: 0.15rem;
+        }
+    `;
+document.head.appendChild(style);
 
 // --- Configurazione sottomenu per tipo di oggetto ---
-const submenuConfigs = {
+// Configurazioni di default (fallback se i JSON non sono disponibili)
+const submenuConfigsDefault = {
     omnifonte: {
         title: 'Omnifonte Settings',
         controls: [
@@ -57,6 +250,53 @@ const submenuConfigs = {
         ]
     }
 };
+
+// Configurazioni caricate dinamicamente dai JSON
+let submenuConfigs = { ...submenuConfigsDefault };
+
+// Funzione per caricare le configurazioni dai JSON
+async function loadMenuConfigs() {
+    const configTypes = ['omnifonte', 'orifonte', 'altoparlante', 'aureola', 'zona', 'povcursor'];
+    
+    for (const type of configTypes) {
+        try {
+            // Usa import.meta.env.BASE_URL per gestire correttamente la base path
+            const basePath = import.meta.env.BASE_URL || '/';
+            const response = await fetch(`${basePath}config/${type}.json`);
+            if (response.ok) {
+                const config = await response.json();
+                
+                // Converti il formato JSON nel formato interno
+                submenuConfigs[type] = {
+                    title: config.title,
+                    controls: config.controls.map(ctrl => ({
+                        type: ctrl.type,
+                        label: ctrl.label,
+                        oscName: ctrl.oscName,
+                        min: ctrl.min,
+                        max: ctrl.max,
+                        step: ctrl.step,
+                        value: ctrl.defaultValue,
+                        options: ctrl.options,  // Per multitoggle
+                        defaultValue: ctrl.defaultValue,  // Per multitoggle e reset
+                        unitType: ctrl.unitType  // Unità di misura
+                    }))
+                };
+                
+                console.log(`✅ Loaded config for ${type}`);
+            } else {
+                console.warn(`⚠️ Could not load config for ${type}, using default`);
+            }
+        } catch (error) {
+            console.warn(`⚠️ Error loading config for ${type}:`, error);
+        }
+    }
+}
+
+// Carica le configurazioni all'avvio
+loadMenuConfigs().then(() => {
+    console.log('📋 Menu configurations loaded');
+});
 
 // Funzione per determinare il tipo di oggetto dal nome
 function getObjectType(objectName) {
@@ -235,37 +475,60 @@ window.updateMenuForObject = updateMenuForObject;
 // Funzioni per creare i controlli del sottomenu
 function createSlider(config, object) {
     const container = document.createElement('div');
-    container.style.display = 'flex';
-    container.style.alignItems = 'center';
-    container.style.marginBottom = '0.5rem';
-    container.style.padding = '0.3rem';
+    container.className = 'menu-control-row';
     
     const label = document.createElement('label');
+    label.className = 'menu-label';
     label.textContent = config.label;
-    label.style.width = '60px';
-    label.style.fontSize = '0.8rem';
-    label.style.marginRight = '0.5rem';
     
     const slider = document.createElement('input');
     slider.type = 'range';
+    slider.className = 'menu-slider';
     slider.min = config.min;
     slider.max = config.max;
     slider.step = config.step;
     slider.value = config.value;
-    slider.style.flex = '1';
-    slider.style.height = '20px';
     
     const valueDisplay = document.createElement('span');
-    valueDisplay.textContent = config.value;
-    valueDisplay.style.width = '40px';
-    valueDisplay.style.fontSize = '0.8rem';
-    valueDisplay.style.textAlign = 'right';
-    valueDisplay.style.marginLeft = '0.5rem';
+    valueDisplay.className = 'menu-value';
+    const unit = config.unitType || '';
+    valueDisplay.textContent = parseFloat(config.value).toFixed(2) + unit;
     
     slider.addEventListener('input', (e) => {
-        valueDisplay.textContent = parseFloat(e.target.value).toFixed(2);
-        // TODO: Qui collegheremo alla logica dell'oggetto
-        console.log(`${object.name} ${config.label}: ${e.target.value}`);
+        valueDisplay.textContent = parseFloat(e.target.value).toFixed(2) + unit;
+        
+        // Invia messaggio OSC
+        if (window.messageBroker && config.oscName) {
+            const objectType = getObjectType(object.name);
+            const match = object.name.match(/(\d+)$/);
+            const index = match ? parseInt(match[1], 10) : 1;
+            
+            window.messageBroker.sendCustomParameter({
+                type: objectType,
+                index: index,
+                paramName: config.oscName,
+                value: parseFloat(e.target.value)
+            });
+        }
+    });
+    
+    // Doppio click per reset
+    slider.addEventListener('dblclick', () => {
+        slider.value = config.value;
+        valueDisplay.textContent = parseFloat(config.value).toFixed(2) + unit;
+        
+        if (window.messageBroker && config.oscName) {
+            const objectType = getObjectType(object.name);
+            const match = object.name.match(/(\d+)$/);
+            const index = match ? parseInt(match[1], 10) : 1;
+            
+            window.messageBroker.sendCustomParameter({
+                type: objectType,
+                index: index,
+                paramName: config.oscName,
+                value: parseFloat(config.value)
+            });
+        }
     });
     
     container.appendChild(label);
@@ -276,45 +539,51 @@ function createSlider(config, object) {
 
 function createToggle(config, object) {
     const container = document.createElement('div');
-    container.style.display = 'flex';
-    container.style.alignItems = 'center';
-    container.style.marginBottom = '0.5rem';
-    container.style.padding = '0.3rem';
+    container.className = 'menu-control-row';
     
     const label = document.createElement('label');
+    label.className = 'menu-label';
     label.textContent = config.label;
-    label.style.fontSize = '0.8rem';
-    label.style.marginRight = '0.5rem';
-    label.style.flex = '1';
     
     const toggle = document.createElement('input');
     toggle.type = 'checkbox';
+    toggle.className = 'menu-checkbox';
     
-    // Per il toggle "Guarda origine", leggi il valore dall'oggetto, non dalla configurazione
-    if (config.label === 'Guarda origine' && getObjectType(object.name) === 'altoparlante') {
-        // Assicurati che userData esista
+    // Per il toggle "Guarda origine" / "Look at Origin", leggi il valore dall'oggetto
+    const isLookAtOrigin = (config.label === 'Guarda origine' || config.label === 'Look at Origin') && 
+                           getObjectType(object.name) === 'altoparlante';
+    
+    if (isLookAtOrigin) {
         object.userData = object.userData || {};
-        // Se il flag non esiste, usa il valore di default dalla configurazione
         if (object.userData.autoRotateToCenter === undefined) {
             object.userData.autoRotateToCenter = config.value;
         }
         toggle.checked = object.userData.autoRotateToCenter;
-        console.log(`Toggle "Guarda origine" for ${object.name} set to: ${toggle.checked}`);
     } else {
         toggle.checked = config.value;
     }
     
-    toggle.style.transform = 'scale(1.2)';
-    
     toggle.addEventListener('change', (e) => {
-        console.log(`${object.name} ${config.label}: ${e.target.checked}`);
-        
-        // Gestione speciale per il toggle "Guarda origine" degli altoparlanti
-        if (config.label === 'Guarda origine' && getObjectType(object.name) === 'altoparlante') {
+        // Gestione speciale per il toggle "Guarda origine"/"Look at Origin" degli altoparlanti
+        if (isLookAtOrigin) {
             orientSpeakerToCenter(object, e.target.checked);
         }
         
-        // TODO: Qui collegheremo alla logica dell'oggetto per altri controlli
+        // Invia messaggio OSC solo se c'è oscName definito
+        if (window.messageBroker && config.oscName) {
+            const objectType = getObjectType(object.name);
+            // Estrai index dal nome (es: "Omnifonte 3" -> 3)
+            const match = object.name.match(/(\d+)$/);
+            const index = match ? parseInt(match[1], 10) : 1;
+            
+            // Invia: /cielo/{type}/{index}/{oscName} 0|1
+            window.messageBroker.sendCustomParameter({
+                type: objectType,
+                index: index,
+                paramName: config.oscName,
+                value: e.target.checked ? 1 : 0
+            });
+        }
     });
     
     container.appendChild(label);
@@ -324,37 +593,242 @@ function createToggle(config, object) {
 
 function createNumbox(config, object) {
     const container = document.createElement('div');
-    container.style.display = 'flex';
-    container.style.alignItems = 'center';
-    container.style.marginBottom = '0.5rem';
-    container.style.padding = '0.3rem';
+    container.className = 'menu-control-row';
     
     const label = document.createElement('label');
+    label.className = 'menu-label';
     label.textContent = config.label;
-    label.style.width = '60px';
-    label.style.fontSize = '0.8rem';
-    label.style.marginRight = '0.5rem';
     
     const numbox = document.createElement('input');
     numbox.type = 'number';
+    numbox.className = 'menu-numbox';
     numbox.value = config.value;
     numbox.min = config.min || '';
     numbox.max = config.max || '';
-    numbox.style.width = '60px';
-    numbox.style.padding = '0.2rem';
-    numbox.style.border = '1px solid var(--dettaglio)';
-    numbox.style.borderRadius = '3px';
-    numbox.style.background = 'var(--fondale)';
-    numbox.style.color = 'var(--testo)';
+    
+    const unit = config.unitType || '';
+    const valueDisplay = document.createElement('span');
+    valueDisplay.className = 'menu-value';
+    if (unit) valueDisplay.textContent = unit;
     
     numbox.addEventListener('change', (e) => {
-        console.log(`${object.name} ${config.label}: ${e.target.value}`);
-        // TODO: Qui collegheremo alla logica dell'oggetto
+        // Invia messaggio OSC
+        if (window.messageBroker && config.oscName) {
+            const objectType = getObjectType(object.name);
+            const match = object.name.match(/(\d+)$/);
+            const index = match ? parseInt(match[1], 10) : 1;
+            
+            window.messageBroker.sendCustomParameter({
+                type: objectType,
+                index: index,
+                paramName: config.oscName,
+                value: parseInt(e.target.value, 10)
+            });
+        }
+    });
+    
+    // Doppio click per reset
+    numbox.addEventListener('dblclick', () => {
+        numbox.value = config.value;
+        
+        if (window.messageBroker && config.oscName) {
+            const objectType = getObjectType(object.name);
+            const match = object.name.match(/(\d+)$/);
+            const index = match ? parseInt(match[1], 10) : 1;
+            
+            window.messageBroker.sendCustomParameter({
+                type: objectType,
+                index: index,
+                paramName: config.oscName,
+                value: parseInt(config.value, 10)
+            });
+        }
     });
     
     container.appendChild(label);
     container.appendChild(numbox);
+    if (unit) container.appendChild(valueDisplay);
     return container;
+}
+
+function createMultitoggle(config, object) {
+    const container = document.createElement('div');
+    container.style.marginBottom = '0.3rem';
+    
+    const label = document.createElement('div');
+    label.className = 'menu-label';
+    label.textContent = config.label;
+    label.style.marginBottom = '0.3rem';
+    label.style.fontSize = '0.75rem';
+    
+    const buttonsContainer = document.createElement('div');
+    buttonsContainer.className = 'menu-multitoggle';
+    
+    const buttons = [];
+    const options = config.options || [];
+    const currentValue = config.defaultValue || 0;
+    
+    options.forEach((option, idx) => {
+        const btn = document.createElement('button');
+        btn.textContent = option.label;
+        btn.className = 'menu-multitoggle-btn';
+        
+        const isActive = (option.value === currentValue) || (idx === currentValue);
+        if (isActive) {
+            btn.classList.add('active');
+        }
+        
+        btn.addEventListener('click', () => {
+            // Deseleziona tutti
+            buttons.forEach(b => b.classList.remove('active'));
+            
+            // Seleziona questo
+            btn.classList.add('active');
+            
+            const selectedValue = option.value !== undefined ? option.value : idx;
+            
+            // Invia messaggio OSC
+            if (window.messageBroker && config.oscName) {
+                const objectType = getObjectType(object.name);
+                const match = object.name.match(/(\d+)$/);
+                const index = match ? parseInt(match[1], 10) : 1;
+                
+                window.messageBroker.sendCustomParameter({
+                    type: objectType,
+                    index: index,
+                    paramName: config.oscName,
+                    value: selectedValue
+                });
+            }
+        });
+        
+        buttons.push(btn);
+        buttonsContainer.appendChild(btn);
+    });
+    
+    // Doppio click per reset
+    buttonsContainer.addEventListener('dblclick', () => {
+        const defaultValue = config.defaultValue || 0;
+        
+        options.forEach((option, idx) => {
+            const isDefault = (option.value === defaultValue) || (idx === defaultValue);
+            const btn = buttons[idx];
+            
+            if (isDefault) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+        
+        if (window.messageBroker && config.oscName) {
+            const objectType = getObjectType(object.name);
+            const match = object.name.match(/(\d+)$/);
+            const index = match ? parseInt(match[1], 10) : 1;
+            
+            window.messageBroker.sendCustomParameter({
+                type: objectType,
+                index: index,
+                paramName: config.oscName,
+                value: defaultValue
+            });
+        }
+    });
+    
+    container.appendChild(label);
+    container.appendChild(buttonsContainer);
+    return container;
+}
+
+// Crea selettore tag per submenu (sincronizzato con context menu)
+function createTagsSelector(object) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'submenu-tags-wrapper';
+    
+    const label = document.createElement('div');
+    label.className = 'submenu-tags-label';
+    label.textContent = 'Tags';
+    
+    const container = document.createElement('div');
+    container.className = 'submenu-tags-container';
+    
+    wrapper.appendChild(label);
+    wrapper.appendChild(container);
+    
+    // Store reference
+    wrapper._container = container;
+    wrapper._object = object;
+    
+    // Inizializza grid
+    updateTagsGrid(wrapper);
+    
+    return wrapper;
+}
+
+// Aggiorna grid tag
+function updateTagsGrid(wrapper) {
+    const container = wrapper._container;
+    const object = wrapper._object;
+    
+    if (!object) return;
+    
+    initializeTags(object);
+    container.innerHTML = '';
+    
+    // Mostra tutti i tag da 1 a 16 (no pagination)
+    for (let tagNum = 1; tagNum <= 16; tagNum++) {
+        const chip = document.createElement('button');
+        chip.textContent = tagNum;
+        chip.dataset.tag = tagNum;
+        
+        const isActive = hasTag(object, tagNum);
+        const color = TAG_COLORS[tagNum];
+        
+        chip.style.cssText = `
+            width: 100%;
+            height: 18px;
+            border-radius: 3px;
+            border: none;
+            margin: 0;
+            padding: 0;
+            font-size: 0.6rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: opacity 0.15s;
+            background-color: ${color};
+            color: #000;
+            opacity: ${isActive ? '1' : '0.3'};
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        `;
+        
+        chip.addEventListener('click', () => {
+            if (window.multiClientManager?.isEnabled && !window.multiClientManager?.isMaster) {
+                window.multiClientManager.requestMaster();
+            }
+            
+            toggleTag(object, tagNum);
+            const newState = hasTag(object, tagNum);
+            chip.style.opacity = newState ? '1' : '0.3';
+            
+            // Invia messaggio OSC
+            if (window.messageBroker) {
+                window.messageBroker.sendObjectTags({
+                    name: object.name,
+                    type: null,
+                    tags: object.userData.tags || [0]
+                });
+            }
+            
+            // Sync con context menu
+            if (window.updateTagsChipsExternal) {
+                window.updateTagsChipsExternal(object);
+            }
+        });
+        
+        container.appendChild(chip);
+    }
 }
 
 function createSubmenu(object) {
@@ -369,22 +843,11 @@ function createSubmenu(object) {
     submenu.style.background = 'var(--fondale)';
     submenu.style.border = '1px solid var(--dettaglio)';
     submenu.style.borderTop = 'none';
-    submenu.style.borderRadius = '0 0 5px 5px';
-    submenu.style.padding = '0.5rem';
+    submenu.style.borderRadius = '0 0 10px 10px';
+    submenu.style.padding = '0.4rem';
     submenu.style.marginBottom = '0.5rem';
-    submenu.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
     
-    // Titolo del sottomenu
-    const title = document.createElement('div');
-    title.textContent = config.title;
-    title.style.fontWeight = 'bold';
-    title.style.fontSize = '0.9rem';
-    title.style.marginBottom = '0.5rem';
-    title.style.borderBottom = '1px solid var(--dettaglio)';
-    title.style.paddingBottom = '0.3rem';
-    submenu.appendChild(title);
-    
-    // Controlli
+    // Controlli (senza titolo)
     config.controls.forEach(controlConfig => {
         let control;
         switch (controlConfig.type) {
@@ -402,9 +865,19 @@ function createSubmenu(object) {
             case 'numbox':
                 control = createNumbox(controlConfig, object);
                 break;
+            case 'multitoggle':
+                control = createMultitoggle(controlConfig, object);
+                break;
         }
         if (control) submenu.appendChild(control);
     });
+    
+    // Aggiungi selettore tag in fondo
+    const tagsSelector = createTagsSelector(object);
+    submenu.appendChild(tagsSelector);
+    
+    // Store reference per aggiornamenti
+    submenu._tagsSelector = tagsSelector;
     
     return submenu;
 }
@@ -648,6 +1121,52 @@ export function updateMenu() {
     // ma manteniamo la funzione per compatibilità
     console.log('updateMenu called - no action needed in simplified menu');
 }
+
+// Funzione per aggiornare i tag nel submenu quando modificati dal context menu
+export function updateSubmenuTags(object) {
+    if (!object) return;
+    
+    console.log('updateSubmenuTags chiamata per:', object.name);
+    
+    // Usa la menuObjectMap per trovare l'itemList di questo oggetto
+    if (!window.menuObjectMap) {
+        console.log('✗ window.menuObjectMap non esiste');
+        return;
+    }
+    
+    const itemList = window.menuObjectMap.get(object);
+    if (!itemList) {
+        console.log('✗ itemList non trovato in menuObjectMap per:', object.name);
+        return;
+    }
+    
+    console.log('✓ itemList trovato');
+    
+    // Risali al parent (itemContainer) e trova il submenu
+    const itemContainer = itemList.parentElement;
+    if (!itemContainer) {
+        console.log('✗ itemContainer non trovato');
+        return;
+    }
+    
+    const submenu = itemContainer.querySelector('.submenu');
+    if (!submenu) {
+        console.log('✗ submenu non trovato nel container');
+        return;
+    }
+    
+    console.log('✓ submenu trovato, ha _tagsSelector?', !!submenu._tagsSelector);
+    
+    if (submenu._tagsSelector) {
+        console.log('✓ Aggiornando tag grid per:', object.name);
+        updateTagsGrid(submenu._tagsSelector);
+    } else {
+        console.log('✗ submenu non ha _tagsSelector');
+    }
+}
+
+// Esponi globalmente per sync con context menu
+window.updateSubmenuTags = updateSubmenuTags;
 
 // Funzione per ottenere il nome dell'oggetto selezionato (mantenuta per compatibilità)
 export function getSelectedObjectName(itemIndex) {

@@ -1,0 +1,37 @@
+{
+  "title": "Orifonte Settings",
+  "controls": [
+    {
+      "label": "Gain",
+      "oscName": "gain",
+      "type": "slider",
+      "min": -60,
+      "max": 12,
+      "step": 1,
+      "defaultValue": 0
+    },
+    {
+      "label": "Spread",
+      "oscName": "spread",
+      "type": "slider",
+      "min": 0,
+      "max": 180,
+      "step": 5,
+      "defaultValue": 30
+    },
+    {
+      "label": "Enabled",
+      "oscName": "enabled",
+      "type": "toggle",
+      "defaultValue": true
+    },
+    {
+      "label": "Input",
+      "oscName": "input",
+      "type": "numbox",
+      "min": 1,
+      "max": 8,
+      "defaultValue": 1
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "title": "Aureola Settings",
+  "controls": [
+    {
+      "label": "Visible",
+      "oscName": "visible",
+      "type": "toggle",
+      "defaultValue": true
+    },
+    {
+      "label": "Opacity",
+      "oscName": "opacity",
+      "type": "slider",
+      "min": 0,
+      "max": 1,
+      "step": 0.1,
+      "defaultValue": 0.5
+    },
+    {
+      "label": "Segments",
+      "oscName": "segments",
+      "type": "numbox",
+      "min": 8,
+      "max": 64,
+      "defaultValue": 32
+    }
+  ]
+}

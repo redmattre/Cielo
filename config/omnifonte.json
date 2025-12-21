@@ -1,0 +1,113 @@
+{
+  "title": "Omnifonte Settings",
+  "controls": [
+    {
+      "label": "Trim",
+      "oscName": "trim",
+      "type": "slider",
+      "min": -12.0,
+      "max": 6.0,
+      "step": 0.01,
+      "defaultValue": 0.0,
+      "unitType": "dB"
+    },
+    {
+      "label": "Active",
+      "oscName": "channelstate",
+      "type": "toggle",
+      "defaultValue": true
+    },
+    {
+      "label": "Solo",
+      "oscName": "solo ",
+      "type": "toggle",
+      "defaultValue": 0.0
+    },
+    {
+      "label": "Delay Mode",
+      "oscName": "delaymode",
+      "type": "multitoggle",
+      "options": [
+        {
+          "label": "Simple",
+          "value": 0
+        },
+        {
+          "label": "Live",
+          "value": 1
+        },
+        {
+          "label": "Full",
+          "value": 2
+        }
+      ],
+      "defaultValue": 2
+    },
+    {
+      "label": "Smooth",
+      "oscName": "delaysmooth",
+      "type": "slider",
+      "min": 0.0,
+      "max": 200.0,
+      "step": 1.0,
+      "defaultValue": 100,
+      "unitType": "%"
+    },
+    {
+      "label": "Spread",
+      "oscName": "spread",
+      "type": "slider",
+      "min": 0.0,
+      "max": 100.0,
+      "step": 1.0,
+      "defaultValue": 0.0,
+      "unitType": "%"
+    },
+    {
+      "label": "Depth",
+      "oscName": "depth",
+      "type": "slider",
+      "min": 0.0,
+      "max": 100.0,
+      "step": 1.0,
+      "defaultValue": 100.0,
+      "unitType": "%"
+    },
+    {
+      "label": "Range",
+      "oscName": "range",
+      "type": "slider",
+      "min": 0.0,
+      "max": 20.0,
+      "step": 0.1,
+      "defaultValue": 10.0,
+      "unitType": "m"
+    },
+    {
+      "label": "Convolution",
+      "oscName": "convolution",
+      "type": "toggle",
+      "defaultValue": false
+    },
+    {
+      "label": "Conv Send",
+      "oscName": "convsend",
+      "type": "slider",
+      "min": -60.0,
+      "max": 6.0,
+      "step": 0.001,
+      "defaultValue": -6.0,
+      "unitType": "dB"
+    },
+    {
+      "label": "Conv Percent",
+      "oscName": "convpercent",
+      "type": "slider",
+      "min": 0.00,
+      "max": 100.0,
+      "step": 1.0,
+      "defaultValue": 0.00,
+      "unitType": "%"
+    }
+  ]
+}

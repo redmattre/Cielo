@@ -86,17 +86,17 @@ class MessageBroker {
 
         // OSC: Messaggio di creazione + messaggio tags separato
         if (oscManager.isEnabled) {
-            // Messaggio added con posizione
-            oscManager.sendOSC(`/cielo/${objectType}/${index}/added`, [
-                name,
-                id,
+            // Messaggio added con nID e posizione (senza nome/id)
+            // NOTA: Added mantiene l'ordine x, y, z di Three.js ma Y è invertita
+            oscManager.sendOSC(`/cielo/${objectType}/added`, [
+                index,
                 position.x,
-                position.y,
+                -position.y,
                 position.z
             ]);
             
-            // Messaggio tags separato
-            oscManager.sendOSC(`/cielo/${objectType}/${index}/tags`, tags);
+            // Messaggio tags separato con nID come primo argomento
+            oscManager.sendOSC(`/cielo/${objectType}/tags`, [index, ...tags]);
         }
 
         // Max/MSP: Mantiene comportamento esistente
@@ -130,19 +130,23 @@ class MessageBroker {
 
         // OSC: Messaggi gerarchici separati per position e rotation
         if (oscManager.isEnabled) {
-            // Position
-            oscManager.sendOSC(`/cielo/${objectType}/${index}/position`, [
+            // Position con nID come primo argomento
+            // NOTA: Three.js usa Y come verticale, ma per OSC scambiamo Y e Z
+            // e invertiamo Y (che diventa -Z di Three.js)
+            oscManager.sendOSC(`/cielo/${objectType}/position`, [
+                index,
                 position.x,
-                position.y,
-                position.z
+                -position.z,  // Z di Three.js diventa -Y per OSC (invertita)
+                position.y    // Y di Three.js diventa Z per OSC
             ]);
 
             // Rotation: solo per orifonti e altoparlanti, NON per omnifonti
             if (objectType !== 'omnifonte') {
-                oscManager.sendOSC(`/cielo/${objectType}/${index}/rotation`, [
+                oscManager.sendOSC(`/cielo/${objectType}/rotation`, [
+                    index,
                     rotation.x,
-                    rotation.y,
-                    rotation.z
+                    rotation.z,  // Z di Three.js diventa Y per OSC
+                    rotation.y   // Y di Three.js diventa Z per OSC
                 ]);
             }
         }
@@ -168,9 +172,9 @@ class MessageBroker {
         const index = this.extractIndex(name);
         const objectType = type || this.extractType(name);
 
-        // OSC: Messaggio tags separato
+        // OSC: Messaggio tags separato con nID come primo argomento
         if (oscManager.isEnabled) {
-            oscManager.sendOSC(`/cielo/${objectType}/${index}/tags`, tags);
+            oscManager.sendOSC(`/cielo/${objectType}/tags`, [index, ...tags]);
         }
     }
 
@@ -191,13 +195,11 @@ class MessageBroker {
         const index = this.extractIndex(name);
         const objectType = type || this.extractType(name);
 
-        // OSC: Messaggio flat contestuale
+        // OSC: Messaggio flat contestuale con nID come primo argomento
         if (oscManager.isEnabled) {
             oscManager.sendOSC('/cielo/deleted', [
                 objectType,
-                index,
-                name,
-                id
+                index
             ]);
         }
 
@@ -253,9 +255,9 @@ class MessageBroker {
             return;
         }
 
-        // OSC: /cielo/{type}/{index}/{paramName} value
+        // OSC: /cielo/{type}/{paramName} con nID come primo argomento
         if (oscManager.isEnabled) {
-            oscManager.sendOSC(`/cielo/${type}/${index}/${paramName}`, [value]);
+            oscManager.sendOSC(`/cielo/${type}/${paramName}`, [index, value]);
         }
 
         // Max: outlet con pattern simile

@@ -170,6 +170,29 @@ style.textContent = `
             border-color: var(--testo);
         }
         
+        /* Button */
+        .menu-button {
+            height: 10px;
+            width: auto;
+            background: var(--fondale);
+            border: 1px solid var(--testo);
+            border-radius: 4px;
+            color: var(--testo);
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.15s;
+            user-select: none;
+        }
+        
+        .menu-button:hover {
+            background: var(--testo);
+            color: var(--fondale);
+        }
+        
+        .menu-button:active {
+            transform: scale(0.95);
+        }
+        
         /* Tags section */
         .submenu-tags-wrapper {
             margin-top: 0.5rem;
@@ -591,6 +614,67 @@ function createToggle(config, object) {
     return container;
 }
 
+function createButton(config, object) {
+    const container = document.createElement('div');
+    container.className = 'menu-control-row';
+    
+    const button = document.createElement('button');
+    button.className = 'menu-button';
+    button.textContent = config.label;
+    
+    // Mouse down: invia 1
+    button.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        if (window.messageBroker && config.oscName) {
+            const objectType = getObjectType(object.name);
+            const match = object.name.match(/(\d+)$/);
+            const index = match ? parseInt(match[1], 10) : 1;
+            
+            window.messageBroker.sendCustomParameter({
+                type: objectType,
+                index: index,
+                paramName: config.oscName,
+                value: 1
+            });
+        }
+    });
+    
+    // Mouse up: invia 0
+    button.addEventListener('mouseup', (e) => {
+        if (window.messageBroker && config.oscName) {
+            const objectType = getObjectType(object.name);
+            const match = object.name.match(/(\d+)$/);
+            const index = match ? parseInt(match[1], 10) : 1;
+            
+            window.messageBroker.sendCustomParameter({
+                type: objectType,
+                index: index,
+                paramName: config.oscName,
+                value: 0
+            });
+        }
+    });
+    
+    // Mouse leave mentre premuto: invia 0
+    button.addEventListener('mouseleave', (e) => {
+        if (window.messageBroker && config.oscName) {
+            const objectType = getObjectType(object.name);
+            const match = object.name.match(/(\d+)$/);
+            const index = match ? parseInt(match[1], 10) : 1;
+            
+            window.messageBroker.sendCustomParameter({
+                type: objectType,
+                index: index,
+                paramName: config.oscName,
+                value: 0
+            });
+        }
+    });
+    
+    container.appendChild(button);
+    return container;
+}
+
 function createNumbox(config, object) {
     const container = document.createElement('div');
     container.className = 'menu-control-row';
@@ -867,6 +951,9 @@ function createSubmenu(object) {
                 break;
             case 'multitoggle':
                 control = createMultitoggle(controlConfig, object);
+                break;
+            case 'button':
+                control = createButton(controlConfig, object);
                 break;
         }
         if (control) submenu.appendChild(control);

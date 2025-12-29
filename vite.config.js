@@ -3,7 +3,7 @@ import { websocketPlugin } from "./plugins/websocket-plugin.js";
 import { oscPlugin } from "./plugins/osc-plugin.js";
 
 export default defineConfig({
-    base: "/Cielo/",
+    // base: "/Cielo/",  // Solo per GitHub Pages
     server: {
         host: '0.0.0.0', // Accetta connessioni da qualsiasi IP
         port: 5173,
@@ -18,7 +18,7 @@ export default defineConfig({
             wsPort: 8081,
             wsPath: '/osc',
             defaultOscHost: '127.0.0.1',
-            defaultOscPort: 8000
+            defaultOscPort: 5000
         })
     ]
 });

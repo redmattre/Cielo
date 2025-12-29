@@ -137,11 +137,11 @@ const panelConfigs = {
         type: 'input',
         id: 'oscPort',
         label: 'OSC Port',
-        defaultValue: '8000',
+        defaultValue: '5000',
         action: (value) => {
           if (window.oscManager) {
             const host = window.oscManager.host;
-            const port = parseInt(value) || 8000;
+            const port = parseInt(value) || 5000;
             window.oscManager.updateConfig(host, port);
           }
         }

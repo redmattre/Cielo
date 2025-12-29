@@ -10,7 +10,7 @@ export function oscPlugin(options = {}) {
     wsPort = 8081,
     wsPath = '/osc',
     defaultOscHost = '127.0.0.1',
-    defaultOscPort = 8000
+    defaultOscPort = 5000
   } = options;
 
   let wss = null;

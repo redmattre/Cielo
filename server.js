@@ -12,7 +12,7 @@ import http from 'http';
 const OSC_WS_PORT = 8081;
 const MULTICLIENT_WS_PORT = 8080;
 const DEFAULT_OSC_HOST = '127.0.0.1';
-const DEFAULT_OSC_PORT = 8000;
+const DEFAULT_OSC_PORT = 5000;
 
 // ============== OSC WebSocket Server ==============
 

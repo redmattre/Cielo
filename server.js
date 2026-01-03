@@ -12,7 +12,7 @@ import dgram from 'dgram';
 
 const OSC_WS_PORT = 8081;
 const MULTICLIENT_WS_PORT = 8080;
-const DEFAULT_OSC_HOST = '127.0.0.1';
+const DEFAULT_OSC_HOST = '192.168.0.255';
 const DEFAULT_OSC_PORT = 5000;
 const NUVOLA_UDP_PORT = 9998;
 
@@ -40,6 +40,12 @@ function initOSCPort() {
 
   udpPort.on('ready', () => {
     console.log(`✓ OSC UDP pronto per inviare a ${oscConfig.host}:${oscConfig.port}`);
+    
+    // Abilita broadcast dopo che il socket è pronto
+    if (udpPort.socket) {
+      udpPort.socket.setBroadcast(true);
+      console.log('✓ Broadcast UDP abilitato');
+    }
   });
 
   udpPort.on('error', (error) => {

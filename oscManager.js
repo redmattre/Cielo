@@ -6,7 +6,7 @@ class OSCManager {
     constructor() {
         this.ws = null;
         this.isEnabled = true; // OSC attivo di default
-        this.host = '127.0.0.1';
+        this.host = '192.168.0.255';
         this.port = 5000;
         this.reconnectAttempts = 0;
         this.maxReconnectAttempts = 5;

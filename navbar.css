@@ -392,6 +392,7 @@
 
 .nuvola-no-devices {
   grid-column: 1 / -1;
+  width: 60%;
   text-align: center;
   color: var(--dettaglio);
   font-size: 0.85rem;

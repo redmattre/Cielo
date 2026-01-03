@@ -9,7 +9,7 @@ export function oscPlugin(options = {}) {
   const {
     wsPort = 8081,
     wsPath = '/osc',
-    defaultOscHost = '127.0.0.1',
+    defaultOscHost = '192.168.0.255',
     defaultOscPort = 5000
   } = options;
 
@@ -41,6 +41,12 @@ export function oscPlugin(options = {}) {
 
     udpPort.on('ready', () => {
       console.log(`OSC UDP pronto per inviare a ${oscConfig.host}:${oscConfig.port}`);
+      
+      // Abilita broadcast dopo che il socket è pronto
+      if (udpPort.socket) {
+        udpPort.socket.setBroadcast(true);
+        console.log('Broadcast UDP abilitato');
+      }
     });
 
     udpPort.on('error', (error) => {

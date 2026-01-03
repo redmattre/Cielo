@@ -108,11 +108,6 @@
       "step": 1.0,
       "defaultValue": 0.00,
       "unitType": "%"
-    },
-    {
-      "type": "button",
-      "label": "Center",
-      "oscName": "center"
     }
   ]
 }

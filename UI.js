@@ -297,25 +297,18 @@ function updateMultiClientStatusDisplay() {
     if (!statusDiv || !window.multiClientManager) return;
 
     const status = window.multiClientManager.getStatus();
-    let statusText = '';
-    let statusColor = '#888';
 
     if (!status.isEnabled) {
-        statusText = 'Status: Disattivato';
         statusDiv.style.display = 'none';
     } else if (!status.isConnected) {
-        statusText = 'Status: Connessione...';
-        statusColor = '#ff9500';
-        statusDiv.style.display = 'block';
+        statusDiv.textContent = 'Connecting...';
+        statusDiv.style.cssText = 'padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; display: inline-block; background: #ed8936; color: white; margin: 5px 0;';
     } else {
-        const role = status.isMaster ? 'MASTER' : 'SLAVE';
-        statusText = `Status: Connesso (${role})`;
-        statusColor = status.isMaster ? '#00ff00' : '#0077ff';
-        statusDiv.style.display = 'block';
+        const role = status.isMaster ? 'Master' : 'Slave';
+        const bgColor = status.isMaster ? '#48bb78' : '#3498DB';
+        statusDiv.textContent = role;
+        statusDiv.style.cssText = `padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; display: inline-block; background: ${bgColor}; color: white; margin: 5px 0;`;
     }
-
-    statusDiv.textContent = statusText;
-    statusDiv.style.color = statusColor;
 }
 
 // Esponi la funzione globalmente per il rightmenu.js
@@ -492,9 +485,8 @@ function createObjectFromMultiClient(data) {
             if (window.addSphereAtPosition) {
                 console.log('Creando omnifonte da sync:', data.name, 'alle coordinate:', appPos, 'con ID:', data.objectId);
                 
-                // Temporaneamente disattiva sync per evitare loop
-                const wasEnabled = window.multiClientManager.isEnabled;
-                window.multiClientManager.isEnabled = false;
+                // NON disattivare sync globalmente, usa flag per skippa broadcast
+                window.multiClientManager._skipNextBroadcast = true;
                 
                 // Crea l'omnifonte con ID e nome dal master
                 window.addSphereAtPosition(appPos.x, appPos.y, appPos.z, data.objectId, data.name);
@@ -510,11 +502,7 @@ function createObjectFromMultiClient(data) {
                     }, 50);
                 }
                 
-                // Riattiva sync dopo un breve delay
-                setTimeout(() => {
-                    window.multiClientManager.isEnabled = wasEnabled;
-                    console.log('Omnifonte creato correttamente con ID:', data.objectId);
-                }, 100);
+                console.log('Omnifonte creato correttamente con ID:', data.objectId);
             }
             break;
             
@@ -523,9 +511,8 @@ function createObjectFromMultiClient(data) {
             if (window.addSpeakerAtPosition) {
                 console.log('Creando altoparlante da sync:', data.name, 'alle coordinate:', appPos, 'con ID:', data.objectId);
                 
-                // Temporaneamente disattiva sync per evitare loop
-                const wasEnabled = window.multiClientManager.isEnabled;
-                window.multiClientManager.isEnabled = false;
+                // NON disattivare sync globalmente, usa flag per skippa broadcast
+                window.multiClientManager._skipNextBroadcast = true;
                 
                 // Crea l'altoparlante con ID e nome dal master
                 window.addSpeakerAtPosition(appPos.x, appPos.y, appPos.z, data.objectId, data.name);
@@ -540,11 +527,6 @@ function createObjectFromMultiClient(data) {
                         });
                     }, 50);
                 }
-                
-                // Riattiva sync dopo un breve delay
-                setTimeout(() => {
-                    window.multiClientManager.isEnabled = wasEnabled;
-                }, 100);
                 
                 // Monitora la scena per assicurarsi che l'oggetto sia stato creato correttamente
                 let callbackTriggered = false;
@@ -575,9 +557,8 @@ function createObjectFromMultiClient(data) {
             if (window.addArrowAtPosition) {
                 console.log('Creando orifonte da sync:', data.name, 'alle coordinate:', appPos, 'con ID:', data.objectId);
                 
-                // Temporaneamente disattiva sync per evitare loop
-                const wasEnabled = window.multiClientManager.isEnabled;
-                window.multiClientManager.isEnabled = false;
+                // NON disattivare sync globalmente, usa flag per skippa broadcast
+                window.multiClientManager._skipNextBroadcast = true;
                 
                 // Crea l'orifonte con ID e nome dal master
                 window.addArrowAtPosition(appPos.x, appPos.y, appPos.z, data.objectId, data.name);
@@ -593,11 +574,7 @@ function createObjectFromMultiClient(data) {
                     }, 50);
                 }
                 
-                // Riattiva sync dopo un breve delay
-                setTimeout(() => {
-                    window.multiClientManager.isEnabled = wasEnabled;
-                    console.log('Orifonte creato correttamente con ID:', data.objectId);
-                }, 100);
+                console.log('Orifonte creato correttamente con ID:', data.objectId);
             }
             break;
             

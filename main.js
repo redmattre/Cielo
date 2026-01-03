@@ -9,10 +9,12 @@ import multiClientManager from './multiClientManager.js';
 import oscManager from './oscManager.js';
 import messageBroker from './messageBroker.js';
 import './rightmenu.js';
+import { initNuvolaManager } from './src/nuvolaManager.js';
 
 
 init();
 render();
+initNuvolaManager();
 
 
 loadGltfModel('./modelli/galleriaGLTF/GenericGallery.glb');

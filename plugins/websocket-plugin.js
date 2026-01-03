@@ -1,4 +1,5 @@
 import { WebSocketServer } from 'ws';
+import dgram from 'dgram';
 
 /**
  * Plugin Vite per integrazione WebSocket Server
@@ -11,7 +12,8 @@ export function websocketPlugin(options = {}) {
     host = '0.0.0.0', // Default: accetta connessioni da qualsiasi IP
     onConnection,
     onMessage,
-    onClose
+    onClose,
+    nuvolaUdpPort = 9998
   } = options;
 
   let wss = null;
@@ -240,6 +242,15 @@ export function websocketPlugin(options = {}) {
   }
 
   /**
+   * Broadcast a tutti i client connessi
+   */
+  function broadcastToAll(message) {
+    connectedClients.forEach((client, clientId) => {
+      sendToClient(clientId, message);
+    });
+  }
+
+  /**
    * Genera ID univoco per client
    */
   function generateClientId() {
@@ -261,6 +272,44 @@ export function websocketPlugin(options = {}) {
       wss.on('connection', handleConnection);
 
       console.log(`WebSocket Server attivo su ws://${host}:${port}${path}`);
+      
+      // ============== Nuvola UDP Listener ==============
+      const nuvolaUdpSocket = dgram.createSocket('udp4');
+      
+      nuvolaUdpSocket.on('message', (data, rinfo) => {
+        try {
+          const deviceInfo = JSON.parse(data.toString('utf-8'));
+          const hostname = deviceInfo.hostname;
+          
+          // Broadcast ai client connessi
+          broadcastToAll({
+            type: 'nuvola_status',
+            data: deviceInfo
+          });
+          
+          const statusSymbol = {
+            'online': '✅',
+            'booting': '⏳',
+            'stopped': '⏹️',
+            'offline': '⚫'
+          }[deviceInfo.status] || '❓';
+          
+          console.log(`[NUVOLA] ${statusSymbol} ${hostname}: ${deviceInfo.status} | ${deviceInfo.temperature}`);
+        } catch (error) {
+          console.error('[NUVOLA] Errore parsing messaggio:', error);
+        }
+      });
+      
+      nuvolaUdpSocket.on('error', (error) => {
+        console.error('[NUVOLA] Errore UDP:', error);
+      });
+      
+      nuvolaUdpSocket.bind(nuvolaUdpPort, '0.0.0.0', () => {
+        console.log(`✓ Nuvola UDP listener in ascolto su porta ${nuvolaUdpPort}`);
+      });
+      
+      // Salva socket per cleanup
+      server._nuvolaUdpSocket = nuvolaUdpSocket;
     },
     
     buildStart() {
@@ -268,7 +317,7 @@ export function websocketPlugin(options = {}) {
     },
     
     closeBundle() {
-      // Cleanup quando il server si chiude
+      // Cleanup quando il server si chiude (solo in dev mode)
       if (wss) {
         console.log('Chiusura WebSocket Server...');
         wss.clients.forEach(ws => {
@@ -277,6 +326,12 @@ export function websocketPlugin(options = {}) {
           }
         });
         wss.close();
+      }
+      
+      // Chiudi anche UDP socket se esiste (solo in dev mode quando server è disponibile)
+      if (typeof server !== 'undefined' && server && server._nuvolaUdpSocket) {
+        server._nuvolaUdpSocket.close();
+        console.log('Chiusura Nuvola UDP listener...');
       }
     }
   };

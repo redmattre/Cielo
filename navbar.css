@@ -379,3 +379,128 @@
   /* position: absolute; */
   z-index: 9999;
 }
+
+/* ============== Nuvola Dashboard ============== */
+
+.nuvola-dashboard-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 0.75rem;
+  padding: 0;
+  width: 100%;
+}
+
+.nuvola-no-devices {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: var(--dettaglio);
+  font-size: 0.85rem;
+  padding: 2rem 1rem;
+  background: var(--fondale);
+  border: 1px solid var(--dettaglio);
+  border-radius: 8px;
+}
+
+.nuvola-device-card {
+  background: var(--fondale);
+  border: 1px solid var(--dettaglio);
+  border-radius: 8px;
+  padding: 0.75rem;
+  width: 60%;
+}
+
+.nuvola-device-card.offline {
+  opacity: 0.5;
+}
+
+.nuvola-device-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.6rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--dettaglio);
+}
+
+.nuvola-device-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--testo);
+}
+
+.nuvola-status-badge {
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Multi-Client Status Badge */
+.multi-client-badge {
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: inline-block;
+}
+
+.multi-client-master {
+  background: #48bb78;
+  color: white;
+}
+
+.multi-client-slave {
+  background: #3498DB;
+  color: white;
+}
+
+.multi-client-connecting {
+  background: #ed8936;
+  color: white;
+}
+
+.nuvola-status-online {
+  background: #48bb78;
+  color: white;
+}
+
+.nuvola-status-booting {
+  background: #ed8936;
+  color: white;
+}
+
+.nuvola-status-stopped {
+  background: #fc8181;
+  color: white;
+}
+
+.nuvola-status-offline {
+  background: var(--dettaglio);
+  color: var(--testo);
+}
+
+.nuvola-device-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.nuvola-info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.3rem 0;
+  font-size: 0.8rem;
+}
+
+.nuvola-info-label {
+  color: var(--dettaglio);
+}
+
+.nuvola-info-value {
+  color: var(--testo);
+  font-weight: 500;
+}

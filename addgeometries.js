@@ -840,3 +840,33 @@ document.addEventListener('DOMContentLoaded', () => {
   // Wait a bit for everything to be initialized
   setTimeout(initializePovCursor, 1000);
 });
+
+/**
+ * Gestione programmatica Aureole per integrazione Nuvola
+ */
+let nuvolaAureoleCounter = 0;
+
+export function createNuvolaAureola(hostname, assignedIndex) {
+  const nome = `Aureola ${assignedIndex}`;
+  const uniqueId = generateUniqueId();
+  
+  console.log(`[NUVOLA] Creando aureola per device ${hostname}: ${nome} (ID: ${uniqueId})`);
+  
+  loadObj('./modelli/galleriaOBJ/halo2_lowpoly.obj', nome, goochMaterialSp, 0.15, 0., 0, 1.2, null, uniqueId);
+  createMenu();
+  setTimeout(syncMaxDictionaries, 50);
+  
+  return { id: uniqueId, name: nome };
+}
+
+export function removeNuvolaAureola(aureoleId) {
+  const aureole = scene.children.find(obj => obj.userData.id === aureoleId);
+  if (aureole) {
+    console.log(`[NUVOLA] Rimuovendo aureola: ${aureole.name} (ID: ${aureoleId})`);
+    scene.remove(aureole);
+    createMenu();
+    setTimeout(syncMaxDictionaries, 50);
+    return true;
+  }
+  return false;
+}

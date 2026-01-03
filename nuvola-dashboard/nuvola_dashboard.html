@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nuvola Devices Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f5f5f7;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: #2d3748;
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+        
+        .devices-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 24px;
+        }
+        
+        .device-card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        
+        .device-card.offline {
+            opacity: 0.6;
+        }
+        
+        .device-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .device-name {
+            font-size: 1.5em;
+            font-weight: 600;
+            color: #2d3748;
+        }
+        
+        .status-badge {
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .status-online {
+            background: #48bb78;
+            color: white;
+        }
+        
+        .status-booting {
+            background: #ed8936;
+            color: white;
+        }
+        
+        .status-stopped {
+            background: #fc8181;
+            color: white;
+        }
+        
+        .status-offline {
+            background: #cbd5e0;
+            color: #4a5568;
+        }
+        
+        .device-info {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            color: #718096;
+            font-size: 0.9em;
+        }
+        
+        .info-value {
+            color: #2d3748;
+            font-weight: 600;
+        }
+        
+        .last-seen {
+            text-align: center;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #e2e8f0;
+            color: #a0aec0;
+            font-size: 0.85em;
+        }
+        
+        .no-devices {
+            text-align: center;
+            color: #718096;
+            font-size: 1.2em;
+            padding: 60px 20px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>nuvola dashboard</h1>
+        <div id="devices" class="devices-grid">
+            <div class="no-devices">
+                Waiting for devices...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const devices = new Map();
+        const OFFLINE_TIMEOUT = 8000; // 8 seconds
+        const UPDATE_INTERVAL = 1000; // Update UI every second
+        
+        // WebSocket connection to receive UDP broadcasts
+        // Note: We'll need a simple Node.js relay server for this
+        // For now, using a simple HTTP polling approach
+        
+        function getStatusClass(status) {
+            const statusMap = {
+                'online': 'status-online',
+                'booting': 'status-booting',
+                'stopped': 'status-stopped',
+                'offline': 'status-offline'
+            };
+            return statusMap[status] || 'status-offline';
+        }
+        
+        function formatTimestamp(timestamp) {
+            const now = Date.now() / 1000;
+            const diff = now - timestamp;
+            
+            if (diff < 60) return 'Just now';
+            if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+            return `${Math.floor(diff / 3600)}h ago`;
+        }
+        
+        function updateDevice(data) {
+            const now = Date.now();
+            devices.set(data.hostname, {
+                ...data,
+                lastSeen: now,
+                timestamp: data.timestamp  // Keep original timestamp in seconds
+            });
+        }
+        
+        function renderDevices() {
+            const container = document.getElementById('devices');
+            const now = Date.now();
+            
+            if (devices.size === 0) {
+                container.innerHTML = '<div class="no-devices">Waiting for devices...</div>';
+                return;
+            }
+            
+            let html = '';
+            
+            devices.forEach((device, hostname) => {
+                const isOffline = (now - device.lastSeen) > OFFLINE_TIMEOUT;
+                const status = isOffline ? 'offline' : device.status;
+                const statusClass = getStatusClass(status);
+                
+                html += `
+                    <div class="device-card ${isOffline ? 'offline' : ''}">
+                        <div class="device-header">
+                            <div class="device-name">${hostname}</div>
+                            <div class="status-badge ${getStatusClass(status)}">${status}</div>
+                        </div>
+                        <div class="device-info">
+                            <div class="info-row">
+                                <span class="info-label">IP Address</span>
+                                <span class="info-value">${device.ip || 'N/A'}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Temperature</span>
+                                <span class="info-value">${device.temperature}</span>
+                            </div>
+                            ${device.battery !== undefined ? `
+                            <div class="info-row">
+                                <span class="info-label">Battery</span>
+                                <span class="info-value" style="color: ${device.battery > 20 ? '#48bb78' : '#fc8181'}">${device.battery}%</span>
+                            </div>
+                            ` : ''}
+                        </div>
+                        <div class="last-seen">
+                            Last seen: ${formatTimestamp(device.timestamp)}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        // Simple HTTP polling approach
+        async function pollStatus() {
+            try {
+                const response = await fetch('http://localhost:9999/status');
+                const data = await response.json();
+                data.devices.forEach(device => updateDevice(device));
+            } catch (e) {
+                console.log('Waiting for relay server...', e);
+            }
+        }
+        
+        // Update UI regularly
+        setInterval(renderDevices, UPDATE_INTERVAL);
+        
+        // Poll for updates every 3 seconds
+        setInterval(pollStatus, 3000);
+        
+        // Initial poll
+        pollStatus();
+    </script>
+</body>
+</html>

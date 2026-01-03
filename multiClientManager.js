@@ -7,7 +7,7 @@ class MultiClientManager {
         this.ws = null;
         this.clientId = null;
         this.isMaster = false;
-        this.isEnabled = false;
+        this.syncEnabled = false; // Sincronizzazione oggetti on/off
         this.reconnectAttempts = 0;
         this.maxReconnectAttempts = 5;
         this.reconnectDelay = 1000;
@@ -23,32 +23,21 @@ class MultiClientManager {
         this.messageQueue = [];
         
         console.log('MultiClientManager inizializzato');
+        
+        // Connetti sempre il WebSocket per messaggi broadcast (es. Nuvola)
+        this.connect();
     }
 
     /**
-     * Abilita/disabilita modalità multi-client
+     * Abilita/disabilita sincronizzazione oggetti multi-client
      */
     setEnabled(enabled) {
-        console.log('setEnabled chiamato con:', enabled, 'isEnabled corrente:', this.isEnabled);
+        console.log('setEnabled chiamato con:', enabled, 'syncEnabled corrente:', this.syncEnabled);
         
-        // Rimuoviamo il check di guard per evitare problemi di inizializzazione
-        // if (this.isEnabled === enabled) {
-        //     console.log('setEnabled: valore già impostato, esco');
-        //     return;
-        // }
+        this.syncEnabled = enabled;
+        console.log('setEnabled: syncEnabled ora è:', this.syncEnabled);
         
-        this.isEnabled = enabled;
-        console.log('setEnabled: isEnabled ora è:', this.isEnabled);
-        
-        if (enabled) {
-            console.log('setEnabled: chiamando connect()...');
-            this.connect();
-        } else {
-            console.log('setEnabled: chiamando disconnect()...');
-            this.disconnect();
-        }
-        
-        console.log(`Modalità multi-client: ${enabled ? 'ATTIVA' : 'DISATTIVA'}`);
+        console.log(`Sincronizzazione multi-client: ${enabled ? 'ATTIVA' : 'DISATTIVA'}`);
     }
 
     /**
@@ -112,6 +101,7 @@ class MultiClientManager {
      * Gestisce messaggi dal server
      */
     handleMessage(message) {
+        console.log('[MultiClient] Messaggio ricevuto:', message.type, message);
         switch (message.type) {
             case 'init':
                 this.clientId = message.clientId;
@@ -157,6 +147,13 @@ class MultiClientManager {
 
             case 'pong':
                 // Risposta al ping
+                break;
+
+            case 'nuvola_status':
+                // Broadcast status device Nuvola
+                if (this.onNuvolaStatus) {
+                    this.onNuvolaStatus(message.data);
+                }
                 break;
 
             default:
@@ -241,8 +238,8 @@ class MultiClientManager {
      * Invia trasformazione (solo se master) con throttling
      */
     sendTransform(objectId, position, rotation, scale, tags = null) {
-        if (!this.isMaster || !this.isEnabled) {
-            console.log('sendTransform BLOCKED - isMaster:', this.isMaster, 'isEnabled:', this.isEnabled);
+        if (!this.isMaster || !this.syncEnabled) {
+            console.log('sendTransform BLOCKED - isMaster:', this.isMaster, 'syncEnabled:', this.syncEnabled);
             return;
         }
 
@@ -279,8 +276,8 @@ class MultiClientManager {
      * Notifica creazione oggetto (solo se master)
      */
     notifyObjectCreated(objectId, objectType, name, position, rotation, scale, properties = {}, tags = [0]) {
-        if (!this.isMaster || !this.isEnabled) {
-            console.log('notifyObjectCreated BLOCKED - isMaster:', this.isMaster, 'isEnabled:', this.isEnabled);
+        if (!this.isMaster || !this.syncEnabled) {
+            console.log('notifyObjectCreated BLOCKED - isMaster:', this.isMaster, 'syncEnabled:', this.syncEnabled);
             return;
         }
 
@@ -305,8 +302,19 @@ class MultiClientManager {
      * Richiede di diventare master
      */
     requestMaster() {
-        if (!this.isEnabled) return;
+        console.log('[requestMaster] syncEnabled:', this.syncEnabled, 'isConnected:', this.isConnected, 'isMaster:', this.isMaster);
         
+        if (!this.syncEnabled) {
+            console.warn('[requestMaster] BLOCCATO: syncEnabled è false');
+            return;
+        }
+        
+        if (!this.isConnected) {
+            console.warn('[requestMaster] BLOCCATO: WebSocket non connesso');
+            return;
+        }
+        
+        console.log('[requestMaster] Invio richiesta al server...');
         this.sendMessage({
             type: 'request_master'
         });
@@ -338,8 +346,7 @@ class MultiClientManager {
      * Gestisce disconnessione e riconnessione
      */
     handleDisconnection() {
-        if (!this.isEnabled) return;
-
+        // Sempre riconnetti per messaggi broadcast (Nuvola, ecc.)
         if (this.reconnectAttempts < this.maxReconnectAttempts) {
             this.reconnectAttempts++;
             const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
@@ -401,6 +408,17 @@ class MultiClientManager {
     /**
      * Getter per stato connessione
      */
+    /**
+     * Getter/setter per compatibilità con codice esistente
+     */
+    get isEnabled() {
+        return this.syncEnabled;
+    }
+    
+    set isEnabled(value) {
+        this.setEnabled(value);
+    }
+
     get isConnected() {
         return this.ws && this.ws.readyState === WebSocket.OPEN;
     }
@@ -410,7 +428,7 @@ class MultiClientManager {
      */
     getStatus() {
         return {
-            isEnabled: this.isEnabled,
+            isEnabled: this.syncEnabled,
             isConnected: this.isConnected,
             isMaster: this.isMaster,
             clientId: this.clientId

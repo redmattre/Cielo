@@ -8,11 +8,13 @@
 import { WebSocketServer } from 'ws';
 import osc from 'osc';
 import http from 'http';
+import dgram from 'dgram';
 
 const OSC_WS_PORT = 8081;
 const MULTICLIENT_WS_PORT = 8080;
 const DEFAULT_OSC_HOST = '127.0.0.1';
 const DEFAULT_OSC_PORT = 5000;
+const NUVOLA_UDP_PORT = 9998;
 
 // ============== OSC WebSocket Server ==============
 
@@ -269,6 +271,42 @@ multiClientHttpServer.listen(MULTICLIENT_WS_PORT, '0.0.0.0', () => {
   console.log(`✓ Multi-Client WebSocket server in ascolto su ws://0.0.0.0:${MULTICLIENT_WS_PORT}/ws`);
 });
 
+// ============== Nuvola UDP Listener ==============
+
+const nuvolaUdpSocket = dgram.createSocket('udp4');
+
+nuvolaUdpSocket.on('message', (data, rinfo) => {
+  try {
+    const deviceInfo = JSON.parse(data.toString('utf-8'));
+    const hostname = deviceInfo.hostname;
+    
+    // Broadcast ai client connessi via WebSocket
+    broadcast({
+      type: 'nuvola_status',
+      data: deviceInfo
+    });
+    
+    const statusSymbol = {
+      'online': '✅',
+      'booting': '⏳',
+      'stopped': '⏹️',
+      'offline': '⚫'
+    }[deviceInfo.status] || '❓';
+    
+    console.log(`[NUVOLA] ${statusSymbol} ${hostname}: ${deviceInfo.status} | ${deviceInfo.temperature}`);
+  } catch (error) {
+    console.error('[NUVOLA] Errore parsing messaggio:', error);
+  }
+});
+
+nuvolaUdpSocket.on('error', (error) => {
+  console.error('[NUVOLA] Errore UDP:', error);
+});
+
+nuvolaUdpSocket.bind(NUVOLA_UDP_PORT, '0.0.0.0', () => {
+  console.log(`✓ Nuvola UDP listener in ascolto su porta ${NUVOLA_UDP_PORT}`);
+});
+
 console.log('\n=== Server WebSocket Standalone Avviato ===');
 console.log('Per connessioni remote, usa l\'indirizzo IP della macchina invece di localhost\n');
 
@@ -276,6 +314,7 @@ console.log('Per connessioni remote, usa l\'indirizzo IP della macchina invece d
 process.on('SIGINT', () => {
   console.log('\n\nShutdown in corso...');
   if (udpPort) udpPort.close();
+  if (nuvolaUdpSocket) nuvolaUdpSocket.close();
   oscHttpServer.close();
   multiClientHttpServer.close();
   process.exit(0);

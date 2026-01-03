@@ -86,15 +86,40 @@ export function clearTransformControlsOverride() {
 
 // Helper per attach con richiesta master automatica
 function attachControlWithMasterRequest(object) {
-    console.log('attachControlWithMasterRequest chiamato');
+    console.log('[attachControlWithMasterRequest] chiamato per:', object.name);
+    console.log('[attachControlWithMasterRequest] isEnabled:', window.multiClientManager?.isEnabled, 'isMaster:', window.multiClientManager?.isMaster);
     
     // Richiedi ruolo master se slave e multi-client attivo
     if (window.multiClientManager?.isEnabled && !window.multiClientManager?.isMaster) {
-        console.log('Richiedendo ruolo master prima di attach...');
+        console.log('[attachControlWithMasterRequest] Sono SLAVE, richiedendo ruolo master...');
         window.multiClientManager.requestMaster();
+        
+        // Attendi conferma ruolo master prima di attaccare control
+        // Salva il callback esistente
+        const originalOnMasterChange = window.multiClientManager.onMasterChange;
+        
+        const onMasterConfirmed = (isMaster) => {
+            console.log('[attachControlWithMasterRequest] Callback onMasterChange ricevuto, isMaster:', isMaster);
+            
+            // Chiama il callback originale (per aggiornare UI)
+            if (originalOnMasterChange) {
+                originalOnMasterChange(isMaster);
+            }
+            
+            if (isMaster) {
+                console.log('[attachControlWithMasterRequest] ✓ Ruolo master confermato, attaching control...');
+                control.attach(object);
+                // Ripristina il callback originale
+                window.multiClientManager.onMasterChange = originalOnMasterChange;
+            }
+        };
+        
+        window.multiClientManager.onMasterChange = onMasterConfirmed;
+        return; // Non attaccare subito, aspetta conferma
     }
     
-    // Attacca il control
+    // Se già master o multi-client disattivo, attacca subito
+    console.log('[attachControlWithMasterRequest] Già MASTER o multi-client disattivo, attaching control subito');
     control.attach(object);
 }
 

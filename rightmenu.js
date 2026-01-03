@@ -356,17 +356,12 @@ const panelConfigs = {
     ]
   },
   corone: {
-    title: 'Corone',
+    title: '',
     controls: [
       {
-        type: 'toggle',
-        id: 'coronesVisibility',
-        label: '⏿',
-        defaultValue: true,
-        action: (value) => {
-          console.log('Corone visibility changed:', value);
-          // Aggiungi logica per corone quando necessario
-        }
+        type: 'custom',
+        id: 'nuvola-dashboard',
+        html: '<div id="nuvola-dashboard" class="nuvola-dashboard-container"></div>'
       }
     ]
   }
@@ -476,9 +471,9 @@ function createInput(config) {
   input.style.flex = '1';
   input.style.padding = '4px 8px';
   input.style.backgroundColor = 'rgba(255,255,255,0.1)';
-  input.style.border = '1px solid rgba(255,255,255,0.3)';
+  input.style.border = '1px solid var(--dettaglio)';
   input.style.borderRadius = '4px';
-  input.style.color = '#fff';
+  input.style.color = 'var(--testo)';
   
   input.addEventListener('change', (e) => {
     config.action(e.target.value);
@@ -549,6 +544,12 @@ function createPanelContent(panelId) {
       case 'input':
         control = createInput(controlConfig);
         break;
+      case 'custom':
+        // Per contenuto HTML custom (dashboard Nuvola)
+        const customDiv = document.createElement('div');
+        customDiv.innerHTML = controlConfig.html;
+        control = customDiv.firstChild;
+        break;
       default:
         console.warn('Unknown control type:', controlConfig.type);
         return;
@@ -607,7 +608,7 @@ function getTabLabel(panelId) {
     carica: 'C',
     zone: 'Z',
     altoparlanti: 'A',
-    corone: 'Co'
+    corone: '❍'
   };
   return labels[panelId] || panelId.charAt(0).toUpperCase();
 }

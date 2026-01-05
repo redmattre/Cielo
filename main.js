@@ -10,6 +10,8 @@ import oscManager from './oscManager.js';
 import messageBroker from './messageBroker.js';
 import './rightmenu.js';
 import { initNuvolaManager } from './src/nuvolaManager.js';
+import './undoRedo.js';
+import './projectManager.js';
 
 
 init();

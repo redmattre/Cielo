@@ -11,14 +11,6 @@
       "defaultValue": 0
     },
     {
-      "label": "Segments",
-      "oscName": "segments",
-      "type": "numbox",
-      "min": 8,
-      "max": 64,
-      "defaultValue": 32
-    },
-    {
       "type": "button",
       "label": "Center",
       "oscName": "center"

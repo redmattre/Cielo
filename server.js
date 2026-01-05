@@ -207,17 +207,31 @@ multiClientWss.on('connection', (ws) => {
 
         case 'transform':
           if (clientInfo.isMaster) {
+            console.log('[SERVER] Ricevuto transform da master:', {
+              objectId: message.objectId,
+              hasMenuState: !!message.menuState,
+              menuStateKeys: message.menuState ? Object.keys(message.menuState) : []
+            });
+            
             // Aggiorna stato
             if (message.objectId) {
               stateStore.set(message.objectId, {
                 position: message.position,
                 rotation: message.rotation,
                 scale: message.scale,
-                tags: message.tags
+                tags: message.tags,
+                menuState: message.menuState  // AGGIUNTO: salva anche menuState
               });
             }
-            // Broadcast a altri client
-            broadcast({ ...message, fromMaster: true }, clientId);
+            
+            // Broadcast a altri client (inoltra tutto il messaggio)
+            const broadcastMsg = { ...message, fromMaster: true };
+            console.log('[SERVER] Broadcasting transform:', {
+              objectId: broadcastMsg.objectId,
+              hasMenuState: !!broadcastMsg.menuState,
+              menuStateKeys: broadcastMsg.menuState ? Object.keys(broadcastMsg.menuState) : []
+            });
+            broadcast(broadcastMsg, clientId);
           }
           break;
 

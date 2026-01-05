@@ -95,6 +95,8 @@ export function websocketPlugin(options = {}) {
             position: message.position,
             rotation: message.rotation,
             scale: message.scale,
+            tags: message.tags,
+            menuState: message.menuState,
             timestamp: Date.now()
           });
 
@@ -106,6 +108,7 @@ export function websocketPlugin(options = {}) {
             rotation: message.rotation,
             scale: message.scale,
             tags: message.tags, // Inoltra i tags se presenti
+            menuState: message.menuState, // Inoltra menuState se presente
             fromMaster: true
           });
         }

@@ -1,5 +1,13 @@
 # Cielo - Distribuzione Produzione
 
+this is a more stable version of the first release, still needs a solid preset system
+
+## features and bugfixes
+- Added broadcast OSC messages
+- Added nuvola dashboard
+- Added automatic creation of Aureola 3D element synced
+- Fixed minor bug in multi client sync between instances of Cielo
+
 ## Contenuto della cartella
 
 - `dist/` - File della build dell'applicazione web
@@ -70,15 +78,29 @@ I server sono configurati su `0.0.0.0` quindi accettano connessioni da qualsiasi
 - **8000** - Server HTTP (interfaccia web)
 - **8080** - WebSocket Multi-Client
 - **8081** - WebSocket OSC
-- **8000** (UDP) - OSC Output (default, configurabile nell'app)
+- **5000** (UDP) - OSC Output broadcast (default, configurabile nell'app)
+- **9998** (UDP) - Nuvola device discovery (ricezione status dispositivi)
 
 ## Configurazione OSC
 
-L'applicazione invia messaggi OSC via UDP. Configurazione di default:
-- Host: `127.0.0.1` (localhost)
-- Porta: `8000`
+L'applicazione invia messaggi OSC via UDP in **modalità broadcast** per raggiungere simultaneamente tutti i dispositivi sulla rete. Configurazione di default:
+- Host: `192.168.0.255` (broadcast address)
+- Porta: `5000`
 
 Puoi modificare questi valori dall'interfaccia web nel menu impostazioni.
+
+### Modalità Broadcast
+Il broadcast UDP permette di inviare messaggi OSC a **tutti i dispositivi** sulla stessa rete simultaneamente, senza dover configurare IP specifici. Questo è ideale per:
+- Dispositivi Nuvola AAR (Augmented Audio Reality)
+- Sistemi di spatializzazione audio distribuiti
+- Setup multi-dispositivo sincronizzati
+
+**Nota:** L'indirizzo broadcast dipende dalla tua subnet mask:
+- `192.168.0.255` per reti `192.168.0.x` (subnet /24)
+- `192.168.1.255` per reti `192.168.1.x` (subnet /24)
+- etc.
+
+Per trovare il broadcast address della tua rete: `ifconfig` (cerca "broadcast")
 
 ## Risoluzione Problemi
 

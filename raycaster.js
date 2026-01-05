@@ -1,5 +1,3 @@
-    // Se il gruppo scompare, nascondi l'handle
-    groupScaleUIDiv.hide();
 import groupScaleUIDiv from './src/GroupScaleUIDiv.js';
 import * as THREE from 'three';
 import { renderer, objToBeDetected, currentCamera, scene, control, updateStato3, orbit } from './setup';
@@ -8,9 +6,10 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { OutlinePass } from 'three/addons/postprocessing/OutlinePass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
+import { undoManager, TransformCommand } from './undoRedo.js';
 import { createMenu, updateMenu } from './objmenu_new.js';
 import { syncMaxDictionaries } from './maxSync.js';
-import { sendLastHoveredObjectToMax, resetLastHoveredObject } from './max.js'; // <--- aggiunto
+import { sendLastHoveredObjectToMax, resetLastHoveredObject } from './max.js';
 
 export let raycaster = new THREE.Raycaster();
 export let mouse = new THREE.Vector2();
@@ -202,6 +201,41 @@ let lastHoveredObject = null; // L'ultimo oggetto su cui si è fatto hover
 
 export let currentSelectedObject = null; // L'ultimo oggetto selezionato rimane memorizzato
 
+// Funzione helper per disporre correttamente gli oggetti THREE.js
+function disposeObject(obj) {
+    // Rimuovi i figli ricorsivamente
+    while (obj.children.length > 0) {
+        disposeObject(obj.children[0]);
+    }
+
+    // Rimuovi il materiale
+    if (obj.material) {
+        if (Array.isArray(obj.material)) {
+            obj.material.forEach(mat => {
+                if (mat.map) mat.map.dispose();
+                if (mat.envMap) mat.envMap.dispose();
+                mat.dispose();
+            });
+        } else {
+            if (obj.material.map) obj.material.map.dispose();
+            if (obj.material.envMap) obj.material.envMap.dispose();
+            obj.material.dispose();
+        }
+    }
+
+    // Rimuovi la geometria
+    if (obj.geometry) {
+        obj.geometry.dispose();
+    }
+
+    // Rimuovi l'oggetto dal suo genitore
+    if (obj.parent) {
+        obj.parent.remove(obj);
+    }
+
+    console.log("Oggetto eliminato:", obj.name || obj.id);
+}
+
 // Funzione per eliminare l'oggetto selezionato
 function deleteSelectedObject() {
     const targetForTransform = lastHoveredObject || currentSelectedObject;
@@ -372,69 +406,11 @@ function processMouseRaycasting(event) {
     }
 }
 
-// Listener mousemove ottimizzato con requestAnimationFrame
-renderer.domElement.addEventListener('mousemove', (event) => {
-    if (!getRaycasterActive()) return;
-    
-    // Salva l'evento più recente
-    lastMouseEvent = event;
-    
-    // Se non c'è già un aggiornamento pendente, programmane uno
-    if (!pendingMouseUpdate) {
-        pendingMouseUpdate = true;
-        requestAnimationFrame(() => {
-            if (lastMouseEvent) {
-                processMouseRaycasting(lastMouseEvent);
-                lastMouseEvent = null;
-            }
-            pendingMouseUpdate = false;
-        });
-    }
-});
-
-
-
-
-function disposeObject(obj) {
-    // Rimuovi i figli ricorsivamente
-    while (obj.children.length > 0) {
-        disposeObject(obj.children[0]);
-    }
-
-    // Rimuovi il materiale
-    if (obj.material) {
-        if (Array.isArray(obj.material)) {
-            obj.material.forEach(mat => {
-                if (mat.map) mat.map.dispose();
-                if (mat.envMap) mat.envMap.dispose();
-                mat.dispose();
-            });
-        } else {
-            if (obj.material.map) obj.material.map.dispose();
-            if (obj.material.envMap) obj.material.envMap.dispose();
-            obj.material.dispose();
-        }
-    }
-
-    // Rimuovi la geometria
-    if (obj.geometry) {
-        obj.geometry.dispose();
-    }
-
-    // Rimuovi l'oggetto dal suo genitore
-    if (obj.parent) {
-        obj.parent.remove(obj);
-    }
-
-    console.log("Oggetto eliminato:", obj.name || obj.id);
-}
-
 // Funzione per aggiornare il div con le informazioni
 const infoDiv = document.getElementById('infoDivTopLeft');
 function updateInfoText(text) {
     infoDiv.textContent = text || '---';
 }
-
 
 // Quando il raycaster seleziona un oggetto, evidenzia anche il bordo del relativo elemento menu
 function highlightMenuItemByObject(object) {
@@ -464,6 +440,70 @@ function highlightMenuItemByObject(object) {
         });
     }
 }
+
+// Funzione per aggiornare la camera nel post-processing
+function updatePostProcessingCamera(newCamera) {
+    if (outlinePass) {
+        outlinePass.renderCamera = newCamera;
+    }
+    if (composer && composer.passes && composer.passes[0]) {
+        // Aggiorna RenderPass
+        composer.passes[0].camera = newCamera;
+    }
+}
+
+// Funzione per resize del raycaster composer (completa)
+function resizeRaycasterComposer() {
+    if (composer) {
+        composer.setSize(window.innerWidth, window.innerHeight);
+    }
+    if (outlinePass) {
+        outlinePass.setSize(window.innerWidth, window.innerHeight);
+    }
+    // Aggiorna anche FXAA uniforms del raycaster
+    if (raycasterFxaaPass) {
+        const pixelRatio = renderer.getPixelRatio();
+        raycasterFxaaPass.material.uniforms['resolution'].value.x = 1 / (window.innerWidth * pixelRatio);
+        raycasterFxaaPass.material.uniforms['resolution'].value.y = 1 / (window.innerHeight * pixelRatio);
+    }
+}
+
+// Esponi globalmente per evitare import circolari
+window.updatePostProcessingCamera = updatePostProcessingCamera;
+window.resizeRaycasterComposer = resizeRaycasterComposer;
+
+// Funzione per inizializzare gli event listeners del raycaster
+function initRaycasterEventListeners() {
+    if (!renderer || !renderer.domElement) {
+        console.warn('Renderer non pronto, ritardo inizializzazione raycaster');
+        setTimeout(initRaycasterEventListeners, 100);
+        return;
+    }
+
+// Listener mousemove ottimizzato con requestAnimationFrame
+renderer.domElement.addEventListener('mousemove', (event) => {
+    if (!getRaycasterActive()) return;
+    
+    // Salva l'evento più recente
+    lastMouseEvent = event;
+    
+    // Se non c'è già un aggiornamento pendente, programmane uno
+    if (!pendingMouseUpdate) {
+        pendingMouseUpdate = true;
+        requestAnimationFrame(() => {
+            if (lastMouseEvent) {
+                processMouseRaycasting(lastMouseEvent);
+                lastMouseEvent = null;
+            }
+            pendingMouseUpdate = false;
+        });
+    }
+});
+
+
+
+
+
 
 // --- SELEZIONE MULTIPLA E GRUPPO TEMPORANEO ---
 let tempGroup = null;
@@ -942,41 +982,19 @@ function getIntersectedObject(event) {
 // Inizializza post-processing
 initPostProcessing();
 
-// Funzione per aggiornare la camera nel post-processing
-function updatePostProcessingCamera(newCamera) {
-    if (outlinePass) {
-        outlinePass.renderCamera = newCamera;
-    }
-    if (composer && composer.passes && composer.passes[0]) {
-        // Aggiorna RenderPass
-        composer.passes[0].camera = newCamera;
-    }
-}
-
-// Funzione per resize del raycaster composer (completa)
-function resizeRaycasterComposer() {
-    if (composer) {
-        composer.setSize(window.innerWidth, window.innerHeight);
-    }
-    if (outlinePass) {
-        outlinePass.setSize(window.innerWidth, window.innerHeight);
-    }
-    // Aggiorna anche FXAA uniforms del raycaster
-    if (raycasterFxaaPass) {
-        const pixelRatio = renderer.getPixelRatio();
-        raycasterFxaaPass.material.uniforms['resolution'].value.x = 1 / (window.innerWidth * pixelRatio);
-        raycasterFxaaPass.material.uniforms['resolution'].value.y = 1 / (window.innerHeight * pixelRatio);
-    }
-}
-
-// Esponi globalmente per evitare import circolari
-window.updatePostProcessingCamera = updatePostProcessingCamera;
-window.resizeRaycasterComposer = resizeRaycasterComposer;
-
 // Cleanup automatico quando la pagina viene ricaricata o chiusa
 window.addEventListener('beforeunload', () => {
     disposePostProcessing();
 });
+
+} // Fine initRaycasterEventListeners
+
+// Inizializza gli event listeners quando il documento è pronto
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initRaycasterEventListeners);
+} else {
+    initRaycasterEventListeners();
+}
 
 // --- FUNZIONI MULTI-CLIENT SYNC ---
 function sendTransformToSlaves(object) {
@@ -1021,7 +1039,9 @@ function sendTransformToSlaves(object) {
                     x: scale.x,
                     y: scale.y,
                     z: scale.z
-                }
+                },
+                child.userData?.tags || null,
+                child.userData?.menuState || null
             );
             
             // Invia al message broker (OSC) per ogni figlio
@@ -1085,7 +1105,9 @@ function sendTransformToSlaves(object) {
             x: scale.x,
             y: scale.y,
             z: scale.z
-        }
+        },
+        object.userData?.tags || null,
+        object.userData?.menuState || null
     );
     
     // Invia anche al message broker (OSC + Max) - FULL RATE!
@@ -1182,7 +1204,27 @@ if (control) {
     control.addEventListener('mouseUp', function () {
         if (!control.object) return;
         const target = control.object;
+        
+        // Crea TransformCommand per undo/redo
         if (target.type === 'Group' && target.name === 'Gruppo di trasformazione') {
+            // Gruppo: crea command per ogni figlio
+            target.children.forEach(child => {
+                if (child.userData._undoInitialState) {
+                    const newState = {
+                        position: { x: child.position.x, y: child.position.y, z: child.position.z },
+                        rotation: { x: child.rotation.x, y: child.rotation.y, z: child.rotation.z },
+                        scale: { x: child.scale.x, y: child.scale.y, z: child.scale.z },
+                        tags: child.userData?.tags ? [...child.userData.tags] : [],
+                        menuState: child.userData?.menuState ? { ...child.userData.menuState } : {}
+                    };
+                    
+                    const command = new TransformCommand(child, child.userData._undoInitialState, newState);
+                    undoManager.execute(command);
+                    
+                    delete child.userData._undoInitialState;
+                }
+            });
+            
             const children = target.children || [];
             const allSpeakers = children.length > 0 && children.every(ch => ch.name && ch.name.toLowerCase().includes('altoparlante'));
             if (allSpeakers) {
@@ -1190,6 +1232,34 @@ if (control) {
             }
             return;
         }
+        
+        // Oggetto singolo
+        if (target.userData._undoInitialState) {
+            const newState = {
+                position: { x: target.position.x, y: target.position.y, z: target.position.z },
+                rotation: { x: target.rotation.x, y: target.rotation.y, z: target.rotation.z },
+                scale: { x: target.scale.x, y: target.scale.y, z: target.scale.z },
+                tags: target.userData?.tags ? [...target.userData.tags] : [],
+                menuState: target.userData?.menuState ? { ...target.userData.menuState } : {}
+            };
+            
+            console.log('[UNDO] Creando TransformCommand:', {
+                object: target.name,
+                oldPos: target.userData._undoInitialState.position,
+                newPos: newState.position,
+                undoManager: !!undoManager
+            });
+            
+            const command = new TransformCommand(target, target.userData._undoInitialState, newState);
+            undoManager.execute(command);
+            
+            console.log('[UNDO] Comando eseguito. Stack size:', undoManager.undoStack.length);
+            
+            delete target.userData._undoInitialState;
+        } else {
+            console.warn('[UNDO] Nessun stato iniziale salvato per:', target.name);
+        }
+        
         const fullName = target.name || '';
         const isSpeaker = fullName.toLowerCase().includes('altoparlante');
         if (isSpeaker) {
@@ -1208,6 +1278,33 @@ if (control) {
         if (window.multiClientManager?.isEnabled && !window.multiClientManager?.isMaster) {
             console.log('Richiedendo ruolo master per trascinamento...');
             window.multiClientManager.requestMaster();
+        }
+        
+        // Salva stato iniziale per undo/redo
+        if (control.object) {
+            const target = control.object;
+            
+            // Se \u00e8 un gruppo, salva stato di tutti i figli
+            if (target.type === 'Group' && target.name === 'Gruppo di trasformazione') {
+                target.children.forEach(child => {
+                    child.userData._undoInitialState = {
+                        position: { x: child.position.x, y: child.position.y, z: child.position.z },
+                        rotation: { x: child.rotation.x, y: child.rotation.y, z: child.rotation.z },
+                        scale: { x: child.scale.x, y: child.scale.y, z: child.scale.z },
+                        tags: child.userData?.tags ? [...child.userData.tags] : [],
+                        menuState: child.userData?.menuState ? { ...child.userData.menuState } : {}
+                    };
+                });
+            } else {
+                // Oggetto singolo
+                target.userData._undoInitialState = {
+                    position: { x: target.position.x, y: target.position.y, z: target.position.z },
+                    rotation: { x: target.rotation.x, y: target.rotation.y, z: target.rotation.z },
+                    scale: { x: target.scale.x, y: target.scale.y, z: target.scale.z },
+                    tags: target.userData?.tags ? [...target.userData.tags] : [],
+                    menuState: target.userData?.menuState ? { ...target.userData.menuState } : {}
+                };
+            }
         }
     });
 }

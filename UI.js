@@ -463,6 +463,22 @@ function applyTransformToObject(targetObject, data) {
         }
     }
     
+    // Applica menuState se presente
+    if (data.menuState) {
+        console.log('[SLAVE] Ricevuto menuState:', data.menuState);
+        console.log('[SLAVE] Object userData PRIMA:', targetObject.userData.menuState);
+        targetObject.userData.menuState = data.menuState;
+        console.log('[SLAVE] Object userData DOPO:', targetObject.userData.menuState);
+        
+        // Aggiorna visivamente il menu per riflettere i nuovi valori
+        if (window.updateMenuForObject) {
+            console.log('[SLAVE] Chiamando updateMenuForObject per:', targetObject.name);
+            window.updateMenuForObject(targetObject);
+        } else {
+            console.error('[SLAVE] updateMenuForObject NON disponibile!');
+        }
+    }
+    
     // Forza aggiornamento matrice
     targetObject.updateMatrixWorld(true);
 }

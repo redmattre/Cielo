@@ -1,5 +1,7 @@
 import { scene, objToBeDetected } from './setup.js';
 import { TAG_COLORS, hasTag, toggleTag, initializeTags } from './tagColors.js';
+import * as THREE from 'three';
+import { undoManager, TransformCommand } from './undoRedo.js';
 
 // Stili CSS minimali per i controlli del menu
 const existingStyle = document.getElementById('objmenu-styles');
@@ -277,6 +279,71 @@ const submenuConfigsDefault = {
 // Configurazioni caricate dinamicamente dai JSON
 let submenuConfigs = { ...submenuConfigsDefault };
 
+// Funzione helper per sincronizzare menuState via multi-client
+function syncMenuStateToSlaves(object) {
+    if (!window.multiClientManager || !object) {
+        console.log('[MENU SYNC] multiClientManager o object mancante');
+        return;
+    }
+    
+    const objectId = object.userData?.id;
+    if (!objectId) {
+        console.log('[MENU SYNC] objectId mancante');
+        return;
+    }
+    
+    console.log('[MENU SYNC] Sincronizzando menuState:', {
+        objectName: object.name,
+        isMaster: window.multiClientManager.isMaster,
+        syncEnabled: window.multiClientManager.syncEnabled,
+        menuState: object.userData?.menuState
+    });
+    
+    // Calcola posizione globale
+    object.updateMatrixWorld(true);
+    const position = new THREE.Vector3();
+    const quaternion = new THREE.Quaternion();
+    const scale = new THREE.Vector3();
+    object.matrixWorld.decompose(position, quaternion, scale);
+    
+    const euler = new THREE.Euler().setFromQuaternion(quaternion);
+    
+    // Invia trasformazione completa con menuState
+    window.multiClientManager.sendTransform(
+        objectId,
+        { x: position.x, y: position.y, z: position.z },
+        { x: euler.x, y: euler.y, z: euler.z },
+        { x: scale.x, y: scale.y, z: scale.z },
+        object.userData?.tags || null,
+        object.userData?.menuState || {}
+    );
+}
+
+// Funzione helper per creare undo command per cambio parametro menu
+function createMenuChangeCommand(object, paramName, oldValue, newValue) {
+    const oldMenuState = { ...object.userData.menuState, [paramName]: oldValue };
+    const newMenuState = { ...object.userData.menuState, [paramName]: newValue };
+    
+    const oldState = {
+        position: { x: object.position.x, y: object.position.y, z: object.position.z },
+        rotation: { x: object.rotation.x, y: object.rotation.y, z: object.rotation.z },
+        scale: { x: object.scale.x, y: object.scale.y, z: object.scale.z },
+        tags: object.userData?.tags ? [...object.userData.tags] : [],
+        menuState: oldMenuState
+    };
+    
+    const newState = {
+        position: { x: object.position.x, y: object.position.y, z: object.position.z },
+        rotation: { x: object.rotation.x, y: object.rotation.y, z: object.rotation.z },
+        scale: { x: object.scale.x, y: object.scale.y, z: object.scale.z },
+        tags: object.userData?.tags ? [...object.userData.tags] : [],
+        menuState: newMenuState
+    };
+    
+    const command = new TransformCommand(object, oldState, newState);
+    undoManager.execute(command);
+}
+
 // Funzione per caricare le configurazioni dai JSON
 async function loadMenuConfigs() {
     const configTypes = ['omnifonte', 'orifonte', 'altoparlante', 'aureola', 'zona', 'povcursor'];
@@ -451,10 +518,10 @@ function setGlobalSpeakerVisibility(visible) {
 
 // Esporta le funzioni per uso globale
 // Funzione per aggiornare l'UI del menu per un oggetto specifico
-function updateMenuForObject(targetObject) {
+export function updateMenuForObject(targetObject) {
     if (!targetObject) return;
     
-    console.log('Updating menu for:', targetObject.name);
+    console.log('Updating menu for:', targetObject.name, 'menuState:', targetObject.userData.menuState);
     
     // Trova l'header del menu nella menuObjectMap
     const menuHeader = window.menuObjectMap?.get(targetObject);
@@ -472,20 +539,83 @@ function updateMenuForObject(targetObject) {
         return;
     }
     
-    // Trova tutti i checkbox nel submenu
-    const checkboxes = submenu.querySelectorAll('input[type="checkbox"]');
+    // Aggiorna i controlli esistenti con i valori da menuState
+    const menuState = targetObject.userData.menuState || {};
     
-    checkboxes.forEach(checkbox => {
-        // Trova il container padre per ottenere la label
-        const container = checkbox.parentElement;
-        const label = container?.querySelector('label');
-        
-        if (label && label.textContent === 'Guarda origine') {
-            const newState = targetObject.userData?.autoRotateToCenter === true;
-            console.log(`Updating "Guarda origine" toggle: ${checkbox.checked} -> ${newState}`);
-            checkbox.checked = newState;
+    // Aggiorna tutti gli slider
+    const sliders = submenu.querySelectorAll('input[type="range"]');
+    sliders.forEach(slider => {
+        // Trova il nome del parametro dal container padre o dai dati
+        const container = slider.closest('.menu-control-row');
+        const label = container?.querySelector('.menu-label');
+        if (label) {
+            // Cerca il parametro corrispondente in menuState
+            // Usa l'attributo data-param se esiste, altrimenti cerca per label
+            const paramName = slider.dataset.param;
+            if (paramName && menuState[paramName] !== undefined) {
+                slider.value = menuState[paramName];
+                const valueDisplay = container.querySelector('.menu-value');
+                if (valueDisplay) {
+                    const unit = slider.dataset.unit || '';
+                    valueDisplay.textContent = parseFloat(menuState[paramName]).toFixed(2) + unit;
+                }
+                console.log(`Updated slider ${paramName}: ${menuState[paramName]}`);
+            }
         }
     });
+    
+    // Aggiorna tutti i checkbox/toggle
+    const checkboxes = submenu.querySelectorAll('input[type="checkbox"]');
+    checkboxes.forEach(checkbox => {
+        const container = checkbox.closest('.menu-control-row');
+        const label = container?.querySelector('label');
+        const paramName = checkbox.dataset.param;
+        
+        if (paramName && menuState[paramName] !== undefined) {
+            checkbox.checked = menuState[paramName];
+            console.log(`Updated checkbox ${paramName}: ${menuState[paramName]}`);
+        }
+    });
+    
+    // Aggiorna tutti i numbox
+    const numboxes = submenu.querySelectorAll('input[type="number"]');
+    numboxes.forEach(numbox => {
+        const paramName = numbox.dataset.param;
+        if (paramName && menuState[paramName] !== undefined) {
+            numbox.value = menuState[paramName];
+            console.log(`Updated numbox ${paramName}: ${menuState[paramName]}`);
+        }
+    });
+    
+    // Aggiorna tutti i multitoggle
+    const multitoggleButtons = submenu.querySelectorAll('.menu-multitoggle-btn');
+    const multitoggleGroups = new Map(); // Raggruppa per param
+    
+    multitoggleButtons.forEach(btn => {
+        const paramName = btn.dataset.param;
+        if (!multitoggleGroups.has(paramName)) {
+            multitoggleGroups.set(paramName, []);
+        }
+        multitoggleGroups.get(paramName).push(btn);
+    });
+    
+    // Per ogni gruppo, attiva il bottone corretto
+    multitoggleGroups.forEach((buttons, paramName) => {
+        if (menuState[paramName] !== undefined) {
+            const targetValue = menuState[paramName];
+            buttons.forEach(btn => {
+                const btnValue = parseFloat(btn.dataset.value);
+                if (btnValue === targetValue) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            console.log(`Updated multitoggle ${paramName}: ${targetValue}`);
+        }
+    });
+    
+    console.log('Menu updated successfully');
 }
 
 window.applyAutoRotationIfEnabled = applyAutoRotationIfEnabled;
@@ -504,21 +634,81 @@ function createSlider(config, object) {
     label.className = 'menu-label';
     label.textContent = config.label;
     
+    // Inizializza menuState se non esiste
+    if (!object.userData.menuState) {
+        object.userData.menuState = {};
+    }
+    
+    // Leggi il valore da userData.menuState o usa il default
+    const savedValue = object.userData.menuState[config.oscName];
+    const currentValue = savedValue !== undefined ? savedValue : config.value;
+    
+    // Se non esiste, salva il default in menuState (importante per undo)
+    if (savedValue === undefined) {
+        object.userData.menuState[config.oscName] = config.value;
+    }
+    
     const slider = document.createElement('input');
     slider.type = 'range';
     slider.className = 'menu-slider';
     slider.min = config.min;
     slider.max = config.max;
     slider.step = config.step;
-    slider.value = config.value;
+    slider.value = currentValue;
+    slider.dataset.param = config.oscName; // Per identificarlo in updateMenuForObject
+    slider.dataset.unit = config.unitType || ''; // Per aggiornare l'unità
     
     const valueDisplay = document.createElement('span');
     valueDisplay.className = 'menu-value';
     const unit = config.unitType || '';
-    valueDisplay.textContent = parseFloat(config.value).toFixed(2) + unit;
+    valueDisplay.textContent = parseFloat(currentValue).toFixed(2) + unit;
+    
+    // Salva stato iniziale per undo quando inizia il drag
+    let initialMenuState = null;
+    slider.addEventListener('mousedown', () => {
+        initialMenuState = { ...object.userData.menuState };
+        
+        // Richiedi ruolo master se necessario (come per transform controls)
+        if (window.multiClientManager?.isEnabled && !window.multiClientManager?.isMaster) {
+            console.log('[MENU SLIDER] Richiedo ruolo master...');
+            window.multiClientManager.requestMaster();
+        }
+    });
+    
+    // Crea comando undo quando finisce il drag
+    slider.addEventListener('mouseup', () => {
+        if (initialMenuState && JSON.stringify(initialMenuState) !== JSON.stringify(object.userData.menuState)) {
+            const newMenuState = { ...object.userData.menuState };
+            
+            // Crea command con solo menuState cambiato
+            const oldState = {
+                position: { x: object.position.x, y: object.position.y, z: object.position.z },
+                rotation: { x: object.rotation.x, y: object.rotation.y, z: object.rotation.z },
+                scale: { x: object.scale.x, y: object.scale.y, z: object.scale.z },
+                tags: object.userData?.tags ? [...object.userData.tags] : [],
+                menuState: initialMenuState
+            };
+            
+            const newState = {
+                position: { x: object.position.x, y: object.position.y, z: object.position.z },
+                rotation: { x: object.rotation.x, y: object.rotation.y, z: object.rotation.z },
+                scale: { x: object.scale.x, y: object.scale.y, z: object.scale.z },
+                tags: object.userData?.tags ? [...object.userData.tags] : [],
+                menuState: newMenuState
+            };
+            
+            const command = new TransformCommand(object, oldState, newState);
+            undoManager.execute(command);
+        }
+        initialMenuState = null;
+    });
     
     slider.addEventListener('input', (e) => {
-        valueDisplay.textContent = parseFloat(e.target.value).toFixed(2) + unit;
+        const value = parseFloat(e.target.value);
+        valueDisplay.textContent = value.toFixed(2) + unit;
+        
+        // Salva in userData.menuState
+        object.userData.menuState[config.oscName] = value;
         
         // Invia messaggio OSC
         if (window.messageBroker && config.oscName) {
@@ -530,15 +720,22 @@ function createSlider(config, object) {
                 type: objectType,
                 index: index,
                 paramName: config.oscName,
-                value: parseFloat(e.target.value)
+                value: value
             });
         }
+        
+        // Sincronizza via multi-client
+        syncMenuStateToSlaves(object);
     });
     
     // Doppio click per reset
     slider.addEventListener('dblclick', () => {
-        slider.value = config.value;
-        valueDisplay.textContent = parseFloat(config.value).toFixed(2) + unit;
+        const defaultValue = parseFloat(config.value);
+        slider.value = defaultValue;
+        valueDisplay.textContent = defaultValue.toFixed(2) + unit;
+        
+        // Salva in userData.menuState
+        object.userData.menuState[config.oscName] = defaultValue;
         
         if (window.messageBroker && config.oscName) {
             const objectType = getObjectType(object.name);
@@ -549,9 +746,12 @@ function createSlider(config, object) {
                 type: objectType,
                 index: index,
                 paramName: config.oscName,
-                value: parseFloat(config.value)
+                value: defaultValue
             });
         }
+        
+        // Sincronizza via multi-client
+        syncMenuStateToSlaves(object);
     });
     
     container.appendChild(label);
@@ -571,6 +771,12 @@ function createToggle(config, object) {
     const toggle = document.createElement('input');
     toggle.type = 'checkbox';
     toggle.className = 'menu-checkbox';
+    toggle.dataset.param = config.oscName; // Per identificarlo in updateMenuForObject
+    
+    // Inizializza menuState se non esiste
+    if (!object.userData.menuState) {
+        object.userData.menuState = {};
+    }
     
     // Per il toggle "Guarda origine" / "Look at Origin", leggi il valore dall'oggetto
     const isLookAtOrigin = (config.label === 'Guarda origine' || config.label === 'Look at Origin') && 
@@ -583,13 +789,37 @@ function createToggle(config, object) {
         }
         toggle.checked = object.userData.autoRotateToCenter;
     } else {
-        toggle.checked = config.value;
+        // Leggi da menuState o usa default
+        const savedValue = object.userData.menuState[config.oscName];
+        toggle.checked = savedValue !== undefined ? savedValue : config.value;
+        
+        // Se non esiste, salva il default in menuState (importante per undo)
+        if (savedValue === undefined) {
+            object.userData.menuState[config.oscName] = config.value;
+        }
     }
     
     toggle.addEventListener('change', (e) => {
+        const value = e.target.checked;
+        const oldValue = object.userData.menuState[config.oscName];
+        
+        // Richiedi ruolo master se necessario
+        if (window.multiClientManager?.isEnabled && !window.multiClientManager?.isMaster) {
+            console.log('[MENU TOGGLE] Richiedo ruolo master...');
+            window.multiClientManager.requestMaster();
+        }
+        
+        // Salva in userData.menuState
+        object.userData.menuState[config.oscName] = value;
+        
+        // Crea undo command
+        if (oldValue !== value) {
+            createMenuChangeCommand(object, config.oscName, oldValue, value);
+        }
+        
         // Gestione speciale per il toggle "Guarda origine"/"Look at Origin" degli altoparlanti
         if (isLookAtOrigin) {
-            orientSpeakerToCenter(object, e.target.checked);
+            orientSpeakerToCenter(object, value);
         }
         
         // Invia messaggio OSC solo se c'è oscName definito
@@ -604,9 +834,12 @@ function createToggle(config, object) {
                 type: objectType,
                 index: index,
                 paramName: config.oscName,
-                value: e.target.checked ? 1 : 0
+                value: value ? 1 : 0
             });
         }
+        
+        // Sincronizza via multi-client
+        syncMenuStateToSlaves(object);
     });
     
     container.appendChild(label);
@@ -683,12 +916,27 @@ function createNumbox(config, object) {
     label.className = 'menu-label';
     label.textContent = config.label;
     
+    // Inizializza menuState se non esiste
+    if (!object.userData.menuState) {
+        object.userData.menuState = {};
+    }
+    
+    // Leggi da menuState o usa default
+    const savedValue = object.userData.menuState[config.oscName];
+    const currentValue = savedValue !== undefined ? savedValue : config.value;
+    
+    // Se non esiste, salva il default in menuState (importante per undo)
+    if (savedValue === undefined) {
+        object.userData.menuState[config.oscName] = config.value;
+    }
+    
     const numbox = document.createElement('input');
     numbox.type = 'number';
     numbox.className = 'menu-numbox';
-    numbox.value = config.value;
+    numbox.value = currentValue;
     numbox.min = config.min || '';
     numbox.max = config.max || '';
+    numbox.dataset.param = config.oscName; // Per identificarlo in updateMenuForObject
     
     const unit = config.unitType || '';
     const valueDisplay = document.createElement('span');
@@ -696,6 +944,23 @@ function createNumbox(config, object) {
     if (unit) valueDisplay.textContent = unit;
     
     numbox.addEventListener('change', (e) => {
+        const value = parseInt(e.target.value, 10);
+        const oldValue = object.userData.menuState[config.oscName];
+        
+        // Richiedi ruolo master se necessario
+        if (window.multiClientManager?.isEnabled && !window.multiClientManager?.isMaster) {
+            console.log('[MENU NUMBOX] Richiedo ruolo master...');
+            window.multiClientManager.requestMaster();
+        }
+        
+        // Salva in userData.menuState
+        object.userData.menuState[config.oscName] = value;
+        
+        // Crea undo command
+        if (oldValue !== value) {
+            createMenuChangeCommand(object, config.oscName, oldValue, value);
+        }
+        
         // Invia messaggio OSC
         if (window.messageBroker && config.oscName) {
             const objectType = getObjectType(object.name);
@@ -706,14 +971,27 @@ function createNumbox(config, object) {
                 type: objectType,
                 index: index,
                 paramName: config.oscName,
-                value: parseInt(e.target.value, 10)
+                value: value
             });
         }
+        
+        // Sincronizza via multi-client
+        syncMenuStateToSlaves(object);
     });
     
     // Doppio click per reset
     numbox.addEventListener('dblclick', () => {
-        numbox.value = config.value;
+        const defaultValue = parseInt(config.value, 10);
+        numbox.value = defaultValue;
+        
+        // Richiedi ruolo master se necessario
+        if (window.multiClientManager?.isEnabled && !window.multiClientManager?.isMaster) {
+            console.log('[MENU NUMBOX RESET] Richiedo ruolo master...');
+            window.multiClientManager.requestMaster();
+        }
+        
+        // Salva in userData.menuState
+        object.userData.menuState[config.oscName] = defaultValue;
         
         if (window.messageBroker && config.oscName) {
             const objectType = getObjectType(object.name);
@@ -724,9 +1002,12 @@ function createNumbox(config, object) {
                 type: objectType,
                 index: index,
                 paramName: config.oscName,
-                value: parseInt(config.value, 10)
+                value: defaultValue
             });
         }
+        
+        // Sincronizza via multi-client
+        syncMenuStateToSlaves(object);
     });
     
     container.appendChild(label);
@@ -748,14 +1029,27 @@ function createMultitoggle(config, object) {
     const buttonsContainer = document.createElement('div');
     buttonsContainer.className = 'menu-multitoggle';
     
+    // Inizializza menuState se non esiste
+    if (!object.userData.menuState) {
+        object.userData.menuState = {};
+    }
+    
     const buttons = [];
     const options = config.options || [];
-    const currentValue = config.defaultValue || 0;
+    const savedValue = object.userData.menuState[config.oscName];
+    const currentValue = savedValue !== undefined ? savedValue : (config.defaultValue || 0);
+    
+    // Se non esiste, salva il default in menuState (importante per undo)
+    if (savedValue === undefined) {
+        object.userData.menuState[config.oscName] = config.defaultValue || 0;
+    }
     
     options.forEach((option, idx) => {
         const btn = document.createElement('button');
         btn.textContent = option.label;
         btn.className = 'menu-multitoggle-btn';
+        btn.dataset.param = config.oscName; // Per identificarlo in updateMenuForObject
+        btn.dataset.value = option.value !== undefined ? option.value : idx; // Salva il valore
         
         const isActive = (option.value === currentValue) || (idx === currentValue);
         if (isActive) {
@@ -770,6 +1064,15 @@ function createMultitoggle(config, object) {
             btn.classList.add('active');
             
             const selectedValue = option.value !== undefined ? option.value : idx;
+            const oldValue = object.userData.menuState[config.oscName];
+            
+            // Salva in userData.menuState
+            object.userData.menuState[config.oscName] = selectedValue;
+            
+            // Crea undo command
+            if (oldValue !== selectedValue) {
+                createMenuChangeCommand(object, config.oscName, oldValue, selectedValue);
+            }
             
             // Invia messaggio OSC
             if (window.messageBroker && config.oscName) {
@@ -784,6 +1087,9 @@ function createMultitoggle(config, object) {
                     value: selectedValue
                 });
             }
+            
+            // Sincronizza via multi-client
+            syncMenuStateToSlaves(object);
         });
         
         buttons.push(btn);
@@ -805,6 +1111,9 @@ function createMultitoggle(config, object) {
             }
         });
         
+        // Salva in userData.menuState
+        object.userData.menuState[config.oscName] = defaultValue;
+        
         if (window.messageBroker && config.oscName) {
             const objectType = getObjectType(object.name);
             const match = object.name.match(/(\d+)$/);
@@ -817,6 +1126,9 @@ function createMultitoggle(config, object) {
                 value: defaultValue
             });
         }
+        
+        // Sincronizza via multi-client
+        syncMenuStateToSlaves(object);
     });
     
     container.appendChild(label);
@@ -892,9 +1204,34 @@ function updateTagsGrid(wrapper) {
                 window.multiClientManager.requestMaster();
             }
             
+            // Salva stato precedente per undo
+            const oldTags = [...object.userData.tags];
+            const oldState = {
+                position: { x: object.position.x, y: object.position.y, z: object.position.z },
+                rotation: { x: object.rotation.x, y: object.rotation.y, z: object.rotation.z },
+                scale: { x: object.scale.x, y: object.scale.y, z: object.scale.z },
+                tags: oldTags,
+                menuState: object.userData?.menuState ? { ...object.userData.menuState } : {}
+            };
+            
             toggleTag(object, tagNum);
             const newState = hasTag(object, tagNum);
             chip.style.opacity = newState ? '1' : '0.3';
+            
+            // Crea comando undo con i nuovi tag
+            const newStateForUndo = {
+                position: { x: object.position.x, y: object.position.y, z: object.position.z },
+                rotation: { x: object.rotation.x, y: object.rotation.y, z: object.rotation.z },
+                scale: { x: object.scale.x, y: object.scale.y, z: object.scale.z },
+                tags: [...object.userData.tags],
+                menuState: object.userData?.menuState ? { ...object.userData.menuState } : {}
+            };
+            
+            if (window.undoManager && window.TransformCommand) {
+                const command = new window.TransformCommand(object, oldState, newStateForUndo);
+                window.undoManager.execute(command);
+                console.log('[UNDO] Tag modificato, comando salvato. Tags:', oldTags, '->', object.userData.tags);
+            }
             
             // Invia messaggio OSC
             if (window.messageBroker) {

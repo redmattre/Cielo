@@ -22,6 +22,9 @@ let rendererBackgoundColor = 0xd6d6d6; //inizia bianco
 // let rendererBackgoundColor = 0x000000; //inizia nero
 let ghostButton = null;
 
+// Esponi objToBeDetected globalmente per undo/redo e console testing
+window.objToBeDetected = objToBeDetected;
+
 const visualizzazione = document.getElementById("visualizzazione");
 export let transfo = false;
 let ignoreNextEscape = false; // Flag per ignorare Escape dopo attach
@@ -45,6 +48,9 @@ export function init() {
     ssuper = new GridHelperAA(10, 16, new THREE.Color(0x888888), new THREE.Color(0x444444), 0.85);
     scene = new THREE.Scene();
     scene.add(ssuper);
+    
+    // Esponi scene globalmente per undo/redo
+    window.scene = scene;
 
     // Camere
     const aspect = window.innerWidth / window.innerHeight;
@@ -445,9 +451,19 @@ export function init() {
             // === ELIMINAZIONE OGGETTO ===  
             case 'x':
             case 'Backspace':
-                const functions_del = getRaycasterFunctions();
-                if (functions_del.deleteSelectedObject) {
-                    functions_del.deleteSelectedObject();
+                // Non cancellare se l'utente sta scrivendo in un input o textarea
+                const activeElement = document.activeElement;
+                const isTyping = activeElement && (
+                    activeElement.tagName === 'INPUT' || 
+                    activeElement.tagName === 'TEXTAREA' ||
+                    activeElement.isContentEditable
+                );
+                
+                if (!isTyping) {
+                    const functions_del = getRaycasterFunctions();
+                    if (functions_del.deleteSelectedObject) {
+                        functions_del.deleteSelectedObject();
+                    }
                 }
                 break;
         }

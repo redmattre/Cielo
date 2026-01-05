@@ -1,0 +1,13 @@
+{
+  "metadata": {
+    "name": "test_project_2",
+    "created": "2026-01-05T13:30:49.578Z",
+    "version": "2.0"
+  },
+  "settings": {
+    "osc": {
+      "host": "192.168.1.255",
+      "port": 5000
+    }
+  }
+}

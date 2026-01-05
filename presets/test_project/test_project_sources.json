@@ -1,0 +1,143 @@
+{
+  "metadata": {
+    "name": "test_project - Sources",
+    "created": "2026-01-05T13:24:02.313Z",
+    "version": "2.0"
+  },
+  "sources": {
+    "Omnifonte_1": {
+      "position": {
+        "x": -2.95,
+        "y": -1.05,
+        "z": 1.2
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 0.25,
+        "y": 0.25,
+        "z": 0.24
+      },
+      "tags": [
+        0
+      ],
+      "menuState": {
+        "trim": -3.3,
+        "channelstate": true,
+        "solo ": 0,
+        "delaymode": 2,
+        "delaysmooth": 125,
+        "spread": 21,
+        "depth": 100,
+        "range": 10,
+        "convolution": false,
+        "convsend": -6,
+        "convpercent": 0
+      }
+    },
+    "Omnifonte_2": {
+      "position": {
+        "x": -0.9,
+        "y": -3,
+        "z": 1.2
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 0.25,
+        "y": 0.25,
+        "z": 0.24
+      },
+      "tags": [
+        0,
+        1
+      ],
+      "menuState": {
+        "trim": 0,
+        "channelstate": true,
+        "solo ": 0,
+        "delaymode": 1,
+        "delaysmooth": 70,
+        "spread": 25,
+        "depth": 100,
+        "range": 7.9,
+        "convolution": false,
+        "convsend": -6,
+        "convpercent": 0
+      }
+    },
+    "Omnifonte_3": {
+      "position": {
+        "x": 2.6500000000000004,
+        "y": 0.8,
+        "z": 1.2
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 0.25,
+        "y": 0.25,
+        "z": 0.24
+      },
+      "tags": [
+        0
+      ],
+      "menuState": {
+        "trim": -7.67,
+        "channelstate": true,
+        "solo ": 0,
+        "delaymode": 2,
+        "delaysmooth": 172,
+        "spread": 0,
+        "depth": 100,
+        "range": 10,
+        "convolution": false,
+        "convsend": -6,
+        "convpercent": 0
+      }
+    },
+    "Omnifonte_4": {
+      "position": {
+        "x": -2.7,
+        "y": 3.5,
+        "z": 1.2
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 0.25,
+        "y": 0.25,
+        "z": 0.24
+      },
+      "tags": [
+        0,
+        2
+      ],
+      "menuState": {
+        "trim": -4.25,
+        "channelstate": true,
+        "solo ": 0,
+        "delaymode": 1,
+        "delaysmooth": 26,
+        "spread": 29,
+        "depth": 100,
+        "range": 10,
+        "convolution": true,
+        "convsend": -6,
+        "convpercent": 0
+      }
+    }
+  }
+}

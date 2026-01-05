@@ -2,36 +2,31 @@
   "title": "Orifonte Settings",
   "controls": [
     {
-      "label": "Gain",
-      "oscName": "gain",
+      "label": "Trim",
+      "oscName": "trim",
       "type": "slider",
-      "min": -60,
-      "max": 12,
-      "step": 1,
-      "defaultValue": 0
+      "min": -12.0,
+      "max": 6.0,
+      "step": 0.01,
+      "defaultValue": 0.0,
+      "unitType": "dB"
     },
     {
-      "label": "Spread",
-      "oscName": "spread",
-      "type": "slider",
-      "min": 0,
-      "max": 180,
-      "step": 5,
-      "defaultValue": 30
-    },
-    {
-      "label": "Enabled",
-      "oscName": "enabled",
+      "label": "Active",
+      "oscName": "channelstate",
       "type": "toggle",
       "defaultValue": true
     },
     {
-      "label": "Input",
-      "oscName": "input",
-      "type": "numbox",
-      "min": 1,
-      "max": 8,
-      "defaultValue": 1
+      "label": "Solo",
+      "oscName": "solo ",
+      "type": "toggle",
+      "defaultValue": 0.0
+    },
+    {
+      "type": "button",
+      "label": "Test",
+      "oscName": "test"
     }
   ]
 }

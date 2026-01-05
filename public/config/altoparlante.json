@@ -2,45 +2,31 @@
   "title": "Speaker Settings",
   "controls": [
     {
-      "label": "Level",
-      "oscName": "level",
+      "label": "Trim",
+      "oscName": "trim",
       "type": "slider",
-      "min": 0,
-      "max": 1,
-      "step": 0.05,
-      "defaultValue": 1.0
+      "min": -12.0,
+      "max": 6.0,
+      "step": 0.01,
+      "defaultValue": 0.0,
+      "unitType": "dB"
     },
     {
-      "label": "Delay",
-      "oscName": "delay",
-      "type": "slider",
-      "min": 0,
-      "max": 100,
-      "step": 1,
-      "defaultValue": 0
-    },
-    {
-      "label": "Mute",
-      "oscName": "mute",
+      "label": "Active",
+      "oscName": "channelstate",
       "type": "toggle",
-      "defaultValue": false
+      "defaultValue": true
     },
     {
-      "label": "Output",
-      "oscName": "output",
-      "type": "numbox",
-      "min": 1,
-      "max": 32,
-      "defaultValue": 1
+      "label": "Solo",
+      "oscName": "solo ",
+      "type": "toggle",
+      "defaultValue": 0.0
     },
     {
-      "label": "EQ High",
-      "oscName": "eq_high",
-      "type": "slider",
-      "min": -12,
-      "max": 12,
-      "step": 0.5,
-      "defaultValue": 0
+      "type": "button",
+      "label": "Test",
+      "oscName": "test"
     },
     {
       "label": "Look at Origin",

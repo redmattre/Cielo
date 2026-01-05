@@ -165,6 +165,12 @@ class MultiClientManager {
      * Gestisce trasformazioni ricevute dal master
      */
     handleTransformMessage(message) {
+        console.log('[MultiClient] handleTransformMessage ricevuto:', {
+            objectId: message.objectId,
+            hasMenuState: !!message.menuState,
+            menuState: message.menuState
+        });
+        
         if (this.onTransformReceived) {
             const data = {
                 objectId: message.objectId,
@@ -176,6 +182,16 @@ class MultiClientManager {
             if (message.tags) {
                 data.tags = message.tags;
             }
+            // Includi menuState se presente nel messaggio
+            if (message.menuState) {
+                data.menuState = message.menuState;
+            }
+            
+            console.log('[MultiClient] Passando data a onTransformReceived:', {
+                hasMenuState: !!data.menuState,
+                menuStateKeys: data.menuState ? Object.keys(data.menuState) : []
+            });
+            
             this.onTransformReceived(data);
         }
     }
@@ -193,7 +209,8 @@ class MultiClientManager {
                 rotation: message.rotation,
                 scale: message.scale,
                 properties: message.properties,
-                tags: message.tags || [0] // Includi tags con default [0]
+                tags: message.tags || [0], // Includi tags con default [0]
+                menuState: message.menuState || {} // Includi menuState con default {}
             });
         }
     }
@@ -237,22 +254,22 @@ class MultiClientManager {
     /**
      * Invia trasformazione (solo se master) con throttling
      */
-    sendTransform(objectId, position, rotation, scale, tags = null) {
+    sendTransform(objectId, position, rotation, scale, tags = null, menuState = null) {
         if (!this.isMaster || !this.syncEnabled) {
             console.log('sendTransform BLOCKED - isMaster:', this.isMaster, 'syncEnabled:', this.syncEnabled);
             return;
         }
 
         // Throttling: massimo 20 FPS per oggetto
-        // ECCEZIONE: se ci sono tags, forza l'invio (cambio tags esplicito)
+        // ECCEZIONE: se ci sono tags o menuState, forza l'invio (cambio esplicito)
         const now = Date.now();
         const throttleKey = `transform_${objectId}`;
         
         if (!this.lastSent) this.lastSent = {};
         
-        // Se non ci sono tags espliciti, applica throttling normale
-        if (tags === null && this.lastSent[throttleKey] && now - this.lastSent[throttleKey] < 50) {
-            return; // Skip se troppo frequente (solo per transform senza tags)
+        // Se non ci sono tags o menuState espliciti, applica throttling normale
+        if (tags === null && menuState === null && this.lastSent[throttleKey] && now - this.lastSent[throttleKey] < 50) {
+            return; // Skip se troppo frequente (solo per transform senza tags/menuState)
         }
         this.lastSent[throttleKey] = now;
 
@@ -268,6 +285,18 @@ class MultiClientManager {
         if (tags !== null) {
             message.tags = tags;
         }
+        
+        // Aggiungi menuState solo se specificato
+        if (menuState !== null) {
+            message.menuState = menuState;
+        }
+        
+        console.log('[MultiClient] sendTransform inviando:', {
+            objectId,
+            hasTags: tags !== null,
+            hasMenuState: menuState !== null,
+            menuStateKeys: menuState ? Object.keys(menuState) : []
+        });
 
         this.sendMessage(message);
     }
@@ -275,13 +304,13 @@ class MultiClientManager {
     /**
      * Notifica creazione oggetto (solo se master)
      */
-    notifyObjectCreated(objectId, objectType, name, position, rotation, scale, properties = {}, tags = [0]) {
+    notifyObjectCreated(objectId, objectType, name, position, rotation, scale, properties = {}, tags = [0], menuState = {}) {
         if (!this.isMaster || !this.syncEnabled) {
             console.log('notifyObjectCreated BLOCKED - isMaster:', this.isMaster, 'syncEnabled:', this.syncEnabled);
             return;
         }
 
-        console.log('MASTER notifica creazione oggetto:', objectId, objectType, name, 'tags:', tags);
+        console.log('MASTER notifica creazione oggetto:', objectId, objectType, name, 'tags:', tags, 'menuState:', menuState);
 
         const message = {
             type: 'object_created',
@@ -292,7 +321,8 @@ class MultiClientManager {
             rotation: rotation,
             scale: scale,
             properties: properties,
-            tags: tags
+            tags: tags,
+            menuState: menuState
         };
 
         this.sendMessage(message);
@@ -325,6 +355,15 @@ class MultiClientManager {
      */
     sendMessage(message) {
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            // Log prima di inviare per verificare il contenuto
+            if (message.type === 'transform') {
+                console.log('[MultiClient] INVIO REALE via WebSocket:', {
+                    type: message.type,
+                    objectId: message.objectId,
+                    hasMenuState: !!message.menuState,
+                    menuStateContent: message.menuState
+                });
+            }
             this.ws.send(JSON.stringify(message));
         } else {
             // Accoda messaggio se non connesso

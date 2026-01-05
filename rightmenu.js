@@ -165,6 +165,33 @@ const panelConfigs = {
       },
       {
         type: 'button',
+        id: 'saveProject',
+        label: 'Save Project',
+        action: () => {
+          console.log('Saving project');
+          document.getElementById('saveProjectBtn')?.click();
+        }
+      },
+      {
+        type: 'button',
+        id: 'saveProjectAs',
+        label: 'Save Project As',
+        action: () => {
+          console.log('Saving project as');
+          document.getElementById('saveProjectAsBtn')?.click();
+        }
+      },
+      {
+        type: 'button',
+        id: 'loadProject',
+        label: 'Load Project',
+        action: () => {
+          console.log('Loading project');
+          document.getElementById('loadProjectBtn')?.click();
+        }
+      },
+      {
+        type: 'button',
         id: 'loadSpeakersPreset',
         label: 'Load Speakers',
         action: () => {
@@ -474,6 +501,8 @@ function createInput(config) {
   input.style.border = '1px solid var(--dettaglio)';
   input.style.borderRadius = '4px';
   input.style.color = 'var(--testo)';
+  input.style.width = '70%';
+  input.style.textAlign = 'right';
   
   input.addEventListener('change', (e) => {
     config.action(e.target.value);

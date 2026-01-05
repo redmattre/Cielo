@@ -23,7 +23,7 @@ let povCursorModel = null;
 
 // Sistema ID univoci per oggetti 3D
 let objectIdCounter = 0;
-function generateUniqueId() {
+export function generateUniqueId() {
   return `obj_${Date.now()}_${++objectIdCounter}`;
 }
 
@@ -146,14 +146,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const addPovCursor = document.getElementById('addPovCursor');
 
   // Counters to ensure unique, sequential naming even when loading is async
-  let speakerCounter = 0;
-  // Initialize speakerCounter based on existing scene children (if any)
-  scene.children.forEach((obj) => {
-    if (obj.name && obj.name.startsWith('Altoparlante ')) speakerCounter++;
-  });
+  // Dinamicamente conta gli altoparlanti nella scena ogni volta
   function getNextSpeakerIndex() {
-    speakerCounter += 1;
-    return speakerCounter;
+    let speakerCount = 0;
+    scene.children.forEach((obj) => {
+      if (obj.name && obj.name.startsWith('Altoparlante ')) speakerCount++;
+    });
+    return speakerCount + 1;
   }
 
   //da modificare: fare che sia un tasto nel dock che ogni volta apre finestra di dialogo per importare un modello esterno

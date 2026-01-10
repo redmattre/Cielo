@@ -19,7 +19,7 @@
     },
     {
       "label": "Solo",
-      "oscName": "solo ",
+      "oscName": "solo",
       "type": "toggle",
       "defaultValue": 0.0
     },
@@ -100,13 +100,13 @@
       "unitType": "dB"
     },
     {
-      "label": "Conv Percent",
-      "oscName": "convpercent",
+      "label": "Dry",
+      "oscName": "dry",
       "type": "slider",
       "min": 0.00,
       "max": 100.0,
       "step": 1.0,
-      "defaultValue": 0.00,
+      "defaultValue": 100.0,
       "unitType": "%"
     }
   ]

@@ -19,7 +19,7 @@
     },
     {
       "label": "Solo",
-      "oscName": "solo ",
+      "oscName": "solo",
       "type": "toggle",
       "defaultValue": 0.0
     },

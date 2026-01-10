@@ -400,6 +400,19 @@ function getObjectType(objectName) {
     return 'default';
 }
 
+// Funzione helper per aggiornare il toggle UI di un oggetto
+function updateToggleInMenu(object, paramName, value) {
+    // Accesso diretto al submenu tramite riferimento salvato
+    const submenu = object.userData?._submenuElement;
+    if (!submenu) return; // Submenu non ancora creato
+    
+    // Trova il checkbox con il paramName
+    const toggle = submenu.querySelector(`input[type="checkbox"][data-param="${paramName}"]`);
+    if (toggle) {
+        toggle.checked = value;
+    }
+}
+
 // Funzione per orientare gli altoparlanti verso il centro rialzato
 function orientSpeakerToCenter(object, enable = true) {
     if (!object || !object.lookAt) return;
@@ -809,6 +822,64 @@ function createToggle(config, object) {
             window.multiClientManager.requestMaster();
         }
         
+        // Flag per sapere se abbiamo già mandato il messaggio OSC
+        let oscAlreadySent = false;
+        
+        // Gestione speciale per SOLO esclusivo
+        if (config.oscName === 'solo') {
+            const currentObjectType = getObjectType(object.name);
+            
+            if (value) {
+                // ATTIVAZIONE SOLO - disattiva tutti gli altri solo dello stesso tipo
+                scene.children.forEach(obj => {
+                    if (obj !== object && obj.userData?.menuState?.solo !== undefined) {
+                        const objType = getObjectType(obj.name);
+                        
+                        // Invia OSC solo 0 a tutti dello stesso tipo (eccetto quello corrente)
+                        if (objType === currentObjectType && window.messageBroker) {
+                            const match = obj.name.match(/(\d+)$/);
+                            const idx = match ? parseInt(match[1], 10) : 1;
+                            window.messageBroker.sendCustomParameter({
+                                type: objType,
+                                index: idx,
+                                paramName: 'solo',
+                                value: 0
+                            });
+                        }
+                        
+                        // Disattiva menuState degli altri solo dello stesso tipo
+                        if (objType === currentObjectType && obj.userData.menuState.solo === true) {
+                            obj.userData.menuState.solo = false;
+                            // Aggiorna UI solo se il submenu è visibile
+                            updateToggleInMenu(obj, 'solo', false);
+                            
+                            // Crea undo command per l'oggetto che viene disattivato
+                            createMenuChangeCommand(obj, 'solo', true, false);
+                        }
+                    }
+                });
+            } else {
+                // DISATTIVAZIONE SOLO - tutti dello stesso tipo mandano solo 1
+                scene.children.forEach(obj => {
+                    if (obj.userData?.menuState?.solo !== undefined) {
+                        const objType = getObjectType(obj.name);
+                        if (objType === currentObjectType && window.messageBroker) {
+                            const match = obj.name.match(/(\d+)$/);
+                            const idx = match ? parseInt(match[1], 10) : 1;
+                            window.messageBroker.sendCustomParameter({
+                                type: objType,
+                                index: idx,
+                                paramName: 'solo',
+                                value: 1
+                            });
+                        }
+                    }
+                });
+                // Abbiamo già mandato il messaggio per l'oggetto corrente nel loop sopra
+                oscAlreadySent = true;
+            }
+        }
+        
         // Salva in userData.menuState
         object.userData.menuState[config.oscName] = value;
         
@@ -822,8 +893,8 @@ function createToggle(config, object) {
             orientSpeakerToCenter(object, value);
         }
         
-        // Invia messaggio OSC solo se c'è oscName definito
-        if (window.messageBroker && config.oscName) {
+        // Invia messaggio OSC solo se c'è oscName definito E non è già stato mandato
+        if (window.messageBroker && config.oscName && !oscAlreadySent) {
             const objectType = getObjectType(object.name);
             // Estrai index dal nome (es: "Omnifonte 3" -> 3)
             const match = object.name.match(/(\d+)$/);
@@ -1489,6 +1560,11 @@ export function createMenu() {
         // Crea il sottomenu
         const submenu = createSubmenu(object);
         let isExpanded = false;
+        
+        // Salva riferimento al submenu nell'oggetto per accesso diretto
+        if (submenu) {
+            object.userData._submenuElement = submenu;
+        }
 
         // Click per espansione (separato dal hover)
         itemList.addEventListener('click', (e) => {

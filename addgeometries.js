@@ -145,13 +145,24 @@ document.addEventListener('DOMContentLoaded', () => {
   const addGenericModel = document.getElementById('loadGenericGltf');
   const addPovCursor = document.getElementById('addPovCursor');
 
-  // Counters to ensure unique, sequential naming even when loading is async
-  // Dinamicamente conta gli altoparlanti nella scena ogni volta
+  // Counter per altoparlanti per garantire numerazione sequenziale anche con caricamento async
+  let howManySpeakers = 0;
+
+  // Funzione per ottenere il prossimo indice altoparlante
+  // Usa il contatore se disponibile, altrimenti conta dinamicamente (per compatibilità preset)
   function getNextSpeakerIndex() {
+    // Se il contatore è stato inizializzato (> 0), usalo
+    if (howManySpeakers > 0) {
+      return howManySpeakers + 1;
+    }
+    
+    // Altrimenti conta dinamicamente (caricamento preset o prima volta)
     let speakerCount = 0;
     scene.children.forEach((obj) => {
       if (obj.name && obj.name.startsWith('Altoparlante ')) speakerCount++;
     });
+    // Aggiorna anche il contatore per future chiamate
+    howManySpeakers = speakerCount;
     return speakerCount + 1;
   }
 
@@ -509,6 +520,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const index = providedName ? parseInt(providedName.split(' ')[1]) || getNextSpeakerIndex() : getNextSpeakerIndex();
     const nome = providedName || `Altoparlante ${index}`;
     const uniqueId = providedId || generateUniqueId();
+    
+    // Incrementa il contatore solo se stiamo generando un nuovo nome
+    if (!providedName) {
+      howManySpeakers = index;
+    }
+    
     console.log('addSpeakerAtPosition:', nome, 'ID:', uniqueId, 'pos:', x, y, z, providedId ? '(from master)' : '(generated)');
     loadObj('./modelli/galleriaOBJ/speaker3dec.obj', nome, goochMaterialSp, 0.045, x, y, z, null, uniqueId);
     createMenu();

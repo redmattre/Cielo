@@ -1,0 +1,110 @@
+{
+  "metadata": {
+    "name": "test_project_3 - Sources",
+    "created": "2026-01-07T08:38:44.111Z",
+    "version": "2.0"
+  },
+  "sources": {
+    "Omnifonte_1": {
+      "position": {
+        "x": -1.2000000000000002,
+        "y": -0.75,
+        "z": 1.9000000000000001
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 0.25,
+        "y": 0.25,
+        "z": 0.24
+      },
+      "tags": [
+        0,
+        1
+      ],
+      "menuState": {
+        "trim": -8.81,
+        "channelstate": true,
+        "solo ": false,
+        "delaymode": 1,
+        "delaysmooth": 51,
+        "spread": 75,
+        "depth": 0,
+        "range": 10,
+        "convolution": false,
+        "convsend": 6,
+        "convpercent": 0
+      }
+    },
+    "Omnifonte_2": {
+      "position": {
+        "x": 0.35000000000000003,
+        "y": 1,
+        "z": 1.2
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 0.25,
+        "y": 0.25,
+        "z": 0.24
+      },
+      "tags": [
+        0
+      ],
+      "menuState": {
+        "trim": -6.3,
+        "channelstate": true,
+        "solo ": 0,
+        "delaymode": 2,
+        "delaysmooth": 100,
+        "spread": 0,
+        "depth": 100,
+        "range": 10,
+        "convolution": false,
+        "convsend": -6,
+        "convpercent": 0
+      }
+    },
+    "Omnifonte_3": {
+      "position": {
+        "x": 2.1,
+        "y": -0.8500000000000001,
+        "z": 1.2
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 0.25,
+        "y": 0.25,
+        "z": 0.24
+      },
+      "tags": [
+        0,
+        2
+      ],
+      "menuState": {
+        "trim": 0,
+        "channelstate": true,
+        "solo ": 0,
+        "delaymode": 0,
+        "delaysmooth": 148,
+        "spread": 0,
+        "depth": 100,
+        "range": 10,
+        "convolution": false,
+        "convsend": -6,
+        "convpercent": 0
+      }
+    }
+  }
+}

@@ -1,117 +1,82 @@
 # Cielo - Distribuzione Produzione
 
-this is a more stable version of the first release, still needs a solid preset system
+## Novità v2.0
 
-## features and bugfixes
-- Added broadcast OSC messages
-- Added nuvola dashboard
-- Added automatic creation of Aureola 3D element synced
-- Fixed minor bug in multi client sync between instances of Cielo
+### Sistema Gestione Progetti
+- **Save/Load Project**: salvataggio completo dello stato (settings + speakers + sources)
+- **Save Project As**: creazione nuovi progetti senza sovrascrivere
+- Struttura organizzata in cartelle (NomeProgetto/NomeProgetto_settings.json, ecc.)
+- Persistenza progetto attivo tra sessioni
 
-## Contenuto della cartella
+### Undo/Redo Avanzato
+- Supporto completo per trasformazioni, parametri menu e tags
+- Sync undo/redo tra client master e slave
+- Stack undo/redo indipendente per ogni client
 
-- `dist/` - File della build dell'applicazione web
-- `server.js` - Server WebSocket per OSC e Multi-Client
-- `node_modules/` - Dipendenze Node.js (installate automaticamente)
-- `package.json` - Configurazione dipendenze
-- `start-cielo.sh` - Script di avvio automatico
-- `README-PROD.md` - Questo file
+### Multi-Client Sync
+- Sincronizzazione automatica di slider, toggle e numbox tra client
+- Richiesta automatica ruolo master quando si modifica un parametro
+- Sync completo di menuState tra master e slave
+
+### Preset System v2.0
+- Salvataggio tags e stati menu per ogni oggetto
+- Compatibilità backward con preset legacy
+- Strumento di conversione per vecchi preset
+
+### UX Improvements
+- Numerazione dinamica altoparlanti dopo caricamento preset
+- Tasto delete/backspace disabilitato durante scrittura in input
+- Stili CSS personalizzabili per campi OSC IP/Port
+
+## Contenuto
+
+- `dist/` - Applicazione web
+- `server.js` - Server WebSocket (OSC + Multi-Client)
+- `start-cielo.sh` - Script avvio automatico
 
 ## Requisiti
 
-- **Node.js** (v16 o superiore) - [Scarica qui](https://nodejs.org/)
-- **Python 3** - Già presente su macOS/Linux
-- **Google Chrome** - Per l'interfaccia web
+- Node.js v16+ - [nodejs.org](https://nodejs.org/)
+- Python 3 (già presente su macOS/Linux)
+- Google Chrome
 
-## Avvio Rapido
+## Avvio
 
-### macOS/Linux
-
-Doppio click su `start-cielo.sh` oppure da terminale:
-
+**macOS/Linux:**
 ```bash
 ./start-cielo.sh
 ```
 
-Lo script:
-1. ✅ Installa automaticamente le dipendenze (prima volta)
-2. 🚀 Avvia il server WebSocket (OSC + Multi-Client)
-3. 🌐 Avvia il server HTTP per l'interfaccia web
-4. 🌍 Apre automaticamente Chrome su http://localhost:8000
+Lo script installa dipendenze, avvia i server e apre Chrome su http://localhost:8000
 
-Per fermare tutto: **Ctrl+C** nel terminale
+Per fermare: **Ctrl+C**
 
-### Avvio Manuale
-
-Se preferisci avviare i componenti separatamente:
-
-**Terminal 1 - Server WebSocket:**
+**Avvio Manuale:**
 ```bash
+# Terminal 1
 node server.js
-```
 
-**Terminal 2 - Server HTTP:**
-```bash
+# Terminal 2
 python3 -m http.server 8000 --directory dist
 ```
 
-Poi apri Chrome su: http://localhost:8000
+## Porte
 
-## Connessioni di Rete
-
-### Locale
-- Interfaccia web: `http://localhost:8000`
-- WebSocket OSC: `ws://localhost:8081/osc`
-- WebSocket Multi-Client: `ws://localhost:8080/ws`
-
-### Da Altri Dispositivi
-
-Sostituisci `localhost` con l'indirizzo IP della macchina:
-
-1. Trova il tuo IP: `ifconfig` (macOS/Linux) o `ipconfig` (Windows)
-2. Usa l'IP nei collegamenti, es: `http://192.168.1.100:8000`
-
-I server sono configurati su `0.0.0.0` quindi accettano connessioni da qualsiasi dispositivo sulla rete.
-
-## Porte Utilizzate
-
-- **8000** - Server HTTP (interfaccia web)
+- **8000** - HTTP (interfaccia web)
 - **8080** - WebSocket Multi-Client
 - **8081** - WebSocket OSC
-- **5000** (UDP) - OSC Output broadcast (default, configurabile nell'app)
-- **9998** (UDP) - Nuvola device discovery (ricezione status dispositivi)
+- **5000** - OSC Output UDP (configurabile)
+- **9998** - Nuvola device discovery
 
 ## Configurazione OSC
 
-L'applicazione invia messaggi OSC via UDP in **modalità broadcast** per raggiungere simultaneamente tutti i dispositivi sulla rete. Configurazione di default:
-- Host: `192.168.0.255` (broadcast address)
-- Porta: `5000`
+Default: broadcast `192.168.0.255:5000`
 
-Puoi modificare questi valori dall'interfaccia web nel menu impostazioni.
+Modificabile da menu impostazioni nell'app. Il broadcast address cambia in base alla tua rete (es: `192.168.1.255` per rete `192.168.1.x`).
 
-### Modalità Broadcast
-Il broadcast UDP permette di inviare messaggi OSC a **tutti i dispositivi** sulla stessa rete simultaneamente, senza dover configurare IP specifici. Questo è ideale per:
-- Dispositivi Nuvola AAR (Augmented Audio Reality)
-- Sistemi di spatializzazione audio distribuiti
-- Setup multi-dispositivo sincronizzati
+## Multi-Client
 
-**Nota:** L'indirizzo broadcast dipende dalla tua subnet mask:
-- `192.168.0.255` per reti `192.168.0.x` (subnet /24)
-- `192.168.1.255` per reti `192.168.1.x` (subnet /24)
-- etc.
-
-Per trovare il broadcast address della tua rete: `ifconfig` (cerca "broadcast")
-
-## Risoluzione Problemi
-
-### "command not found: node"
-Node.js non è installato. Installalo da https://nodejs.org/
-
-### "Address already in use"
-Una porta è già occupata. Chiudi altre istanze o cambia porta nello script.
-
-### WebSocket non si connette
-Verifica che `server.js` sia in esecuzione e che le porte 8080/8081 siano libere.
+Apri Cielo su più browser/dispositivi. Il primo diventa master, gli altri slave. Usa `http://TUO_IP:8000` per connessioni remote.
 
 ### Chrome non si apre automaticamente
 Apri manualmente Chrome e vai su http://localhost:8000

@@ -279,6 +279,9 @@ const submenuConfigsDefault = {
 // Configurazioni caricate dinamicamente dai JSON
 let submenuConfigs = { ...submenuConfigsDefault };
 
+// Rendi disponibile globalmente per il dump
+window.submenuConfigs = submenuConfigs;
+
 // Funzione helper per sincronizzare menuState via multi-client
 function syncMenuStateToSlaves(object) {
     if (!window.multiClientManager || !object) {
@@ -369,7 +372,8 @@ async function loadMenuConfigs() {
                         value: ctrl.defaultValue,
                         options: ctrl.options,  // Per multitoggle
                         defaultValue: ctrl.defaultValue,  // Per multitoggle e reset
-                        unitType: ctrl.unitType  // Unità di misura
+                        unitType: ctrl.unitType,  // Unità di misura
+                        exp: ctrl.exp  // Esponente per slider non-lineari
                     }))
                 };
                 
@@ -640,6 +644,8 @@ window.updateMenuForObject = updateMenuForObject;
 
 // Funzioni per creare i controlli del sottomenu
 function createSlider(config, object) {
+    console.log('[CREATE SLIDER] config ricevuto:', JSON.stringify(config, null, 2));
+    
     const container = document.createElement('div');
     container.className = 'menu-control-row';
     
@@ -670,11 +676,41 @@ function createSlider(config, object) {
     slider.value = currentValue;
     slider.dataset.param = config.oscName; // Per identificarlo in updateMenuForObject
     slider.dataset.unit = config.unitType || ''; // Per aggiornare l'unità
+    slider.dataset.exp = config.exp || 1; // Salva l'esponente (default 1 = lineare)
     
     const valueDisplay = document.createElement('span');
     valueDisplay.className = 'menu-value';
     const unit = config.unitType || '';
     valueDisplay.textContent = parseFloat(currentValue).toFixed(2) + unit;
+    
+    // Funzione helper per applicare la trasformazione esponenziale
+    // Converte il valore dello slider (range min-max) in valore con curvatura esponenziale
+    const applyExponentialTransform = (sliderValue, min, max, exp) => {
+        if (exp === 1 || !exp) return sliderValue; // Lineare
+        
+        // Normalizza a 0-1
+        const normalized = (sliderValue - min) / (max - min);
+        // Applica esponente
+        const curved = Math.pow(normalized, exp);
+        // Rimappa al range
+        return min + curved * (max - min);
+    };
+    
+    // Funzione helper inversa - per aggiornare lo slider dato un valore finale
+    const inverseExponentialTransform = (finalValue, min, max, exp) => {
+        if (exp === 1 || !exp) return finalValue; // Lineare
+        
+        // Normalizza a 0-1
+        const normalized = (finalValue - min) / (max - min);
+        // Applica radice (inversa di potenza)
+        const linearSliderPos = Math.pow(normalized, 1 / exp);
+        // Rimappa al range dello slider
+        return min + linearSliderPos * (max - min);
+    };
+    
+    // Imposta il valore iniziale dello slider applicando la trasformazione inversa
+    const exp = config.exp || 1;
+    slider.value = inverseExponentialTransform(currentValue, config.min, config.max, exp);
     
     // Salva stato iniziale per undo quando inizia il drag
     let initialMenuState = null;
@@ -717,11 +753,16 @@ function createSlider(config, object) {
     });
     
     slider.addEventListener('input', (e) => {
-        const value = parseFloat(e.target.value);
-        valueDisplay.textContent = value.toFixed(2) + unit;
+        // Leggi il valore dello slider e applica la trasformazione esponenziale
+        const sliderValue = parseFloat(e.target.value);
+        // console.log(`[SLIDER DEBUG] oscName: ${config.oscName}, exp: ${exp}, sliderValue: ${sliderValue}`);
+        const finalValue = applyExponentialTransform(sliderValue, config.min, config.max, exp);
+        // console.log(`[SLIDER DEBUG] finalValue dopo transform: ${finalValue}`);
         
-        // Salva in userData.menuState
-        object.userData.menuState[config.oscName] = value;
+        valueDisplay.textContent = finalValue.toFixed(2) + unit;
+        
+        // Salva il valore trasformato in userData.menuState
+        object.userData.menuState[config.oscName] = finalValue;
         
         // Invia messaggio OSC
         if (window.messageBroker && config.oscName) {
@@ -733,7 +774,7 @@ function createSlider(config, object) {
                 type: objectType,
                 index: index,
                 paramName: config.oscName,
-                value: value
+                value: finalValue
             });
         }
         
@@ -744,7 +785,8 @@ function createSlider(config, object) {
     // Doppio click per reset
     slider.addEventListener('dblclick', () => {
         const defaultValue = parseFloat(config.value);
-        slider.value = defaultValue;
+        // Applica trasformazione inversa per posizionare lo slider correttamente
+        slider.value = inverseExponentialTransform(defaultValue, config.min, config.max, exp);
         valueDisplay.textContent = defaultValue.toFixed(2) + unit;
         
         // Salva in userData.menuState
@@ -1043,37 +1085,6 @@ function createNumbox(config, object) {
                 index: index,
                 paramName: config.oscName,
                 value: value
-            });
-        }
-        
-        // Sincronizza via multi-client
-        syncMenuStateToSlaves(object);
-    });
-    
-    // Doppio click per reset
-    numbox.addEventListener('dblclick', () => {
-        const defaultValue = parseInt(config.value, 10);
-        numbox.value = defaultValue;
-        
-        // Richiedi ruolo master se necessario
-        if (window.multiClientManager?.isEnabled && !window.multiClientManager?.isMaster) {
-            console.log('[MENU NUMBOX RESET] Richiedo ruolo master...');
-            window.multiClientManager.requestMaster();
-        }
-        
-        // Salva in userData.menuState
-        object.userData.menuState[config.oscName] = defaultValue;
-        
-        if (window.messageBroker && config.oscName) {
-            const objectType = getObjectType(object.name);
-            const match = object.name.match(/(\d+)$/);
-            const index = match ? parseInt(match[1], 10) : 1;
-            
-            window.messageBroker.sendCustomParameter({
-                type: objectType,
-                index: index,
-                paramName: config.oscName,
-                value: defaultValue
             });
         }
         
@@ -1399,16 +1410,13 @@ export function createMenu() {
 
     // --- Creazione barra categorie ---
     const bar = document.createElement('div');
-    bar.className = 'menuCatBar'; // Aggiungiamo la classe CSS
+    bar.className = 'menuCatBar';
     bar.style.display = 'flex';
     bar.style.gap = '0.3rem';
     bar.style.marginBottom = '1rem';
     bar.style.justifyContent = 'flex-start';
     bar.style.alignItems = 'flex-end';
     bar.style.height = '1.7rem';
-    bar.style.position = 'relative';
-
-    const btns = [];
 
     categories.forEach(cat => {
         const btn = document.createElement('button');
@@ -1421,78 +1429,22 @@ export function createMenu() {
         btn.style.background = 'none';
         btn.style.border = 'none';
         btn.style.borderRadius = '0';
-        btn.style.color = selectedCategory === cat.key ? 'var(--dettaglio)' : 'var(--testo)';
-        btn.style.opacity = selectedCategory === cat.key ? '0.85' : '0.45';
-        btn.style.position = 'relative';
         btn.style.cursor = 'pointer';
-        btn.style.transition = 'color 0.2s, opacity 0.2s';
         btn.classList.toggle('menuCatActive', selectedCategory === cat.key);
         btn.classList.add('menuCatBtn');
 
         btn.addEventListener('click', () => {
-            // Anima lo slider prima di cambiare categoria
             const newCategory = cat.key;
             if (newCategory !== selectedCategory) {
-                // Trova il bottone cliccato per l'animazione
-                const clickedBtnIndex = categories.findIndex(c => c.key === newCategory);
-                if (btns[clickedBtnIndex]) {
-                    const clickedBtn = btns[clickedBtnIndex];
-                    const newLeft = clickedBtn.offsetLeft + clickedBtn.offsetWidth * 0.1;
-                    const newWidth = clickedBtn.offsetWidth * 0.8;
-                    
-                    // Anima lo slider
-                    const currentIndicator = bar.querySelector('.menuCatSlider');
-                    if (currentIndicator) {
-                        currentIndicator.style.left = newLeft + 'px';
-                        currentIndicator.style.width = newWidth + 'px';
-                    }
-                }
-                
-                // Attendi l'animazione prima di ricreare il menu
-                setTimeout(() => {
-                    localStorage.setItem('cielo_menu_category', newCategory);
-                    createMenu(); // Ricrea tutto il menu
-                }, 150); // Metà dell'animazione (0.28s)
+                localStorage.setItem('cielo_menu_category', newCategory);
+                createMenu();
             }
         });
 
         bar.appendChild(btn);
-        btns.push(btn);
     });
 
-    // --- Sliding Indicator (versione sistemata) ---
-    const indicator = document.createElement('div');
-    indicator.className = 'menuCatSlider';
-    indicator.style.position = 'absolute';
-    indicator.style.height = '0.13rem';
-    indicator.style.background = 'var(--dettaglio)';
-    indicator.style.borderRadius = '2px';
-    indicator.style.bottom = '-0.25rem';
-    indicator.style.zIndex = '2';
-    indicator.style.transition = 'left 0.28s cubic-bezier(0.4,0,0.2,1), width 0.28s cubic-bezier(0.4,0,0.2,1)';
-
-    bar.appendChild(indicator);
     menuList.appendChild(bar);
-
-    // Posiziona l'indicatore DOPO che la barra è nel DOM
-    requestAnimationFrame(() => {
-        const idx = categories.findIndex(c => c.key === selectedCategory);
-        if (btns[idx]) {
-            const btn = btns[idx];
-            const newLeft = btn.offsetLeft + btn.offsetWidth * 0.1;
-            const newWidth = btn.offsetWidth * 0.8;
-            
-            // Imposta la posizione iniziale senza transizione per evitare animazioni indesiderate
-            indicator.style.transition = 'none';
-            indicator.style.left = newLeft + 'px';
-            indicator.style.width = newWidth + 'px';
-            
-            // Riattiva la transizione per future animazioni
-            setTimeout(() => {
-                indicator.style.transition = 'left 0.28s cubic-bezier(0.4,0,0.2,1), width 0.28s cubic-bezier(0.4,0,0.2,1)';
-            }, 50);
-        }
-    });
 
     // --- Filtra oggetti in base alla categoria selezionata ---
     let filterFn;

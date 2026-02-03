@@ -101,6 +101,8 @@ function removeObjectsByPrefix(prefix) {
       scene.remove(child);
     }
   });
+  // Broadcast conteggi aggiornati
+  messageBroker.sendObjectCounts();
 }
 
 // Carica preset altoparlanti (.json)
@@ -202,6 +204,13 @@ export async function loadSpeakersFromData(data) {
   
   createMenu();
   setTimeout(() => syncMaxDictionaries('altoparlanti'), 50);
+  
+  // Invia conteggi finali dopo aver caricato tutti gli altoparlanti
+  setTimeout(() => {
+    if (window.messageBroker && window.messageBroker.sendObjectCounts) {
+      window.messageBroker.sendObjectCounts();
+    }
+  }, 100);
 }
 
 // Carica preset fonti sonore e zone (.json)
@@ -405,6 +414,13 @@ export async function loadSourcesFromData(data) {
   
   createMenu();
   setTimeout(() => syncMaxDictionaries('omnifonti'), 50);
+  
+  // Invia conteggi finali dopo aver caricato tutte le fonti
+  setTimeout(() => {
+    if (window.messageBroker && window.messageBroker.sendObjectCounts) {
+      window.messageBroker.sendObjectCounts();
+    }
+  }, 100);
 }
 
 // Funzione per resettare la scena (rimuove altoparlanti, fonti e zone)
@@ -415,6 +431,8 @@ export function resetScene() {
   removeObjectsByPrefix('Zona');
   createMenu();
   setTimeout(() => syncMaxDictionaries(['altoparlanti', 'omnifonti']), 50);
+  // Broadcast conteggi dopo aver svuotato la scena
+  setTimeout(() => messageBroker.sendObjectCounts(), 100);
 }
 
 // Collega i bottoni di import e reset ai rispettivi handler

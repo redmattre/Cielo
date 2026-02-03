@@ -1,0 +1,209 @@
+{
+  "metadata": {
+    "name": "Speakers Preset",
+    "created": "2026-01-16T11:09:24.791Z",
+    "version": "2.0"
+  },
+  "speakers": {
+    "Altoparlante_1": {
+      "position": {
+        "x": -0.65,
+        "y": -1.3,
+        "z": 1.2
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0.4636476090008061
+      },
+      "scale": {
+        "x": 0.045,
+        "y": 0.045,
+        "z": 0.045
+      },
+      "tags": [
+        0
+      ],
+      "menuState": {
+        "trim": 0,
+        "channelstate": true,
+        "solo": 0
+      }
+    },
+    "Altoparlante_2": {
+      "position": {
+        "x": 0,
+        "y": -1.3,
+        "z": 1.2
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 0.045,
+        "y": 0.045,
+        "z": 0.045
+      },
+      "tags": [
+        0
+      ],
+      "menuState": {
+        "trim": 0,
+        "channelstate": true,
+        "solo": 0
+      }
+    },
+    "Altoparlante_3": {
+      "position": {
+        "x": 0.65,
+        "y": -1.3,
+        "z": 1.2
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": -0.4636476090008061
+      },
+      "scale": {
+        "x": 0.045,
+        "y": 0.045,
+        "z": 0.045
+      },
+      "tags": [
+        0
+      ],
+      "menuState": {
+        "trim": 0,
+        "channelstate": true,
+        "solo": 0
+      }
+    },
+    "Altoparlante_4": {
+      "position": {
+        "x": 0.65,
+        "y": 0,
+        "z": 1.2
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": -1.5707963267948966
+      },
+      "scale": {
+        "x": 0.045,
+        "y": 0.045,
+        "z": 0.045
+      },
+      "tags": [
+        0
+      ],
+      "menuState": {
+        "trim": 0,
+        "channelstate": true,
+        "solo": 0
+      }
+    },
+    "Altoparlante_5": {
+      "position": {
+        "x": 0.65,
+        "y": 1.25,
+        "z": 1.2
+      },
+      "rotation": {
+        "x": -3.141592653589793,
+        "y": -3.141592653589793,
+        "z": -0.4795192919925962
+      },
+      "scale": {
+        "x": 0.045,
+        "y": 0.045,
+        "z": 0.045
+      },
+      "tags": [
+        0
+      ],
+      "menuState": {
+        "trim": 0,
+        "channelstate": true,
+        "solo": 0
+      }
+    },
+    "Altoparlante_6": {
+      "position": {
+        "x": 0,
+        "y": 1.3,
+        "z": 1.2
+      },
+      "rotation": {
+        "x": -3.141592653589793,
+        "y": -3.141592653589793,
+        "z": 0
+      },
+      "scale": {
+        "x": 0.045,
+        "y": 0.045,
+        "z": 0.045
+      },
+      "tags": [
+        0
+      ],
+      "menuState": {
+        "trim": 0,
+        "channelstate": true,
+        "solo": 0
+      }
+    },
+    "Altoparlante_7": {
+      "position": {
+        "x": -0.65,
+        "y": 1.3,
+        "z": 1.2
+      },
+      "rotation": {
+        "x": -3.141592653589793,
+        "y": -3.141592653589793,
+        "z": 0.4636476090008061
+      },
+      "scale": {
+        "x": 0.045,
+        "y": 0.045,
+        "z": 0.045
+      },
+      "tags": [
+        0
+      ],
+      "menuState": {
+        "trim": 0,
+        "channelstate": true,
+        "solo": 0
+      }
+    },
+    "Altoparlante_8": {
+      "position": {
+        "x": -0.65,
+        "y": 0,
+        "z": 1.2
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 1.5707963267948966
+      },
+      "scale": {
+        "x": 0.045,
+        "y": 0.045,
+        "z": 0.045
+      },
+      "tags": [
+        0
+      ],
+      "menuState": {
+        "trim": 0,
+        "channelstate": true,
+        "solo": 0
+      }
+    }
+  }
+}

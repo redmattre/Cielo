@@ -282,7 +282,13 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       
       createMenu();
-      setTimeout(() => syncMaxDictionaries('omnifonti'), 50);
+      setTimeout(() => {
+        syncMaxDictionaries('omnifonti');
+        // Invia parametri menu dopo che è stato creato
+        if (window.messageBroker) {
+          window.messageBroker.sendObjectMenuState(nome);
+        }
+      }, 50);
       // Invia subito coordinate Omnifonte
       setTimeout(() => {
         if (window.max && window.max.outlet) {
@@ -322,50 +328,6 @@ document.addEventListener('DOMContentLoaded', () => {
   let howManyZones = 0;
 
   const materials = [dashedMaterial, dashedMaterialB, dashedMaterialC, dashedMaterialD];
-  const multimenu = document.getElementById("infoDivCenter");
-  const addZone = document.getElementById('addZone');
-  const addZoneCube = document.getElementById('addZoneCube');
-  const addZoneSphere = document.getElementById('addZoneSphere');
-  const closeMultimenu = document.getElementById('closeInfoDivCenter');
-
-  if (addZone && multimenu) {
-    addZone.addEventListener('click', () => {
-      multimenu.style.opacity = 1;
-      multimenu.style.pointerEvents = "all";
-    });
-  }
-  if (addZoneCube && multimenu) {
-    addZoneCube.addEventListener('click', () => {
-      howManyZones++;
-      const index = (howManyZones - 1) % materials.length;
-      const color = materials[index];
-      const nome = `Zona ${howManyZones}`;
-
-      newZone(false, nome, color, 0., 0., 1.2);
-      multimenu.style.opacity = 0;
-      multimenu.style.pointerEvents = "none";
-      setTimeout(syncMaxDictionaries, 50);
-    });
-  }
-  if (closeMultimenu && multimenu) {
-    closeMultimenu.addEventListener('click', () => {
-      multimenu.style.opacity = 0;
-      multimenu.style.pointerEvents = "none";
-    });
-  }
-  if (addZoneSphere && multimenu) {
-    addZoneSphere.addEventListener('click', () => {
-      howManyZones++;
-      const index = (howManyZones - 1) % materials.length;
-      const color = materials[index];
-      const nome = `Zona ${howManyZones}`;
-
-      newZone(true, nome, color, 0., 0., 1.2);
-      multimenu.style.opacity = 0;
-      multimenu.style.pointerEvents = "none";
-      setTimeout(syncMaxDictionaries, 50);
-    });
-  }
 
   //functions
 
@@ -506,7 +468,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     createMenu();
-    setTimeout(() => syncMaxDictionaries('omnifonti'), 50);
+    setTimeout(() => {
+      syncMaxDictionaries('omnifonti');
+      // Invia parametri menu dopo che è stato creato
+      if (window.messageBroker) {
+        window.messageBroker.sendObjectMenuState(nome);
+      }
+    }, 50);
     // Invia subito coordinate Omnifonte
     setTimeout(() => {
       if (window.max && window.max.outlet) {
@@ -529,7 +497,13 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('addSpeakerAtPosition:', nome, 'ID:', uniqueId, 'pos:', x, y, z, providedId ? '(from master)' : '(generated)');
     loadObj('./modelli/galleriaOBJ/speaker3dec.obj', nome, goochMaterialSp, 0.045, x, y, z, null, uniqueId);
     createMenu();
-    setTimeout(() => syncMaxDictionaries('altoparlanti'), 50);
+    setTimeout(() => {
+      syncMaxDictionaries('altoparlanti');
+      // Invia parametri menu dopo che è stato creato
+      if (window.messageBroker) {
+        window.messageBroker.sendObjectMenuState(nome);
+      }
+    }, 50);
   };
 
   window.addArrowAtPosition = function(x, y, z, providedId = null, providedName = null) {

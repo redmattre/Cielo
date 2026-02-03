@@ -595,37 +595,25 @@ function createRightMenuTabs() {
   const tabContainer = document.createElement('div');
   tabContainer.className = 'right-menu-tabs';
   
-  const slider = document.createElement('div');
-  slider.className = 'right-tab-slider';
-  tabContainer.appendChild(slider);
-  
-  let firstTab = null;
-  
-  Object.keys(panelConfigs).forEach((panelId, index) => {
+  Object.keys(panelConfigs).forEach((panelId) => {
     const tab = document.createElement('button');
     tab.className = 'right-menu-tab';
     tab.textContent = getTabLabel(panelId);
     tab.dataset.panel = panelId;
     
+    if (panelId === 'generali') {
+      tab.classList.add('right-tab-active');
+    }
+    
     tab.addEventListener('click', () => {
       switchToRightPanel(panelId);
-      updateRightSliderPosition(tab, slider);
+      // Update active state
+      tabContainer.querySelectorAll('.right-menu-tab').forEach(t => t.classList.remove('right-tab-active'));
+      tab.classList.add('right-tab-active');
     });
     
     tabContainer.appendChild(tab);
-    
-    if (panelId === 'generali') {
-      firstTab = tab;
-    }
   });
-  
-  // Initialize first tab after all tabs are added
-  if (firstTab) {
-    setTimeout(() => {
-      firstTab.classList.add('right-tab-active');
-      updateRightSliderPosition(firstTab, slider);
-    }, 0);
-  }
   
   return tabContainer;
 }
@@ -640,29 +628,6 @@ function getTabLabel(panelId) {
     corone: '❍'
   };
   return labels[panelId] || panelId.charAt(0).toUpperCase();
-}
-
-function updateRightSliderPosition(activeTab, slider) {
-  if (!activeTab || !activeTab.parentNode || !slider) {
-    console.warn('Invalid elements passed to updateRightSliderPosition');
-    return;
-  }
-  
-  const tabs = activeTab.parentNode.querySelectorAll('.right-menu-tab');
-  
-  tabs.forEach((tab) => {
-    tab.classList.remove('right-tab-active');
-  });
-  activeTab.classList.add('right-tab-active');
-  
-  // Use setTimeout to ensure DOM is updated
-  setTimeout(() => {
-    const tabWidth = activeTab.offsetWidth;
-    const tabLeft = activeTab.offsetLeft;
-    
-    slider.style.left = tabLeft + 'px';
-    slider.style.width = tabWidth + 'px';
-  }, 0);
 }
 
 function switchToRightPanel(panelId) {

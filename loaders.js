@@ -113,6 +113,12 @@ export function loadObj(filename, name, material, scaleFactor, x, y, z, rotation
 
             console.log(`Loaded ${fullPath} successfully.`);
             createMenu();
+            // Invia parametri menu dopo che è stato creato
+            setTimeout(() => {
+                if (window.messageBroker && name) {
+                    window.messageBroker.sendObjectMenuState(name);
+                }
+            }, 100);
         },
         function (xhr) {
             console.log(`${Math.round((xhr.loaded / xhr.total) * 100)}% loaded`);

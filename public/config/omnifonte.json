@@ -9,7 +9,8 @@
       "max": 6.0,
       "step": 0.01,
       "defaultValue": 0.0,
-      "unitType": "dB"
+      "unitType": "dB",
+      "exp": 2.0
     },
     {
       "label": "Active",
@@ -84,6 +85,17 @@
       "unitType": "m"
     },
     {
+      "label": "Dry",
+      "oscName": "dry",
+      "type": "slider",
+      "min": -96.0,
+      "max": 0.0,
+      "step": 0.1,
+      "defaultValue": 0.0,
+      "unitType": "dB",
+      "exp": 0.25
+    },
+    {
       "label": "Convolution",
       "oscName": "convolution",
       "type": "toggle",
@@ -97,17 +109,33 @@
       "max": 6.0,
       "step": 0.001,
       "defaultValue": -6.0,
-      "unitType": "dB"
+      "unitType": "dB",
+      "exp": 0.75
     },
     {
-      "label": "Dry",
-      "oscName": "dry",
+      "label": "Direct Out",
+      "oscName": "matrix",
+      "type": "toggle",
+      "defaultValue": false
+    },
+    {
+      "label": "Channel",
+      "oscName": "matrixchannel",
+      "type": "numbox",
+      "min": 1,
+      "max": 64,
+      "defaultValue": 63
+    },
+    {
+      "label": "Direct Send",
+      "oscName": "matrixsend",
       "type": "slider",
-      "min": 0.00,
-      "max": 100.0,
-      "step": 1.0,
-      "defaultValue": 100.0,
-      "unitType": "%"
+      "min": -60.0,
+      "max": 6.0,
+      "step": 0.1,
+      "defaultValue": -12.0,
+      "unitType": "dB",
+      "exp": 0.75
     }
   ]
 }

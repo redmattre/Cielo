@@ -1,0 +1,339 @@
+{
+  "metadata": {
+    "name": "ableton_demo_test - Sources",
+    "created": "2026-01-10T13:00:42.446Z",
+    "version": "2.0"
+  },
+  "sources": {
+    "Omnifonte_1": {
+      "position": {
+        "x": -0.35000000000000003,
+        "y": -3.6500000000000004,
+        "z": 1.2
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 0.25,
+        "y": 0.25,
+        "z": 0.24
+      },
+      "tags": [
+        0
+      ],
+      "menuState": {
+        "trim": 0,
+        "channelstate": true,
+        "solo": true,
+        "delaymode": 2,
+        "delaysmooth": 100,
+        "spread": 0,
+        "depth": 100,
+        "range": 20,
+        "convolution": false,
+        "convsend": -6,
+        "dry": 100
+      }
+    },
+    "Omnifonte_2": {
+      "position": {
+        "x": -3.1,
+        "y": 1.1,
+        "z": 1.2
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 0.25,
+        "y": 0.25,
+        "z": 0.24
+      },
+      "tags": [
+        0
+      ],
+      "menuState": {
+        "trim": 0,
+        "channelstate": true,
+        "solo": 0,
+        "delaymode": 2,
+        "delaysmooth": 100,
+        "spread": 0,
+        "depth": 100,
+        "range": 10,
+        "convolution": false,
+        "convsend": -6,
+        "dry": 100
+      }
+    },
+    "Omnifonte_3": {
+      "position": {
+        "x": 2.75,
+        "y": -3.0500000000000003,
+        "z": 1.2
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 0.25,
+        "y": 0.25,
+        "z": 0.24
+      },
+      "tags": [
+        0
+      ],
+      "menuState": {
+        "trim": 0,
+        "channelstate": true,
+        "solo": false,
+        "delaymode": 2,
+        "delaysmooth": 100,
+        "spread": 0,
+        "depth": 100,
+        "range": 10,
+        "convolution": false,
+        "convsend": -6,
+        "dry": 100
+      }
+    },
+    "Omnifonte_4": {
+      "position": {
+        "x": 2.7,
+        "y": -0.25,
+        "z": 1.2
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 0.25,
+        "y": 0.25,
+        "z": 0.24
+      },
+      "tags": [
+        0
+      ],
+      "menuState": {
+        "trim": 6,
+        "channelstate": true,
+        "solo": false,
+        "delaymode": 2,
+        "delaysmooth": 100,
+        "spread": 0,
+        "depth": 100,
+        "range": 10,
+        "convolution": false,
+        "convsend": -6,
+        "dry": 100
+      }
+    },
+    "Omnifonte_5": {
+      "position": {
+        "x": -2.4000000000000004,
+        "y": -2.35,
+        "z": 1.2
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 0.25,
+        "y": 0.25,
+        "z": 0.24
+      },
+      "tags": [
+        0
+      ],
+      "menuState": {
+        "trim": 0,
+        "channelstate": true,
+        "solo": 0,
+        "delaymode": 2,
+        "delaysmooth": 100,
+        "spread": 0,
+        "depth": 100,
+        "range": 10,
+        "convolution": false,
+        "convsend": -6,
+        "dry": 100
+      }
+    },
+    "Omnifonte_6": {
+      "position": {
+        "x": -1.8,
+        "y": 3.1,
+        "z": 1.2
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 0.25,
+        "y": 0.25,
+        "z": 0.24
+      },
+      "tags": [
+        0
+      ],
+      "menuState": {
+        "trim": 0,
+        "channelstate": true,
+        "solo": false,
+        "delaymode": 2,
+        "delaysmooth": 100,
+        "spread": 0,
+        "depth": 100,
+        "range": 10,
+        "convolution": false,
+        "convsend": -6,
+        "dry": 100
+      }
+    },
+    "Omnifonte_7": {
+      "position": {
+        "x": -2.5,
+        "y": -3.7,
+        "z": 1.2
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 0.25,
+        "y": 0.25,
+        "z": 0.24
+      },
+      "tags": [
+        0
+      ],
+      "menuState": {
+        "trim": 0,
+        "channelstate": true,
+        "solo": 0,
+        "delaymode": 2,
+        "delaysmooth": 100,
+        "spread": 0,
+        "depth": 100,
+        "range": 10,
+        "convolution": false,
+        "convsend": -6,
+        "dry": 100
+      }
+    },
+    "Omnifonte_8": {
+      "position": {
+        "x": 2.5,
+        "y": -3.6500000000000004,
+        "z": 1.2
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 0.25,
+        "y": 0.25,
+        "z": 0.24
+      },
+      "tags": [
+        0
+      ],
+      "menuState": {
+        "trim": 0,
+        "channelstate": true,
+        "solo": 0,
+        "delaymode": 2,
+        "delaysmooth": 100,
+        "spread": 0,
+        "depth": 100,
+        "range": 10,
+        "convolution": false,
+        "convsend": -6,
+        "dry": 100
+      }
+    },
+    "Omnifonte_9": {
+      "position": {
+        "x": 2.5,
+        "y": 3.75,
+        "z": 1.2
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 0.25,
+        "y": 0.25,
+        "z": 0.24
+      },
+      "tags": [
+        0
+      ],
+      "menuState": {
+        "trim": 0,
+        "channelstate": true,
+        "solo": 0,
+        "delaymode": 2,
+        "delaysmooth": 100,
+        "spread": 0,
+        "depth": 100,
+        "range": 10,
+        "convolution": false,
+        "convsend": -6,
+        "dry": 100
+      }
+    },
+    "Omnifonte_10": {
+      "position": {
+        "x": -2.5,
+        "y": 3.75,
+        "z": 1.2
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 0.25,
+        "y": 0.25,
+        "z": 0.24
+      },
+      "tags": [
+        0
+      ],
+      "menuState": {
+        "trim": 0,
+        "channelstate": true,
+        "solo": 0,
+        "delaymode": 2,
+        "delaysmooth": 100,
+        "spread": 0,
+        "depth": 100,
+        "range": 10,
+        "convolution": false,
+        "convsend": -6,
+        "dry": 100
+      }
+    }
+  }
+}

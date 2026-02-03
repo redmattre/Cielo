@@ -10,7 +10,8 @@ export function oscPlugin(options = {}) {
     wsPort = 8081,
     wsPath = '/osc',
     defaultOscHost = '192.168.0.255',
-    defaultOscPort = 5000
+    defaultOscPort = 5000,
+    oscInPort = 7777 // Porta per ricevere comandi OSC in ingresso
   } = options;
 
   let wss = null;
@@ -22,6 +23,7 @@ export function oscPlugin(options = {}) {
 
   // OSC UDP Port
   let udpPort = null;
+  let oscInPortListener = null; // Listener per comandi in ingresso
 
   /**
    * Inizializza porta OSC UDP
@@ -54,6 +56,63 @@ export function oscPlugin(options = {}) {
     });
 
     udpPort.open();
+  }
+
+  /**
+   * Inizializza ricevitore OSC per comandi in ingresso
+   */
+  function initOSCInputListener() {
+    oscInPortListener = new osc.UDPPort({
+      localAddress: '0.0.0.0',
+      localPort: oscInPort,
+      metadata: true
+    });
+
+    oscInPortListener.on('ready', () => {
+      console.log(`✓ ========================================`);
+      console.log(`✓ OSC INPUT RECEIVER ATTIVO`);
+      console.log(`✓ Porta: ${oscInPort}`);
+      console.log(`✓ Invia /cielo/dump per testare`);
+      console.log(`✓ ========================================`);
+    });
+
+    oscInPortListener.on('message', (oscMsg) => {
+      console.log(`\n[OSC IN] ========================================`);
+      console.log(`[OSC IN] MESSAGGIO RICEVUTO!`);
+      console.log(`[OSC IN] Address: ${oscMsg.address}`);
+      console.log(`[OSC IN] Args:`, oscMsg.args);
+      console.log(`[OSC IN] ========================================\n`);
+      
+      // Gestisci comando /cielo/dump
+      if (oscMsg.address === '/cielo/dump') {
+        console.log('[OSC IN] ✓✓✓ Comando DUMP riconosciuto!');
+        console.log('[OSC IN] Inoltrando richiesta a', connectedClients.size, 'client(i) WebSocket');
+        
+        // Invia richiesta dump a tutti i client WebSocket connessi
+        let sentCount = 0;
+        connectedClients.forEach(client => {
+          if (client.ws.readyState === 1) {
+            client.ws.send(JSON.stringify({ 
+              type: 'dump_request'
+            }));
+            sentCount++;
+          }
+        });
+        console.log(`[OSC IN] Richiesta dump inviata a ${sentCount} client(i)`);
+      } else {
+        console.log(`[OSC IN] Comando non riconosciuto: ${oscMsg.address}`);
+      }
+    });
+
+    oscInPortListener.on('error', (error) => {
+      console.error('✗ ========================================');
+      console.error('✗ ERRORE OSC INPUT RECEIVER');
+      console.error('✗', error);
+      console.error('✗ ========================================');
+    });
+
+    console.log(`[OSC IN] Apertura porta ${oscInPort}...`);
+    oscInPortListener.open();
   }
 
   /**
@@ -183,8 +242,11 @@ export function oscPlugin(options = {}) {
       console.log(`Inizializzando OSC Plugin...`);
       console.log(`WebSocket OSC sulla porta ${wsPort}${wsPath}`);
       
-      // Inizializza OSC UDP
+      // Inizializza OSC UDP per output
       initOSCPort();
+      
+      // Inizializza OSC Input Listener
+      initOSCInputListener();
       
       // Crea WebSocket Server
       wss = new WebSocketServer({
@@ -196,10 +258,16 @@ export function oscPlugin(options = {}) {
 
       console.log(`OSC Plugin attivo - WebSocket: ws://localhost:${wsPort}${wsPath}`);
       console.log(`OSC Output: ${oscConfig.host}:${oscConfig.port}`);
+      console.log(`OSC Input: porta ${oscInPort}`);
     },
     
     closeBundle() {
       // Cleanup quando il server si chiude
+      if (oscInPortListener) {
+        console.log('Chiusura OSC Input Listener...');
+        oscInPortListener.close();
+      }
+      
       if (udpPort) {
         console.log('Chiusura OSC UDP...');
         udpPort.close();

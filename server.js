@@ -15,6 +15,7 @@ const MULTICLIENT_WS_PORT = 8080;
 const DEFAULT_OSC_HOST = '192.168.0.255';
 const DEFAULT_OSC_PORT = 5000;
 const NUVOLA_UDP_PORT = 9998;
+const OSC_IN_PORT = 7777; // Porta per ricevere comandi OSC in ingresso
 
 // ============== OSC WebSocket Server ==============
 
@@ -54,6 +55,44 @@ function initOSCPort() {
 
   udpPort.open();
 }
+
+// ============== OSC Input Receiver (comandi in ingresso) ==============
+
+const oscInPort = new osc.UDPPort({
+  localAddress: '0.0.0.0',
+  localPort: OSC_IN_PORT,
+  metadata: true
+});
+
+oscInPort.on('ready', () => {
+  console.log(`✓ OSC Input receiver in ascolto su porta ${OSC_IN_PORT}`);
+});
+
+oscInPort.on('message', (oscMsg) => {
+  console.log(`[OSC IN] Ricevuto: ${oscMsg.address}`, oscMsg.args);
+  
+  // Gestisci comando /cielo/dump
+  if (oscMsg.address === '/cielo/dump') {
+    console.log('[OSC IN] Comando DUMP ricevuto - inoltrando al client web');
+    
+    // Invia richiesta dump a tutti i client OSC WebSocket connessi
+    oscWss.clients.forEach((client) => {
+      if (client.readyState === 1) { // WebSocket.OPEN
+        client.send(JSON.stringify({ 
+          type: 'dump_request'
+        }));
+      }
+    });
+  }
+});
+
+oscInPort.on('error', (error) => {
+  console.error('✗ Errore OSC Input:', error);
+});
+
+oscInPort.open();
+
+// ============== OSC WebSocket Server ==============
 
 // Crea server HTTP per OSC WebSocket
 const oscHttpServer = http.createServer();

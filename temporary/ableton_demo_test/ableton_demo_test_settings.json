@@ -1,0 +1,13 @@
+{
+  "metadata": {
+    "name": "ableton_demo_test",
+    "created": "2026-01-10T13:00:42.342Z",
+    "version": "2.0"
+  },
+  "settings": {
+    "osc": {
+      "host": "192.168.1.255",
+      "port": 5000
+    }
+  }
+}

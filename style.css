@@ -105,22 +105,6 @@ button {
     background-repeat: no-repeat;
 } */
 
-#closeInfoDivCenter {
-    position: absolute;
-    height: 1rem;
-    width: 1rem;
-    font-size: x-small;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-color: var(--fondale);
-    margin: 0;
-    /* top: calc(50% - 0.5rem); */
-    bottom: -.7rem;
-    left: calc(50% - 1.15rem);
-    border: solid 1px var(--dettaglio);
-}
-
 button:active {
   background-color: var(--dettaglio);
 }
@@ -140,35 +124,6 @@ button:active {
 
 
 
-
-#infoDivCenter {
-    position: absolute;
-    margin: 0;
-    padding: 0;
-    width: calc(10rem + 1rem);
-    height: calc(4rem + 1rem);
-    z-index: 500;
-    border: solid 1px var(--dettaglio);
-    background-color: var(--fondale);
-    border-radius: 10px;
-    top: calc(50vh - 2.5rem);
-    left: calc(50vw - 5.5rem);
-    text-shadow: 2px 0 var(--fondale), -2px 0 var(--fondale), 0 2px var(--fondale), 0 -2px var(--fondale),
-             1px 1px var(--fondale), -1px -1px var(--fondale), 1px -1px var(--fondale), -1px 1px var(--fondale);
-    display: flex;
-    opacity: 0;
-    pointer-events: none;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s ease;
-}
-
-.centeredButton {
-    margin: 0;
-    margin-right: 0.5rem;
-    margin-left: 0.5rem;
-    border: 1px solid var(--testo);
-}
 
 .bottonieraDestra {
     padding: 0;
@@ -492,23 +447,8 @@ input[type='number'] {
   transition: color 0.2s, opacity 0.2s;
 }
 .menuCatBtn.menuCatActive {
-  color: var(--dettaglio);
-  opacity: 0.85;
-}
-.menuCatBtn::after {
-  display: none !important;
-}
-.menuCatSlider {
-  position: absolute;
-  height: 0.13rem;
-  background: var(--dettaglio);
-  border-radius: 2px;
-  bottom: -0.25rem;
-  left: 0;
-  width: 0;
-  pointer-events: none;
-  z-index: 2;
-  transition: left 0.28s cubic-bezier(0.4,0,0.2,1), width 0.28s cubic-bezier(0.4,0,0.2,1);
+  color: black;
+  opacity: 1;
 }
 .menuCatBar {
   display: flex;
@@ -519,7 +459,7 @@ input[type='number'] {
 }
 
 /* --- Pannello destro: tabs e sezioni --- */
-.panel-tabs {
+.right-menu-tabs {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
@@ -529,34 +469,30 @@ input[type='number'] {
   min-height: 2.1em;
   height: 2.1em;
 }
-.panel-tab {
+.right-menu-tab {
   background: none;
   border: none;
-  color: var(--testo, rgba(200,200,200,0.65));
+  color: var(--testo);
+  opacity: 0.45;
   font-size: 0.82em;
-  padding: 0.1em 0.45em 0.1em 0.45em;
+  padding: 0.1em 0.45em;
   min-width: 1.5em;
   cursor: pointer;
   border-radius: 0;
-  transition: border-bottom 0.2s;
   margin-right: 0.1em;
-  letter-spacing: 0.01em;
-  border-bottom: 2.5px solid transparent;
-  box-shadow: none;
   height: 1.7em;
   line-height: 1.7em;
   display: flex;
   align-items: flex-end;
   justify-content: center;
 }
-.panel-tab:active, .panel-tab:focus {
+.right-menu-tab:active, .right-menu-tab:focus {
   background: none !important;
-  color: var(--testo, rgba(200,200,200,0.65)) !important;
   outline: none;
-  box-shadow: none;
 }
-.panel-tab.active {
-  border-bottom: 2.5px solid var(--testo, #fff);
+.right-menu-tab.right-tab-active {
+  color: black;
+  opacity: 1;
 }
 .panel-section {
   background: transparent;
@@ -965,8 +901,8 @@ input[type='number'] {
 }
 
 .right-menu-tab.right-tab-active {
-  color: var(--dettaglio);
-  opacity: 0.85;
+  color: black;
+  opacity: 1;
 }
 
 .right-menu-tab:active, .right-menu-tab:focus {

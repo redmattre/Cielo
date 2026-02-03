@@ -97,6 +97,9 @@ class MessageBroker {
             
             // Messaggio tags separato con nID come primo argomento
             oscManager.sendOSC(`/cielo/${objectType}/tags`, [index, ...tags]);
+            
+            // Invia conteggi aggiornati
+            this.sendObjectCounts();
         }
 
         // Max/MSP: Mantiene comportamento esistente
@@ -104,6 +107,53 @@ class MessageBroker {
             window.max.outlet('added', objectType, index, name, id,
                 position.x, position.y, position.z,
                 rotation.x, rotation.y, rotation.z);
+        }
+    }
+
+    /**
+     * Invia i parametri del menu di un oggetto appena creato
+     * Da chiamare DOPO createMenu() per assicurarsi che menuState esista
+     */
+    sendObjectMenuState(name) {
+        if (!this.canSendMessages() || !oscManager.isEnabled) {
+            return;
+        }
+
+        const sceneObject = window.scene?.children.find(obj => obj.name === name);
+        if (!sceneObject) {
+            console.warn(`[MessageBroker] sendObjectMenuState: oggetto ${name} non trovato nella scena`);
+            return;
+        }
+
+        const objectType = this.extractType(name);
+        const index = this.extractIndex(name);
+
+        // Inizializza menuState se necessario
+        this.initializeMenuStateIfNeeded(sceneObject);
+
+        if (sceneObject.userData?.menuState) {
+            console.log(`[MessageBroker] Invio menuState per ${name}:`, sceneObject.userData.menuState);
+            
+            // Controlla se c'è almeno un solo attivo per questo tipo di oggetto
+            const soloActive = this.hasSoloActive(objectType);
+            
+            Object.entries(sceneObject.userData.menuState).forEach(([paramName, value]) => {
+                // Salta il parametro 'solo' se non c'è nessun solo attivo
+                if (paramName === 'solo' && !soloActive) {
+                    console.log(`[MessageBroker] Salto 'solo' per ${name} - nessun solo attivo`);
+                    return;
+                }
+                
+                // Converti boolean in 0/1
+                const numValue = typeof value === 'boolean' ? (value ? 1 : 0) : value;
+                
+                oscManager.sendOSC(`/cielo/${objectType}/${paramName}`, [
+                    index,
+                    numValue
+                ]);
+            });
+        } else {
+            console.warn(`[MessageBroker] menuState non trovato per ${name}`);
         }
     }
 
@@ -201,6 +251,9 @@ class MessageBroker {
                 objectType,
                 index
             ]);
+            
+            // Invia conteggi aggiornati dopo eliminazione
+            this.sendObjectCounts();
         }
 
         // Max/MSP: Mantiene comportamento esistente
@@ -264,6 +317,206 @@ class MessageBroker {
         if (window.max && window.max.outlet) {
             window.max.outlet(type, index, paramName, value);
         }
+    }
+
+    /**
+     * Controlla se c'è almeno un oggetto con solo attivo per il tipo specificato
+     */
+    hasSoloActive(objectType) {
+        if (!window.scene) return false;
+
+        return window.scene.children.some(obj => {
+            const type = this.extractType(obj.name);
+            if (type !== objectType) return false;
+            
+            return obj.userData?.menuState?.solo === true;
+        });
+    }
+
+    /**
+     * Invia conteggio oggetti (omnifonti e altoparlanti)
+     */
+    sendObjectCounts() {
+        if (!window.scene) return;
+
+        let omnifontiCount = 0;
+        let altoparlanteiCount = 0;
+
+        window.scene.children.forEach(obj => {
+            const objectType = this.extractType(obj.name);
+            if (objectType === 'omnifonte') omnifontiCount++;
+            if (objectType === 'altoparlante') altoparlanteiCount++;
+        });
+
+        // Invia conteggi via OSC
+        if (oscManager.isEnabled) {
+            oscManager.sendOSC('/cielo/nomnifonti', [omnifontiCount]);
+            oscManager.sendOSC('/cielo/naltoparlanti', [altoparlanteiCount]);
+        }
+
+        console.log(`[COUNTS] Inviato: ${omnifontiCount} omnifonti, ${altoparlanteiCount} altoparlanti`);
+    }
+
+    /**
+     * Inizializza menuState con valori di default dal config se non esiste
+     */
+    initializeMenuStateIfNeeded(object) {
+        const objectType = this.extractType(object.name);
+        
+        // Se il menuState esiste già, non fare nulla
+        if (object.userData?.menuState && Object.keys(object.userData.menuState).length > 0) {
+            return;
+        }
+        
+        // Carica config per questo tipo di oggetto
+        const configMap = {
+            'omnifonte': '/config/omnifonte.json',
+            'altoparlante': '/config/altoparlante.json',
+            'orifonte': '/config/orifonte.json'
+        };
+        
+        const configPath = configMap[objectType];
+        if (!configPath) return;
+        
+        // Inizializza menuState vuoto
+        if (!object.userData) object.userData = {};
+        if (!object.userData.menuState) object.userData.menuState = {};
+        
+        // Carica config e popola defaults (sincrono perché usiamo i config già caricati)
+        if (window.submenuConfigs && window.submenuConfigs[objectType]) {
+            const config = window.submenuConfigs[objectType];
+            config.controls.forEach(controlConfig => {
+                if (controlConfig.oscName && controlConfig.defaultValue !== undefined) {
+                    object.userData.menuState[controlConfig.oscName] = controlConfig.defaultValue;
+                }
+            });
+        }
+    }
+
+    /**
+     * Invia dump completo di tutti gli oggetti (omnifonti e altoparlanti)
+     * Chiamato quando si riceve comando /cielo/dump via OSC
+     */
+    sendDump() {
+        console.log('\n=====================================');
+        console.log('[DUMP] 🚀 INIZIO DUMP COMPLETO');
+        console.log('=====================================\n');
+        
+        if (!window.scene) {
+            console.warn('[DUMP] ⚠️ Scene non disponibile');
+            return;
+        }
+
+        let omnifontiCount = 0;
+        let altoparlanteiCount = 0;
+        let messaggiInviati = 0;
+
+        // 1. INVIA CONTEGGI ALL'INIZIO
+        window.scene.children.forEach(obj => {
+            const objectType = this.extractType(obj.name);
+            if (objectType === 'omnifonte') omnifontiCount++;
+            if (objectType === 'altoparlante') altoparlanteiCount++;
+        });
+
+        if (oscManager.isEnabled) {
+            console.log(`[DUMP] 📊 Invio conteggi: ${omnifontiCount} omnifonti, ${altoparlanteiCount} altoparlanti`);
+            oscManager.sendOSC('/cielo/nomnifonti', [omnifontiCount]);
+            oscManager.sendOSC('/cielo/naltoparlanti', [altoparlanteiCount]);
+            messaggiInviati += 2;
+        }
+
+        // Reset contatori per la seconda iterazione
+        omnifontiCount = 0;
+        altoparlanteiCount = 0;
+
+        // Controlla se ci sono solo attivi per ciascun tipo
+        const omnifontiHasSolo = this.hasSoloActive('omnifonte');
+        const altoparlanteiHasSolo = this.hasSoloActive('altoparlante');
+        
+        console.log(`[DUMP] 🔍 Solo attivo - Omnifonti: ${omnifontiHasSolo}, Altoparlanti: ${altoparlanteiHasSolo}`);
+
+        // 2. ITERA E INVIA TUTTI I DATI
+
+        // Itera su tutti gli oggetti della scena
+        window.scene.children.forEach(obj => {
+            const objectType = this.extractType(obj.name);
+            
+            // Solo omnifonti e altoparlanti
+            if (objectType !== 'omnifonte' && objectType !== 'altoparlante') {
+                return;
+            }
+
+            const index = this.extractIndex(obj.name);
+            
+            // Inizializza menuState se non esiste
+            this.initializeMenuStateIfNeeded(obj);
+            
+            // Conta per statistiche
+            if (objectType === 'omnifonte') omnifontiCount++;
+            if (objectType === 'altoparlante') altoparlanteiCount++;
+
+            console.log(`[DUMP] 📦 Elaborando ${obj.name} (index: ${index})`);
+
+            // 1. POSIZIONE (in coordinate Max: y invertito)
+            if (obj.position && oscManager.isEnabled) {
+                console.log(`  → Position: [${obj.position.x.toFixed(2)}, ${(-obj.position.z).toFixed(2)}, ${obj.position.y.toFixed(2)}]`);
+                // Usa lo stesso formato di sendObjectTransform: x, -z, y
+                oscManager.sendOSC(`/cielo/${objectType}/position`, [
+                    index,
+                    obj.position.x,
+                    -obj.position.z,  // Z di Three.js diventa -Y per OSC (invertita)
+                    obj.position.y    // Y di Three.js diventa Z per OSC
+                ]);
+                messaggiInviati++;
+            }
+
+            // 2. TAGS (formato: nID tag1. tag2. tag3. ...)
+            if (obj.userData?.tags && oscManager.isEnabled) {
+                const activeTags = obj.userData.tags
+                    .map((active, idx) => active ? `${idx}.` : null)
+                    .filter(t => t !== null);
+                
+                console.log(`  → Tags: [${activeTags.join(' ')}]`);
+                oscManager.sendOSC(`/cielo/${objectType}/tags`, [
+                    index,
+                    ...activeTags
+                ]);
+                messaggiInviati++;
+            }
+
+            // 3. MENU STATE (tutti i parametri del menu)
+            if (obj.userData?.menuState && oscManager.isEnabled) {
+                console.log(`  → MenuState:`, obj.userData.menuState);
+                
+                // Determina se saltare 'solo' per questo tipo di oggetto
+                const skipSolo = (objectType === 'omnifonte' && !omnifontiHasSolo) || 
+                                 (objectType === 'altoparlante' && !altoparlanteiHasSolo);
+                
+                Object.entries(obj.userData.menuState).forEach(([paramName, value]) => {
+                    // Salta il parametro 'solo' se non c'è nessun solo attivo per questo tipo
+                    if (paramName === 'solo' && skipSolo) {
+                        console.log(`    ⊘ Salto 'solo' - nessun solo attivo per ${objectType}`);
+                        return;
+                    }
+                    
+                    // Converti boolean in 0/1
+                    const numValue = typeof value === 'boolean' ? (value ? 1 : 0) : value;
+                    
+                    oscManager.sendOSC(`/cielo/${objectType}/${paramName}`, [
+                        index,
+                        numValue
+                    ]);
+                    messaggiInviati++;
+                });
+            }
+        });
+
+        console.log('\n=====================================');
+        console.log(`[DUMP] ✅ COMPLETATO!`);
+        console.log(`[DUMP] 📊 Omnifonti: ${omnifontiCount}`);
+        console.log(`[DUMP] 📊 Altoparlanti: ${altoparlanteiCount}`);
+        console.log(`[DUMP] 📊 Messaggi OSC inviati: ${messaggiInviati}`);
+        console.log('=====================================\n');
     }
 }
 

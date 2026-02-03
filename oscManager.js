@@ -132,6 +132,14 @@ class OSCManager {
                 }
                 break;
 
+            case 'dump_request':
+                console.log('[OSC] Richiesta DUMP ricevuta dal server');
+                // Trigger dump tramite messageBroker
+                if (window.messageBroker && window.messageBroker.sendDump) {
+                    window.messageBroker.sendDump();
+                }
+                break;
+
             case 'pong':
                 // Risposta al ping
                 break;

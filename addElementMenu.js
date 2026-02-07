@@ -43,6 +43,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // Reset selezione
         resetSelection();
         
+        // Reset quantità a 1 ogni volta che si apre il menu
+        if (quantityInput) {
+            quantityInput.value = 1;
+        }
+        
         // Aggiungi backdrop per chiudere cliccando fuori
         const backdrop = document.createElement('div');
         backdrop.id = 'addMenuBackdrop';

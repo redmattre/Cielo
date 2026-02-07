@@ -1,3 +1,27 @@
+/* Reset globale per rimuovere outline di focus */
+*:focus {
+  outline: none !important;
+}
+
+button:focus,
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none !important;
+}
+
+/* Reset globale per rimuovere outline di focus blu */
+*:focus {
+  outline: none !important;
+}
+
+button:focus,
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none !important;
+}
+
 /* Group Scale UI Handle Styles */
 #group-scale-ui-handle {
   z-index: 10000;
@@ -114,16 +138,49 @@ button:active {
     color: var(--testo);
     top: 1rem;
     left: 1rem;
-    pointer-events: none;
-    user-select: none;
+    /* pointer-events: none;
+    user-select: none; */
     z-index: 500;
     text-shadow: 2px 0 var(--fondale), -2px 0 var(--fondale), 0 2px var(--fondale), 0 -2px var(--fondale),
              1px 1px var(--fondale), -1px -1px var(--fondale), 1px -1px var(--fondale), -1px 1px var(--fondale);
 }
 
+/* Quick save button in basso a destra */
+.quick-save-btn {
+    position: absolute;
+    bottom: 1rem;
+    right: 1rem;
+    z-index: 500;
+    font-size: 1.05rem;
+    background: var(--fondale);
+    border: none;
+    border-radius: 10px;
+    width: 3rem;
+    height: 2.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 8px #0002;
+    color: var(--dettaglio);
+    padding: 0;
+    margin: 0;
+    transition: all 0.6s ease;
+}
 
+.quick-save-btn svg {
+    width: 20px;
+    height: 20px;
+    filter: none;
+}
 
+.quick-save-btn:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.243);
+}
 
+.quick-save-btn:active {
+    background: var(--fondale);
+}
 
 .bottonieraDestra {
     padding: 0;
@@ -364,12 +421,12 @@ input[type='number'] {
 
 #openSideMenu {
   position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
+  top: 1rem;
+  right: 1rem;
   z-index: 10000;
   font-size: 1.05rem;
   background: var(--fondale);
+  margin-top: 0;
   /* border: var(--dettaglio) solid 1px; */
   border: none;
   border-radius: 10px;
@@ -386,7 +443,14 @@ input[type='number'] {
 }
 
 #openSideMenu:hover {
+  /* background: var(--dettaglio); */
+  /* color: var(--fondale); */
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.243);
+}
+
+#openSideMenu svg {
+  width: 2rem;
+  height: 2rem;
 }
 
 .dockTasti {
@@ -828,10 +892,10 @@ input[type='number'] {
 
 /* Stile per le icone SVG nei bottoni della toolbar */
 #addPovCursor svg, #seeItemsList svg, #metroButton svg {
-  width: 24px !important;
-  height: 24px !important;
-  min-width: 24px !important;
-  min-height: 24px !important;
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px !important;
+  min-height: 18px !important;
   color: var(--testo);
   display: block !important;
   flex-shrink: 0 !important;

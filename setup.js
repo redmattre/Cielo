@@ -118,7 +118,7 @@ export function init() {
 
     // Listener consolidato per tutti i tasti
     window.addEventListener('keydown', function(event) {
-        // Ignora input numerici (1,2,3,4) se l'utente sta scrivendo in un campo di testo
+        // Ignora TUTTE le shortcut se l'utente sta scrivendo in un campo di testo
         const activeElement = document.activeElement;
         const isTyping = activeElement && (
             activeElement.tagName === 'INPUT' || 
@@ -126,8 +126,14 @@ export function init() {
             activeElement.isContentEditable
         );
         
-        // Se sta scrivendo e il tasto è un numero (1-4), ignora l'evento
-        if (isTyping && ['1', '2', '3', '4'].includes(event.key)) {
+        // Se sta scrivendo, ignora completamente le shortcut (eccetto Escape)
+        if (isTyping && event.key !== 'Escape') {
+            return;
+        }
+        
+        // Blocca gli shortcut se ci sono modifier keys attivi (Ctrl/Cmd/Alt)
+        // Questo evita che, ad esempio, Cmd+S attivi sia il salvataggio che la scala
+        if (event.ctrlKey || event.metaKey || event.altKey) {
             return;
         }
         
@@ -387,6 +393,22 @@ export function init() {
                 } else {
                     // Nessun oggetto selezionato: non fare nulla (non attivare gizmo Three.js)
                     console.log('Tasto S: nessun oggetto selezionato per la scala');
+                }
+                break;
+
+            // === TOGGLE MENU LIST ===
+            case 'w':
+                const menuListButton = document.getElementById('seeItemsList');
+                if (menuListButton) {
+                    menuListButton.click();
+                }
+                break;
+
+            // === TOGGLE RIGHT MENU (BLACK PANEL) ===
+            case 'e':
+                const openSideMenuButton = document.getElementById('openSideMenu');
+                if (openSideMenuButton) {
+                    openSideMenuButton.click();
                 }
                 break;
 

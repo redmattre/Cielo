@@ -1,0 +1,49 @@
+{
+  "metadata": {
+    "name": "backup_test_2 - Sources",
+    "created": "2026-02-07T12:50:13.834Z",
+    "version": "2.0",
+    "backup": true,
+    "timestamp": "2026-02-07T12-50-13"
+  },
+  "sources": {
+    "Voce_#1": {
+      "position": {
+        "x": -0.8,
+        "y": -2.4000000000000004,
+        "z": 1.2
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 0.25,
+        "y": 0.25,
+        "z": 0.24
+      },
+      "objectType": "omnifonte",
+      "tags": [
+        0,
+        1
+      ],
+      "menuState": {
+        "trim": 0,
+        "channelstate": true,
+        "solo": 0,
+        "delaymode": 1,
+        "delaysmooth": 100,
+        "spread": 0,
+        "depth": 100,
+        "range": 10,
+        "dry": 0,
+        "convolution": true,
+        "convsend": -6,
+        "matrix": false,
+        "matrixchannel": 63,
+        "matrixsend": -12
+      }
+    }
+  }
+}

@@ -285,6 +285,45 @@ openSideMenu.addEventListener('click', () => {
   }
 });
 
+// Chiudi il blackPanel quando si clicca sul canvas 3D (ma non durante un drag)
+let mouseDownPos = null;
+
+document.addEventListener('mousedown', (event) => {
+  mouseDownPos = { x: event.clientX, y: event.clientY };
+});
+
+document.addEventListener('click', (event) => {
+  // Verifica se il blackPanel è aperto
+  if (blackPanel.style.opacity === '1') {
+    // Calcola la distanza tra mousedown e click per rilevare un drag
+    const dragThreshold = 5; // pixel
+    const isDrag = mouseDownPos && (
+      Math.abs(event.clientX - mouseDownPos.x) > dragThreshold ||
+      Math.abs(event.clientY - mouseDownPos.y) > dragThreshold
+    );
+    
+    // Se è un drag, non chiudere il menu
+    if (isDrag) {
+      mouseDownPos = null;
+      return;
+    }
+    
+    // Verifica se il click è sul canvas 3D (renderer.domElement)
+    const canvas = renderer?.domElement;
+    const clickedOnCanvas = canvas && event.target === canvas;
+    
+    // Chiudi solo se il click è sul canvas 3D
+    if (clickedOnCanvas) {
+      blackPanel.style.opacity = 0;
+      blackPanel.style.pointerEvents = 'none';
+      blackPanel.style.width = '0vw';
+      blackPanel.style.color = 'var(--fondale)';
+    }
+  }
+  
+  mouseDownPos = null;
+});
+
 
 
 //MULTI-CLIENT INTEGRATION

@@ -381,6 +381,16 @@ export const undoManager = new UndoManager();
 // Keyboard shortcuts
 if (typeof window !== 'undefined') {
     window.addEventListener('keydown', (e) => {
+        // Ignora shortcut se l'utente sta scrivendo in un campo di testo
+        const activeElement = document.activeElement;
+        const isTyping = activeElement && (
+            activeElement.tagName === 'INPUT' || 
+            activeElement.tagName === 'TEXTAREA' ||
+            activeElement.isContentEditable
+        );
+        
+        if (isTyping) return;
+        
         // Ctrl+Z o Cmd+Z per undo
         if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
             e.preventDefault();

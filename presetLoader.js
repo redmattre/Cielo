@@ -5,7 +5,8 @@ import * as THREE from 'three';
 import { createMenu, updateMenuForObject } from './objmenu_new.js';
 import { syncMaxDictionaries } from './maxSync.js';
 import { sendSpeakersLoadedToMax, sendOmnifontesLoadedToMax } from './max.js';
-import { generateUniqueId } from './addgeometries.js';
+import { generateUniqueId, getObjectTypeFromObject } from './addgeometries.js';
+import { extractChannelNumber } from './nameUtils.js';
 
 // Funzione per applicare le config globali dal preset
 function applyGlobalSettings(settings) {
@@ -42,8 +43,7 @@ function applyGlobalSettings(settings) {
 function sendAllOscMessagesForObject(obj, objectType, sendCreatedAndTags = true) {
   if (!window.messageBroker) return;
   
-  const match = obj.name.match(/(\d+)$/);
-  const index = match ? parseInt(match[1], 10) : 1;
+  const index = extractChannelNumber(obj.name) || 1;
   
   // Invia creazione e tags solo se richiesto (per evitare duplicati quando loadObj li ha già inviati)
   if (sendCreatedAndTags) {
@@ -88,19 +88,36 @@ function sendAllOscMessagesForObject(obj, objectType, sendCreatedAndTags = true)
 
 // Utility per rimuovere oggetti di una tipologia
 function removeObjectsByPrefix(prefix) {
+  // Converti il prefix in objectType corrispondente
+  const typeMap = {
+    'Altoparlante': 'altoparlante',
+    'Omnifonte': 'omnifonte',
+    'Orifonte': 'orifonte',
+    'Aureola': 'aureola',
+    'Zona': 'zona'
+  };
+  const targetType = typeMap[prefix];
+  
   for (let i = objToBeDetected.length - 1; i >= 0; i--) {
     const obj = objToBeDetected[i];
-    if (obj.name && obj.name.startsWith(prefix)) {
+    // Usa getObjectTypeFromObject (stessa logica di messageBroker!)
+    const objType = getObjectTypeFromObject(obj);
+    
+    if (objType === targetType.toLowerCase()) {
       if (obj.parent) obj.parent.remove(obj);
       objToBeDetected.splice(i, 1);
     }
   }
+  
   // Rimuovi anche dalla scena (se non già fatto)
   scene.children.forEach(child => {
-    if (child.name && child.name.startsWith(prefix)) {
+    const childType = getObjectTypeFromObject(child);
+    
+    if (childType === targetType.toLowerCase()) {
       scene.remove(child);
     }
   });
+  
   // Broadcast conteggi aggiornati
   messageBroker.sendObjectCounts();
 }
@@ -169,6 +186,10 @@ export async function loadSpeakersFromData(data) {
           clearInterval(checkInterval);
           clearTimeout(timeoutHandle); // Cancella il timeout di sicurezza
           
+          // Ripristina objectType se salvato (per coerenza)
+          if (item.objectType) {
+            obj.userData.objectType = item.objectType;
+          }
           // Ripristina tags
           if (item.tags) {
             obj.userData.tags = item.tags;
@@ -266,7 +287,12 @@ export async function loadSourcesFromData(data) {
       z: item.rotation.y  // y di Max diventa z di Three.js
     } : null;
     
-    if (objectName.startsWith('Omnifonte')) {
+    // Determina il tipo dall'objectType salvato o dal nome (fallback)
+    const objectType = item.objectType || '';
+    const isOmnifonte = objectType === 'omnifonte' || objectName.startsWith('Omnifonte');
+    const isOrifonte = objectType === 'orifonte' || objectName.startsWith('Orifonte');
+    
+    if (isOmnifonte) {
       // Genera ID univoco per l'oggetto
       const uniqueId = generateUniqueId();
       
@@ -283,6 +309,9 @@ export async function loadSourcesFromData(data) {
       
       // Assegna ID univoco
       mesh.userData.id = uniqueId;
+      
+      // Salva tipo per identificazione dopo rinomina (usa quello salvato se presente)
+      mesh.userData.objectType = item.objectType || 'omnifonte';
       
       // Ripristina tags e menuState
       if (item.tags) mesh.userData.tags = item.tags;
@@ -315,7 +344,7 @@ export async function loadSourcesFromData(data) {
         if (angleDeg < 0) angleDeg += 360;
         window.max.outlet('Omnifonte', index, x, z, y, angleDeg, distanceXY);
       }
-    } else if (objectName.startsWith('Orifonte')) {
+    } else if (isOrifonte) {
       // Genera ID univoco per l'oggetto
       const uniqueId = generateUniqueId();
       
@@ -326,6 +355,7 @@ export async function loadSourcesFromData(data) {
       setTimeout(() => {
         const obj = scene.children.find(o => o.name === displayName) || objToBeDetected.find(o => o.name === displayName);
         if (obj) {
+          if (item.objectType) obj.userData.objectType = item.objectType;
           if (item.tags) obj.userData.tags = item.tags;
           if (item.menuState) obj.userData.menuState = item.menuState;
           updateMenuForObject(obj);

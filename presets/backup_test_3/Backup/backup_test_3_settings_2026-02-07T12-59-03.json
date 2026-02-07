@@ -1,0 +1,15 @@
+{
+  "metadata": {
+    "name": "backup_test_3",
+    "created": "2026-02-07T12:59:03.252Z",
+    "version": "2.0",
+    "backup": true,
+    "timestamp": "2026-02-07T12-59-03"
+  },
+  "settings": {
+    "osc": {
+      "host": "127.0.0.1",
+      "port": 5000
+    }
+  }
+}

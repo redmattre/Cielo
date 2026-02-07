@@ -125,7 +125,7 @@ const panelConfigs = {
         type: 'input',
         id: 'oscHost',
         label: 'OSC IP',
-        defaultValue: '192.168.0.255',
+        defaultValue: '127.0.0.1',
         action: (value) => {
           if (window.oscManager) {
             const port = window.oscManager.port;

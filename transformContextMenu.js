@@ -4,6 +4,8 @@
 import * as THREE from 'three';
 import groupScaleUIDiv from './src/GroupScaleUIDiv.js';
 import { TAG_COLORS, hasTag, toggleTag, initializeTags } from './tagColors.js';
+import { getObjectTypeFromObject } from './addgeometries.js';
+import { triggerAutosaveFromAction } from './projectManager.js';
 
 // Configurazione controlli per tipo di oggetto
 const objectTransformConfigs = {
@@ -567,6 +569,9 @@ function updateTagsChips(object) {
                         object.userData.tags || [0]
                     );
                 }
+                
+                // Trigger autosave dopo modifica tag
+                triggerAutosaveFromAction();
             }
         });
         
@@ -802,16 +807,32 @@ function toggleState(toggleId) {
     }
 }
 
-// Determina il tipo di oggetto dall'ultimo oggetto hoverato
+// Determina il tipo di oggetto usando userData.objectType o analisi della geometria
 function getObjectType(object) {
-    if (!object || !object.name) return 'gruppo';
+    if (!object) return 'gruppo';
     
-    const name = object.name.toLowerCase();
-    if (name.includes('omnifonte')) return 'omnifonte';
-    if (name.includes('orifonte')) return 'orifonte';
-    if (name.includes('altoparlante')) return 'altoparlante';
-    if (name.includes('aureola') || name.includes('cloud')) return 'aureola';
-    if (name.includes('zona')) return 'zona';
+    // PRIORITÀ 1: Controlla se è un "Gruppo di trasformazione" (gruppo temporaneo)
+    if (object.type === 'Group' && object.name === 'Gruppo di trasformazione') {
+        return 'gruppo';
+    }
+    
+    // PRIORITÀ 2: Usa la funzione che controlla userData.objectType o analizza la geometria
+    const detectedType = getObjectTypeFromObject(object);
+    
+    // Se il tipo è riconosciuto, usalo
+    if (detectedType && detectedType !== 'unknown') {
+        return detectedType;
+    }
+    
+    // PRIORITÀ 3: Fallback - controlla il nome (per oggetti vecchi o non standard)
+    if (object.name) {
+        const name = object.name.toLowerCase();
+        if (name.includes('omnifonte')) return 'omnifonte';
+        if (name.includes('orifonte')) return 'orifonte';
+        if (name.includes('altoparlante')) return 'altoparlante';
+        if (name.includes('aureola') || name.includes('cloud')) return 'aureola';
+        if (name.includes('zona')) return 'zona';
+    }
     
     return 'gruppo'; // Default per oggetti non riconosciuti o gruppi
 }

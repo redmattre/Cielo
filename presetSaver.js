@@ -1,13 +1,30 @@
 import { objToBeDetected } from './setup.js';
 import { getActiveProjectHandle, getActiveProjectName } from './projectManager.js';
+import { getObjectTypeFromObject } from './addgeometries.js';
 
 // Utility per estrarre posizione, nome e rotazione nel formato Max
 function extractPositions(typePrefix) {
   const result = {};
   
-  objToBeDetected
-    .filter(obj => obj.name && obj.name.startsWith(typePrefix))
-    .forEach(obj => {
+  // Converti il prefix in objectType corrispondente
+  const typeMap = {
+    'Altoparlante': 'altoparlante',
+    'Omnifonte': 'omnifonte',
+    'Orifonte': 'orifonte',
+    'Aureola': 'aureola',
+    'Zona': 'zona'
+  };
+  const targetType = typeMap[typePrefix];
+  
+  // Filtra oggetti usando getObjectTypeFromObject (stessa logica di messageBroker!)
+  const filtered = objToBeDetected.filter(obj => {
+    const detectedType = getObjectTypeFromObject(obj);
+    return detectedType === targetType.toLowerCase();
+  });
+  
+  console.log(`[SAVE PRESET] Trovati ${filtered.length} oggetti di tipo ${typePrefix}`);
+  
+  filtered.forEach(obj => {
       // Prendi il parent se è un group, altrimenti l'oggetto stesso
       const target = obj.parent && obj.parent.type === 'Group' ? obj.parent : obj;
       // Sostituisci gli spazi con underscore nel nome
@@ -29,6 +46,8 @@ function extractPositions(typePrefix) {
           y: target.scale.z, // invertito come in maxSync
           z: target.scale.y  // invertito come in maxSync
         },
+        // Salva il tipo per identificazione durante il caricamento
+        objectType: obj.userData?.objectType || typePrefix.toLowerCase(),
         // Aggiungi tags
         tags: obj.userData.tags || [],
         // Aggiungi menuState
@@ -155,15 +174,24 @@ if (typeof window !== 'undefined') {
 
   // Shortcut per salvataggio preset (cmd+s / ctrl+s)
   window.addEventListener('keydown', async (e) => {
+    // Ignora shortcut se l'utente sta scrivendo in un campo di testo
+    const activeElement = document.activeElement;
+    const isTyping = activeElement && (
+      activeElement.tagName === 'INPUT' || 
+      activeElement.tagName === 'TEXTAREA' ||
+      activeElement.isContentEditable
+    );
+    
+    if (isTyping) return;
+    
     if ((e.ctrlKey || e.metaKey) && e.key === 's') {
       e.preventDefault();
-      try {
-        await saveSpeakersPreset();
-        await saveSourcesPreset();
-        alert('Preset salvati con successo!');
-      } catch (err) {
-        alert('Errore nel salvataggio preset: ' + err);
-      }
+      // Importa saveProject da projectManager.js
+      import('./projectManager.js').then(module => {
+        module.saveProject();
+      }).catch(err => {
+        console.error('[SHORTCUT] Errore nel caricamento di projectManager:', err);
+      });
     }
   });
 }

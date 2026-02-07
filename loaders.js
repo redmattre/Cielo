@@ -57,6 +57,22 @@ export function loadObj(filename, name, material, scaleFactor, x, y, z, rotation
             
             // Inizializza tag di default
             group.userData.tags = [0];
+            
+            // Salva il tipo di oggetto in userData per identificazione dopo rinomina
+            if (name.toLowerCase().includes('altoparlante')) {
+                group.userData.objectType = 'altoparlante';
+            } else if (name.toLowerCase().includes('orifonte')) {
+                group.userData.objectType = 'orifonte';
+            } else if (name.toLowerCase().includes('aureola')) {
+                group.userData.objectType = 'aureola';
+            }
+
+            // Rimuovi placeholder se esiste (usato per prenotare numeri di canale)
+            const placeholder = scene.children.find(obj => obj.name === name && obj.userData.isPlaceholder);
+            if (placeholder) {
+                scene.remove(placeholder);
+                console.log('Placeholder rimosso per:', name);
+            }
 
             // Add the group to the scene and the objects to detect
             scene.add(group);

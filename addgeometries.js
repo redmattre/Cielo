@@ -10,9 +10,11 @@ import { loadGenericGltf } from './loadersFIX.js';
 import { saveSpeakersPreset, saveSourcesPreset } from './presetSaver.js';
 import { loadSpeakersPreset, loadSourcesPreset } from './presetLoader.js';
 import { syncMaxDictionaries } from './maxSync.js';
-import { sendSpeakersLoadedToMax, sendOmnifontesLoadedToMax } from './max.js'; // <--- aggiunto
+import { sendSpeakersLoadedToMax, sendOmnifontesLoadedToMax } from './max.js';
 import { ConditionalLinesManager } from './ConditionalLinesManager.js';
 import messageBroker from './messageBroker.js';
+import { extractChannelNumber, generateObjectName } from './nameUtils.js';
+import { triggerAutosaveFromAction } from './projectManager.js';
 
 // Initialize ConditionalLinesManager
 let conditionalLinesManager;
@@ -25,6 +27,195 @@ let povCursorModel = null;
 let objectIdCounter = 0;
 export function generateUniqueId() {
   return `obj_${Date.now()}_${++objectIdCounter}`;
+}
+
+// ============================================
+// SISTEMA DI NUMERAZIONE CANALI CON #numero
+// ============================================
+
+/**
+ * Ottiene il tipo base dell'oggetto dal nome/geometria/userData
+ * @param {THREE.Object3D} object - Oggetto 3D
+ * @returns {string} - Tipo dell'oggetto
+ */
+export function getObjectTypeFromObject(object) {
+  // Prima controlla userData.objectType (salvato al momento della creazione)
+  if (object.userData && object.userData.objectType) {
+    return object.userData.objectType;
+  }
+  
+  const name = object.name;
+  let detectedType = 'unknown';
+  
+  // Prova con il nome (per compatibilità con nomi standard)
+  if (name.includes('Omnifonte')) detectedType = 'omnifonte';
+  else if (name.includes('Altoparlante')) detectedType = 'altoparlante';
+  else if (name.includes('Orifonte')) detectedType = 'orifonte';
+  else if (name.includes('Aureola')) detectedType = 'aureola';
+  else if (name.includes('Cloud')) detectedType = 'cloud';
+  else if (name.includes('Zona')) detectedType = 'zona';
+  // Controlla la geometria per sfere (omnifonti)
+  else if (object.geometry && object.geometry.type === 'SphereGeometry') {
+    detectedType = 'omnifonte';
+  }
+  // Se è un Group, controlla i children per determinare il tipo
+  else if (object.type === 'Group' && object.children && object.children.length > 0) {
+    // Cerca un mesh child con geometry
+    const meshChild = object.children.find(child => child.isMesh && child.geometry);
+    if (meshChild) {
+      // Controlla se è una sfera (omnifonte)
+      if (meshChild.geometry.type === 'SphereGeometry') {
+        detectedType = 'omnifonte';
+      }
+      // Per OBJ caricati (altoparlanti, orifonti, aureole), controlliamo il modello caricato
+      // Non possiamo determinarlo dalla geometria, quindi cerchiamo nel nome originale del file
+      // o usiamo altre euristiche. Per ora, se non riusciamo a determinarlo, rimane 'unknown'
+    }
+  }
+  
+  // Lazy migration: salva il tipo determinato per usi futuri
+  if (detectedType !== 'unknown') {
+    if (!object.userData) object.userData = {};
+    object.userData.objectType = detectedType;
+  }
+  
+  return detectedType;
+}
+
+/**
+ * Migrazione manuale: setta userData.objectType su tutti gli oggetti esistenti
+ * Chiamare da console con: window.migrateAllObjectTypes()
+ */
+export function migrateAllObjectTypes() {
+  console.log('[MIGRATION] Inizio migrazione di tutti gli oggetti...');
+  let migrated = 0;
+  let failed = 0;
+  
+  scene.children.forEach(obj => {
+    if (!obj.userData?.objectType) {
+      const oldName = obj.name;
+      // Prova a determinare il tipo dal nome originale
+      let type = 'unknown';
+      if (oldName.includes('Altoparlante') || oldName.includes('Front') || oldName.includes('Rear') || oldName.includes('Left') || oldName.includes('Right')) {
+        type = 'altoparlante';
+      } else if (oldName.includes('Omnifonte') || oldName.includes('Basso') || oldName.includes('Voce')) {
+        type = 'omnifonte';
+      } else if (oldName.includes('Orifonte') || oldName.includes('Freccia')) {
+        type = 'orifonte';
+      } else if (oldName.includes('Aureola')) {
+        type = 'aureola';
+      } else if (oldName.includes('Zona')) {
+        type = 'zona';
+      }
+      // Controlla geometria per omnifonti
+      else if (obj.geometry && obj.geometry.type === 'SphereGeometry') {
+        type = 'omnifonte';
+      }
+      // Per Groups, controlla i children
+      else if (obj.type === 'Group' && obj.children && obj.children.length > 0) {
+        const meshChild = obj.children.find(child => child.isMesh && child.geometry);
+        if (meshChild && meshChild.geometry.type === 'SphereGeometry') {
+          type = 'omnifonte';
+        }
+      }
+      
+      if (type !== 'unknown') {
+        if (!obj.userData) obj.userData = {};
+        obj.userData.objectType = type;
+        console.log(`[MIGRATION] ✅ ${oldName} -> ${type}`);
+        migrated++;
+      } else {
+        console.warn(`[MIGRATION] ❌ Non riesco a determinare il tipo di: ${oldName}`);
+        failed++;
+      }
+    }
+  });
+  
+  console.log(`[MIGRATION] Completata! Migrati: ${migrated}, Falliti: ${failed}`);
+  return { migrated, failed };
+}
+
+// Esponi la funzione globalmente
+if (typeof window !== 'undefined') {
+  window.migrateAllObjectTypes = migrateAllObjectTypes;
+}
+
+/**
+ * Trova tutti i numeri di canale già utilizzati per un dato tipo
+ * @param {string} type - Tipo di oggetto ('omnifonte', 'altoparlante', etc.)
+ * @returns {number[]} - Array di numeri già in uso
+ */
+export function getUsedChannelNumbers(type) {
+  const usedNumbers = [];
+  
+  scene.children.forEach((obj) => {
+    const objType = getObjectTypeFromObject(obj);
+    const channelNum = extractChannelNumber(obj.name);
+    console.log(`[getUsedChannelNumbers] obj.name: ${obj.name}, objType: ${objType}, channelNum: ${channelNum}`);
+    
+    if (objType === type) {
+      if (channelNum !== null) {
+        usedNumbers.push(channelNum);
+      }
+    }
+  });
+  
+  return usedNumbers.sort((a, b) => a - b);
+}
+
+/**
+ * Trova il primo numero di canale disponibile (primo "buco" nella sequenza)
+ * Es: se ho [1, 2, 4, 5] -> ritorna 3
+ * Es: se ho [1, 2, 3] -> ritorna 4
+ * @param {string} type - Tipo di oggetto
+ * @returns {number} - Primo numero disponibile
+ */
+export function getNextAvailableChannel(type) {
+  const usedNumbers = getUsedChannelNumbers(type);
+  console.log(`[getNextAvailableChannel] type: ${type}, usedNumbers:`, usedNumbers);
+  
+  // Se non ci sono oggetti, inizia da 1
+  if (usedNumbers.length === 0) return 1;
+  
+  // Cerca il primo buco nella sequenza
+  for (let i = 1; i <= usedNumbers.length; i++) {
+    if (!usedNumbers.includes(i)) {
+      console.log(`[getNextAvailableChannel] Trovato buco: ${i}`);
+      return i;
+    }
+  }
+  
+  // Se non ci sono buchi, ritorna il successivo
+  const nextNum = usedNumbers.length + 1;
+  console.log(`[getNextAvailableChannel] Nessun buco, ritorno: ${nextNum}`);
+  return nextNum;
+}
+
+/**
+ * Verifica se un numero di canale è già occupato per un dato tipo
+ * @param {string} type - Tipo di oggetto
+ * @param {number} channelNumber - Numero da verificare
+ * @param {THREE.Object3D} excludeObject - Oggetto da escludere dal controllo (per rinomina)
+ * @returns {boolean} - true se occupato
+ */
+export function isChannelOccupied(type, channelNumber, excludeObject = null) {
+  // Se excludeObject è un mesh figlio di un Group, escludi anche il parent
+  let objectsToExclude = [excludeObject];
+  if (excludeObject && excludeObject.parent && excludeObject.parent.type === 'Group') {
+    objectsToExclude.push(excludeObject.parent);
+  }
+  // Se excludeObject è un Group, escludi anche tutti i figli
+  if (excludeObject && excludeObject.type === 'Group') {
+    excludeObject.traverse(child => objectsToExclude.push(child));
+  }
+  
+  const usedNumbers = scene.children
+    .filter(obj => !objectsToExclude.includes(obj))
+    .filter(obj => getObjectTypeFromObject(obj) === type)
+    .map(obj => extractChannelNumber(obj.name))
+    .filter(num => num !== null);
+  
+  return usedNumbers.includes(channelNumber);
 }
 
 // Load the POV Cursor model at initialization (invisible)
@@ -175,14 +366,17 @@ document.addEventListener('DOMContentLoaded', () => {
       loadGenericGltf('./modelli/galleriaGLTF/scultura.glb', nome, 0.045, -3.5, -0.7, 0.5);
       createMenu();
       setTimeout(syncMaxDictionaries, 50);
+      
+      // Trigger autosave dopo aggiunta modello generico
+      triggerAutosaveFromAction();
     });
   }
 
   if (addSpeaker) {
     addSpeaker.addEventListener('click', () => {
-      // Use persistent counter to assign a unique sequential name immediately
-      const index = getNextSpeakerIndex();
-      const nome = `Altoparlante ${index}`;
+      // Usa il nuovo sistema: trova il primo canale libero
+      const channelNumber = getNextAvailableChannel('altoparlante');
+      const nome = generateObjectName('Altoparlante', channelNumber);
       const uniqueId = generateUniqueId();
       console.log('Creando altoparlante:', nome, 'con ID:', uniqueId);
       loadObj('./modelli/galleriaOBJ/speaker3dec.obj', nome, goochMaterialSp, 0.045, 0., 0, 1.2, null, uniqueId);
@@ -191,11 +385,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  let howManyHalos = 0;
   if (addHalo) {
     addHalo.addEventListener('click', () => {
-      howManyHalos++;
-      let nome = `Aureola ${howManyHalos}`;
+      // Usa il nuovo sistema: trova il primo canale libero
+      const channelNumber = getNextAvailableChannel('aureola');
+      const nome = generateObjectName('Aureola', channelNumber);
       const uniqueId = generateUniqueId();
       console.log('Creando aureola:', nome, 'con ID:', uniqueId);
       loadObj('./modelli/galleriaOBJ/halo2_lowpoly.obj', nome, goochMaterialSp, 0.15, 0., 0, 1.2, null, uniqueId);
@@ -204,11 +398,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  let howManyArrows = 0;
   if (addArrow) {
     addArrow.addEventListener('click', () => {
-      howManyArrows++;
-      const nome = `Orifonte ${howManyArrows}`;
+      // Usa il nuovo sistema: trova il primo canale libero
+      const channelNumber = getNextAvailableChannel('orifonte');
+      const nome = generateObjectName('Orifonte', channelNumber);
       const uniqueId = generateUniqueId();
       loadObj('./modelli/galleriaOBJ/arrow.obj', nome, goochMaterialArrow, 0.045, 0., 0., 1.2, null, uniqueId);
       createMenu();
@@ -223,11 +417,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  let howManyCloudClients = 0;
   if (addCloudClient) {
     addCloudClient.addEventListener('click', () => {
-      howManyCloudClients++;
-      const nome = `Nuvola:client ${howManyCloudClients}`;
+      // Usa il nuovo sistema: trova il primo canale libero
+      const channelNumber = getNextAvailableChannel('cloud');
+      const nome = generateObjectName('Cloud', channelNumber);
       loadObj('./modelli/galleriaOBJ/cloudDec.obj', nome, goochMaterialSp, 0.035, 0., 0, 1.2);
       createMenu();
       setTimeout(syncMaxDictionaries, 50);
@@ -236,14 +430,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (addSphere) {
     addSphere.addEventListener('click', (event) => {
-      // Conta solo le sfere di primo livello nella scena
-      let howManySpheres = 0;
-      scene.children.forEach((obj) => {
-        if (obj.name && obj.name.startsWith("Omnifonte ")) {
-          howManySpheres++;
-        }
-      });
-      let nome = `Omnifonte ${howManySpheres + 1}`;
+      // Usa il nuovo sistema: trova il primo canale libero
+      const channelNumber = getNextAvailableChannel('omnifonte');
+      const nome = generateObjectName('Omnifonte', channelNumber);
+      
       const geometry = new THREE.SphereGeometry(0.3, 40, 40);
       const material = goochMaterialArrow;
       const mesh = new THREE.Mesh(geometry, material);
@@ -251,6 +441,7 @@ document.addEventListener('DOMContentLoaded', () => {
       mesh.name = nome;
       mesh.userData.id = generateUniqueId();
       mesh.userData.tags = [0]; // Tag di default
+      mesh.userData.objectType = 'omnifonte'; // Salva tipo per identificazione dopo rinomina
       mesh.isDashed = false;
       mesh.position.set(0., 1.2, 0.);
       scene.add(mesh);
@@ -375,6 +566,9 @@ document.addEventListener('DOMContentLoaded', () => {
       scene.add(group);
       objToBeDetected.push(line);
       createMenu();
+      
+      // Trigger autosave dopo aggiunta Zona
+      triggerAutosaveFromAction();
       // syncMaxDictionaries() viene già chiamata dopo la funzione
   }
 
@@ -420,14 +614,9 @@ document.addEventListener('DOMContentLoaded', () => {
       uniqueId = providedId;
       console.log('addSphereAtPosition:', nome, 'ID:', uniqueId, 'pos:', x, y, z, '(from master)');
     } else {
-      // Conta solo le sfere di primo livello nella scena
-      let howManySpheres = 0;
-      scene.children.forEach((obj) => {
-        if (obj.name && obj.name.startsWith("Omnifonte ")) {
-          howManySpheres++;
-        }
-      });
-      nome = `Omnifonte ${howManySpheres + 1}`;
+      // Usa il nuovo sistema: trova il primo canale libero
+      const channelNumber = getNextAvailableChannel('omnifonte');
+      nome = generateObjectName('Omnifonte', channelNumber);
       uniqueId = generateUniqueId();
       console.log('addSphereAtPosition:', nome, 'ID:', uniqueId, 'pos:', x, y, z, '(generated)');
     }
@@ -475,6 +664,9 @@ document.addEventListener('DOMContentLoaded', () => {
         window.messageBroker.sendObjectMenuState(nome);
       }
     }, 50);
+    
+    // Trigger autosave dopo aggiunta Omnifonte
+    triggerAutosaveFromAction();
     // Invia subito coordinate Omnifonte
     setTimeout(() => {
       if (window.max && window.max.outlet) {
@@ -485,16 +677,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
   window.addSpeakerAtPosition = function(x, y, z, providedId = null, providedName = null) {
     // Use provided values or generate new ones
-    const index = providedName ? parseInt(providedName.split(' ')[1]) || getNextSpeakerIndex() : getNextSpeakerIndex();
-    const nome = providedName || `Altoparlante ${index}`;
-    const uniqueId = providedId || generateUniqueId();
+    let nome, uniqueId;
     
-    // Incrementa il contatore solo se stiamo generando un nuovo nome
-    if (!providedName) {
-      howManySpeakers = index;
+    if (providedName && providedId) {
+      nome = providedName;
+      uniqueId = providedId;
+      console.log('addSpeakerAtPosition:', nome, 'ID:', uniqueId, 'pos:', x, y, z, '(from master)');
+    } else {
+      // Usa il nuovo sistema: trova il primo canale libero
+      const channelNumber = getNextAvailableChannel('altoparlante');
+      nome = generateObjectName('Altoparlante', channelNumber);
+      uniqueId = generateUniqueId();
+      console.log('addSpeakerAtPosition:', nome, 'ID:', uniqueId, 'pos:', x, y, z, '(generated)');
+      
+      // IMPORTANTE: Crea un placeholder temporaneo per "prenotare" questo numero
+      // Così le chiamate successive vedono che questo numero è già in uso
+      const placeholder = new THREE.Object3D();
+      placeholder.name = nome;
+      placeholder.userData.isPlaceholder = true;
+      scene.add(placeholder);
     }
     
-    console.log('addSpeakerAtPosition:', nome, 'ID:', uniqueId, 'pos:', x, y, z, providedId ? '(from master)' : '(generated)');
     loadObj('./modelli/galleriaOBJ/speaker3dec.obj', nome, goochMaterialSp, 0.045, x, y, z, null, uniqueId);
     createMenu();
     setTimeout(() => {
@@ -504,6 +707,9 @@ document.addEventListener('DOMContentLoaded', () => {
         window.messageBroker.sendObjectMenuState(nome);
       }
     }, 50);
+    
+    // Trigger autosave dopo aggiunta Altoparlante
+    triggerAutosaveFromAction();
   };
 
   window.addArrowAtPosition = function(x, y, z, providedId = null, providedName = null) {
@@ -515,22 +721,25 @@ document.addEventListener('DOMContentLoaded', () => {
       uniqueId = providedId;
       console.log('addArrowAtPosition:', nome, 'ID:', uniqueId, 'pos:', x, y, z, '(from master)');
     } else {
-      // Usa il contatore condiviso howManyArrows (dichiarato nello scope superiore)
-      if (typeof howManyArrows === 'undefined') {
-        // fallback: conteggia
-        let tmp = 0;
-        scene.children.forEach((obj) => { if (obj.name && obj.name.startsWith('Orifonte ')) tmp++; });
-        howManyArrows = tmp;
-      }
-      howManyArrows++;
-      nome = `Orifonte ${howManyArrows}`;
+      // Usa il nuovo sistema: trova il primo canale libero
+      const channelNumber = getNextAvailableChannel('orifonte');
+      nome = generateObjectName('Orifonte', channelNumber);
       uniqueId = generateUniqueId();
       console.log('addArrowAtPosition:', nome, 'ID:', uniqueId, 'pos:', x, y, z, '(generated)');
+      
+      // IMPORTANTE: Crea un placeholder temporaneo per "prenotare" questo numero
+      const placeholder = new THREE.Object3D();
+      placeholder.name = nome;
+      placeholder.userData.isPlaceholder = true;
+      scene.add(placeholder);
     }
     
     loadObj('./modelli/galleriaOBJ/arrow.obj', nome, goochMaterialArrow, 0.045, x, y, z, null, uniqueId);
     createMenu();
     setTimeout(syncMaxDictionaries, 50);
+    
+    // Trigger autosave dopo aggiunta Orifonte
+    triggerAutosaveFromAction();
     // Invia subito coordinate Orifonte
     setTimeout(() => {
       const obj = scene.children.find(o => o.name === nome);
@@ -541,33 +750,33 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   window.addHaloAtPosition = function(x, y, z) {
-    // Usa il contatore condiviso howManyHalos (dichiarato nello scope superiore)
-    if (typeof howManyHalos === 'undefined') {
-      let tmp = 0;
-      scene.children.forEach((obj) => { if (obj.name && obj.name.startsWith('Aureola')) tmp++; });
-      howManyHalos = tmp;
-    }
-    howManyHalos++;
-    let nome = `Aureola ${howManyHalos}`;
+    // Usa il nuovo sistema: trova il primo canale libero
+    const channelNumber = getNextAvailableChannel('aureola');
+    const nome = generateObjectName('Aureola', channelNumber);
     const uniqueId = generateUniqueId();
     console.log('Creando aureola:', nome, 'con ID:', uniqueId);
+    
+    // IMPORTANTE: Crea un placeholder temporaneo per "prenotare" questo numero
+    const placeholder = new THREE.Object3D();
+    placeholder.name = nome;
+    placeholder.userData.isPlaceholder = true;
+    scene.add(placeholder);
+    
     loadObj('./modelli/galleriaOBJ/halo2_lowpoly.obj', nome, goochMaterialSp, 0.15, x, y, z, null, uniqueId);
     createMenu();
     setTimeout(syncMaxDictionaries, 50);
+    
+    // Trigger autosave dopo aggiunta Aureola
+    triggerAutosaveFromAction();
   };
 
   window.addZoneAtPosition = function(x, y, z) {
-    // Usa il contatore condiviso howManyZones (dichiarato nello scope superiore)
-    if (typeof howManyZones === 'undefined') {
-      let tmp = 0;
-      scene.children.forEach((obj) => { if (obj.name && obj.name.startsWith('Zona ')) tmp++; });
-      howManyZones = tmp;
-    }
-    howManyZones++;
+    // Usa il nuovo sistema: trova il primo canale libero
+    const channelNumber = getNextAvailableChannel('zona');
     const materials = [dashedMaterial, dashedMaterialB, dashedMaterialC, dashedMaterialD];
-    const index = (howManyZones - 1) % materials.length;
+    const index = (channelNumber - 1) % materials.length;
     const color = materials[index];
-    const nome = `Zona ${howManyZones}`;
+    const nome = generateObjectName('Zona', channelNumber);
 
     newZone(false, nome, color, x, y, z); // Default a cubo
     setTimeout(syncMaxDictionaries, 50);

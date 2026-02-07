@@ -10,6 +10,7 @@ import { undoManager, TransformCommand } from './undoRedo.js';
 import { createMenu, updateMenu } from './objmenu_new.js';
 import { syncMaxDictionaries } from './maxSync.js';
 import { sendLastHoveredObjectToMax, resetLastHoveredObject } from './max.js';
+import { triggerAutosaveFromAction } from './projectManager.js';
 
 export let raycaster = new THREE.Raycaster();
 export let mouse = new THREE.Vector2();
@@ -275,6 +276,9 @@ function deleteSelectedObject() {
         createMenu();
         currentSelectedObject = null;
         resetLastHoveredObject();
+        
+        // Trigger autosave dopo rimozione oggetto
+        triggerAutosaveFromAction();
         return true;
     }
     return false;
@@ -365,7 +369,7 @@ function processMouseRaycasting(event) {
             currentSelectedObject = group;
             lastHoveredObject = group; // Aggiorna lastHoveredObject
             sendLastHoveredObjectToMax(group.name || 'Gruppo di trasformazione');
-            updateInfoText(group.name || 'Gruppo di trasformazione');
+            updateInfoText(group.name || 'Gruppo di trasformazione', group);
             highlightMenuItemByObject(group);
             // Do not hide groupScaleUIDiv here (keep visible if S is active)
         } else if (hovered.name === 'Gruppo di trasformazione') {
@@ -374,7 +378,7 @@ function processMouseRaycasting(event) {
             currentSelectedObject = hovered;
             lastHoveredObject = hovered; // Aggiorna lastHoveredObject
             sendLastHoveredObjectToMax(hovered.name || 'Gruppo di trasformazione');
-            updateInfoText(hovered.name || 'Gruppo di trasformazione');
+            updateInfoText(hovered.name || 'Gruppo di trasformazione', hovered);
             highlightMenuItemByObject(hovered);
         } else {
             // Oggetto singolo (mesh o non mesh)
@@ -382,7 +386,7 @@ function processMouseRaycasting(event) {
             currentSelectedObject = hovered;
             lastHoveredObject = hovered; // Aggiorna lastHoveredObject
             sendLastHoveredObjectToMax(hovered.name || 'Oggetto non trattato');
-            updateInfoText(hovered.name || 'Oggetto non trattato');
+            updateInfoText(hovered.name || 'Oggetto non trattato', hovered);
             highlightMenuItemByObject(hovered);
         }
 
@@ -408,9 +412,183 @@ function processMouseRaycasting(event) {
 
 // Funzione per aggiornare il div con le informazioni
 const infoDiv = document.getElementById('infoDivTopLeft');
-function updateInfoText(text) {
+let currentHoveredObject = null; // Tiene traccia dell'oggetto in hover
+
+function updateInfoText(text, hoveredObject = null) {
     infoDiv.textContent = text || '---';
+    currentHoveredObject = hoveredObject;
+    
+    // Aggiorna anche lastHoveredObject per permettere transform controls
+    // Solo se hoveredObject è valido (non aggiornare con null)
+    if (hoveredObject) {
+        lastHoveredObject = hoveredObject;
+    }
 }
+
+// Esponi updateInfoText globalmente per permettere al menu di aggiornare l'info
+window.updateInfoText = updateInfoText;
+
+// ============================================
+// SISTEMA DI RINOMINA CON DOPPIO CLICK
+// ============================================
+
+// Import delle funzioni di naming
+import { extractChannelNumber, generateObjectName } from './nameUtils.js';
+import { getObjectTypeFromObject, isChannelOccupied } from './addgeometries.js';
+import { showNotification } from './projectManager.js';
+
+let isRenaming = false;
+
+infoDiv.addEventListener('dblclick', () => {
+    if (!currentHoveredObject || isRenaming) return;
+    
+    // Determina l'oggetto principale (potrebbe essere un mesh figlio di un Group)
+    let object = currentHoveredObject;
+    if (object.parent && object.parent.type === 'Group' && objToBeDetected.includes(object.parent)) {
+        object = object.parent;
+    }
+    
+    const oldName = object.name;
+    const objectType = getObjectTypeFromObject(object);
+    
+    if (objectType === 'unknown') {
+        console.warn('Tipo oggetto sconosciuto, impossibile rinominare:', oldName);
+        return;
+    }
+    
+    isRenaming = true;
+    
+    // Crea input field
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = oldName;
+    input.style.cssText = infoDiv.style.cssText;
+    input.style.background = 'rgba(0, 0, 0, 0.5)';
+    input.style.color = 'white';
+    input.style.border = '1px solid white';
+    input.style.padding = '2px 5px';
+    input.style.fontFamily = 'inherit';
+    input.style.fontSize = 'inherit';
+    input.style.width = 'auto';
+    input.style.minWidth = '200px';
+    
+    // Sostituisci il div con l'input
+    infoDiv.textContent = '';
+    infoDiv.appendChild(input);
+    input.focus();
+    input.select();
+    
+    const finishRename = (save) => {
+        if (!isRenaming) return;
+        isRenaming = false;
+        
+        let newName = input.value.trim();
+        let success = false;
+        
+        if (save && newName && newName !== oldName) {
+            // Estrai o aggiungi il numero di canale
+            let channelNum = extractChannelNumber(newName);
+            
+            // Se non c'è #numero, aggiungi quello vecchio
+            if (channelNum === null) {
+                const oldChannelNum = extractChannelNumber(oldName);
+                if (oldChannelNum !== null) {
+                    newName = `${newName} #${oldChannelNum}`;
+                    channelNum = oldChannelNum;
+                } else {
+                    // Caso edge: oggetto vecchio senza numero
+                    newName = `${newName} #1`;
+                    channelNum = 1;
+                }
+            }
+            
+            // Verifica che il numero non sia occupato (escludendo l'oggetto corrente)
+            if (isChannelOccupied(objectType, channelNum, object)) {
+                showNotification(`❌ Canale ${channelNum} già occupato per tipo ${objectType}!`, true);
+                newName = oldName; // Ripristina
+            } else {
+                // Determina l'oggetto principale (potrebbe essere un mesh figlio di un Group)
+                let mainObject = object;
+                if (object.parent && object.parent.type === 'Group' && objToBeDetected.includes(object.parent)) {
+                    console.log(`[RENAME] object è un mesh figlio, uso il parent Group`);
+                    mainObject = object.parent;
+                }
+                
+                console.log(`[RENAME] mainObject type: ${mainObject.type}, name: ${mainObject.name}`);
+                
+                // Assicurati che userData.objectType sia settato (importante per oggetti vecchi)
+                if (!mainObject.userData) mainObject.userData = {};
+                if (!mainObject.userData.objectType) {
+                    mainObject.userData.objectType = objectType;
+                    console.log(`[RENAME] Settato userData.objectType = ${objectType} su mainObject`);
+                }
+                
+                // Rinomina l'oggetto principale
+                mainObject.name = newName;
+                
+                // Se l'oggetto principale è un Group (altoparlanti, frecce), rinomina anche tutti i mesh figli
+                if (mainObject.type === 'Group') {
+                    mainObject.traverse((child) => {
+                        if (child.isMesh) {
+                            child.name = newName;
+                            console.log(`[RENAME] Rinominato mesh figlio: ${newName}`);
+                        }
+                    });
+                }
+                
+                // Se l'oggetto originale era diverso dal mainObject, rinominalo anche
+                if (object !== mainObject) {
+                    object.name = newName;
+                    console.log(`[RENAME] Rinominato anche object originale: ${newName}`);
+                }
+                
+                console.log(`✅ Oggetto rinominato: ${oldName} → ${newName}`);
+                
+                // Aggiorna immediatamente il nome nel menu usando mainObject
+                if (window.menuObjectMap && window.menuObjectMap.has(mainObject)) {
+                    const menuItem = window.menuObjectMap.get(mainObject);
+                    const nameContainer = menuItem.querySelector('div'); // Primo div è il nameContainer
+                    if (nameContainer) {
+                        nameContainer.textContent = newName;
+                    }
+                }
+                
+                // Sincronizza con multi-client se necessario
+                if (window.multiClientManager?.isMaster && window.multiClientManager?.isEnabled) {
+                    // TODO: inviare aggiornamento nome ai client
+                }
+                
+                // Trigger autosave dopo rinomina oggetto
+                triggerAutosaveFromAction();
+                
+                success = true;
+            }
+        } else {
+            newName = oldName; // Annulla
+        }
+        
+        // Ripristina il div
+        infoDiv.removeChild(input);
+        infoDiv.textContent = newName;
+        currentHoveredObject = object; // Mantieni il riferimento
+    };
+    
+    // Conferma con Enter, annulla con Esc
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            finishRename(true);
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            finishRename(false);
+        }
+    });
+    
+    // Conferma anche se perde focus
+    input.addEventListener('blur', () => {
+        setTimeout(() => finishRename(true), 100);
+    });
+});
 
 // Quando il raycaster seleziona un oggetto, evidenzia anche il bordo del relativo elemento menu
 function highlightMenuItemByObject(object) {
@@ -554,9 +732,10 @@ function selectObjectsInRect(start, end) {
 
     selectedObjects = [];
     objToBeDetected.forEach(obj => {
-        // Filtro per tipo
-        let isOmni = obj.name && (obj.name.toLowerCase().includes('omnifonte') || obj.name.toLowerCase().includes('orifonte'));
-        let isSpeaker = obj.name && obj.name.toLowerCase().includes('altoparlante');
+        // Filtro per tipo usando userData.objectType
+        const objType = getObjectTypeFromObject(obj);
+        let isOmni = objType === 'omnifonte' || objType === 'orifonte' || objType === 'aureola';
+        let isSpeaker = objType === 'altoparlante';
         // Ottieni posizione proiettata
         let target = obj;
         if (!obj.isMesh && obj.children && obj.children.length > 0) {
@@ -711,6 +890,7 @@ function isTransformActive() {
 renderer.domElement.addEventListener('pointerdown', (event) => {
     if (!isOrthoView()) return;
     if (isTransformActive()) return; // Blocca selezione se TransformControls attivi
+    if (event.shiftKey) return; // Blocca selezione se shift è premuto (pan della scena)
     isDragging = true;
     dragStart = { x: event.clientX, y: event.clientY };
     dragEnd = { x: event.clientX, y: event.clientY };
@@ -755,7 +935,7 @@ renderer.domElement.addEventListener('pointerup', (event) => {
                                 currentSelectedObject = group;
                                 lastHoveredObject = group;
                                 sendLastHoveredObjectToMax(group.name || 'Gruppo di trasformazione');
-                                updateInfoText(group.name || 'Gruppo di trasformazione');
+                                updateInfoText(group.name || 'Gruppo di trasformazione', group);
                                 highlightMenuItemByObject(group);
                                 
                                 attachControlWithMasterRequest(group);
@@ -897,7 +1077,7 @@ function handleTransformClick(event) {
         currentSelectedObject = intersected;
         lastHoveredObject = intersected;
         sendLastHoveredObjectToMax(intersected.name || 'Oggetto');
-        updateInfoText(intersected.name || 'Oggetto');
+        updateInfoText(intersected.name || 'Oggetto', intersected);
         highlightMenuItemByObject(intersected);
         
         // Aggiorna lo stato UI per mostrare "Spostamento" (come con il tasto 'g')
@@ -1143,26 +1323,50 @@ if (control) {
         // Caso gruppo
         if (target.type === 'Group' && target.name === 'Gruppo di trasformazione') {
             const children = target.children || [];
-            const allOmni = children.length > 0 && children.every(ch => ch.name && (ch.name.toLowerCase().includes('omnifonte') || ch.name.toLowerCase().includes('orifonte')));
-            const allSpeakers = children.length > 0 && children.every(ch => ch.name && ch.name.toLowerCase().includes('altoparlante'));
-            if (allOmni && window.max && window.max.outlet) {
-                // Invia realtime solo per omnifonti
-                children.forEach(child => {
-                    const worldPos = new THREE.Vector3();
-                    child.getWorldPosition(worldPos);
-                    let index = 1;
-                    const match = child.name.match(/^(.*?)[\s_-]?(\d+)$/);
-                    if (match) index = parseInt(match[2], 10);
-                    const x = worldPos.x;
-                    const z = worldPos.z;
-                    const y = worldPos.y;
-                    const distanceXY = Math.sqrt(x * x + z * z);
-                    let angleDeg = Math.atan2(z, x) * (180 / Math.PI) - 90;
-                    if (angleDeg < 0) angleDeg += 360;
+            
+            // Invia messaggi per ogni oggetto nel gruppo
+            children.forEach(child => {
+                const worldPos = new THREE.Vector3();
+                child.getWorldPosition(worldPos);
+                
+                // Estrai rotazione globale
+                child.updateMatrixWorld(true);
+                const worldQuat = new THREE.Quaternion();
+                child.getWorldQuaternion(worldQuat);
+                const worldEuler = new THREE.Euler().setFromQuaternion(worldQuat);
+                
+                // Usa getObjectTypeFromObject per determinare il tipo (funziona anche con nomi custom)
+                const objectType = getObjectTypeFromObject(child);
+                
+                // Estrai indice dal nome
+                let index = 1;
+                const match = child.name.match(/^(.*?)[\s_-]?(\d+)$/);
+                if (match) index = parseInt(match[2], 10);
+                
+                const x = worldPos.x;
+                const z = worldPos.z;
+                const y = worldPos.y;
+                const distanceXY = Math.sqrt(x * x + z * z);
+                let angleDeg = Math.atan2(z, x) * (180 / Math.PI) - 90;
+                if (angleDeg < 0) angleDeg += 360;
+                
+                // Invia a Max (solo per omnifonti)
+                if ((objectType === 'omnifonte' || objectType === 'orifonte') && window.max && window.max.outlet) {
                     window.max.outlet('Omnifonte', index, x, z, y, angleDeg, distanceXY);
-                });
-            }
-            // Per altoparlanti nessun outlet realtime
+                }
+                
+                // Invia a OSC (per tutti i tipi riconosciuti)
+                if (window.messageBroker && objectType && objectType !== 'unknown') {
+                    window.messageBroker.sendObjectTransform({
+                        name: child.name,
+                        type: objectType,
+                        index: index,
+                        position: { x: x, y: y, z: z },
+                        rotation: { x: worldEuler.x, y: worldEuler.y, z: worldEuler.z }
+                    });
+                }
+            });
+            
             syncMaxDictionaries();
             return;
         }
@@ -1265,6 +1469,9 @@ if (control) {
         if (isSpeaker) {
             syncMaxDictionaries('update-altoparlanti');
         }
+        
+        // Trigger autosave dopo trasformazione oggetto
+        triggerAutosaveFromAction();
     });
     
     // Listener mouseDown: richiedi ruolo master quando si inizia a trascinare
@@ -1388,8 +1595,11 @@ function duplicateObject(original) {
     currentSelectedObject = clone;
     sendLastHoveredObjectToMax(clone.name);
     outlinePass.selectedObjects = [clone];
-    updateInfoText(clone.name);
+    updateInfoText(clone.name, clone);
     highlightMenuItemByObject(clone);
+    
+    // Trigger autosave dopo duplicazione oggetto
+    triggerAutosaveFromAction();
     
     // Invia notifica corretta in base al tipo di oggetto duplicato
     const isAltoparlante = clone.name && clone.name.startsWith('Altoparlante');

@@ -4,6 +4,8 @@
  */
 
 import oscManager from './oscManager.js';
+import { extractChannelNumber } from './nameUtils.js';
+import { getObjectTypeFromObject } from './addgeometries.js';
 
 class MessageBroker {
     constructor() {
@@ -43,21 +45,44 @@ class MessageBroker {
 
     /**
      * Estrae l'indice numerico dal nome dell'oggetto
-     * Es: "Altoparlante 3" → 3
+     * Supporta sia formato #5 che vecchio formato "spazio 5"
+     * Es: "Altoparlante #3" → 3, "Voce soprano #5" → 5
      */
     extractIndex(name) {
-        const match = name.match(/\d+$/);
-        return match ? parseInt(match[0]) : 0;
+        return extractChannelNumber(name) || 0;
     }
 
     /**
-     * Estrae il tipo base dal nome completo
-     * Es: "Altoparlante 3" → "altoparlante"
+     * Estrae il tipo base dal nome completo o dall'oggetto Three.js
+     * @param {string|Object} nameOrObject - Nome dell'oggetto o oggetto Three.js
+     * @returns {string} Tipo dell'oggetto (altoparlante, omnifonte, ecc.)
+     * 
+     * Es: "Altoparlante #3" → "altoparlante"
+     *     "Voce soprano #5" (con geometry ConeGeometry) → "omnifonte"
+     *     oggetto Three.js con SphereGeometry → "omnifonte"
      */
-    extractType(name) {
-        if (name.startsWith('Altoparlante')) return 'altoparlante';
-        if (name.startsWith('Omnifonte')) return 'omnifonte';
-        if (name.startsWith('Orifonte')) return 'orifonte';
+    extractType(nameOrObject) {
+        // Se è un oggetto Three.js, usa la funzione getObjectTypeFromObject
+        if (nameOrObject && typeof nameOrObject === 'object' && nameOrObject.type) {
+            const type = getObjectTypeFromObject(nameOrObject);
+            
+            // Mappa i tipi al formato OSC
+            const typeMap = {
+                'altoparlante': 'altoparlante',
+                'omnifonte': 'omnifonte',
+                'orifonte': 'orifonte',
+                'aureola': 'aureola',
+                'zona': 'zona'
+            };
+            
+            return typeMap[type] || 'unknown';
+        }
+        
+        // Altrimenti è una stringa, fa parsing del nome (fallback per compatibilità)
+        const name = nameOrObject;
+        if (name.includes('Altoparlante')) return 'altoparlante';
+        if (name.includes('Omnifonte')) return 'omnifonte';
+        if (name.includes('Orifonte')) return 'orifonte';
         if (name.startsWith('Aureola')) return 'aureola';
         if (name.startsWith('Zona')) return 'zona';
         return 'unknown';
@@ -125,7 +150,7 @@ class MessageBroker {
             return;
         }
 
-        const objectType = this.extractType(name);
+        const objectType = this.extractType(sceneObject); // Usa l'oggetto invece del nome
         const index = this.extractIndex(name);
 
         // Inizializza menuState se necessario
@@ -176,7 +201,19 @@ class MessageBroker {
         }
 
         const index = this.extractIndex(name);
-        const objectType = type || this.extractType(name);
+        
+        // Se type non è specificato, cerca l'oggetto nella scena per determinarlo dalla geometria
+        let objectType = type;
+        if (!objectType && window.scene) {
+            const sceneObject = window.scene.children.find(obj => obj.name === name);
+            if (sceneObject) {
+                objectType = this.extractType(sceneObject);
+            } else {
+                objectType = this.extractType(name); // Fallback al parsing del nome
+            }
+        } else if (!objectType) {
+            objectType = this.extractType(name);
+        }
 
         // OSC: Messaggi gerarchici separati per position e rotation
         if (oscManager.isEnabled) {
@@ -220,7 +257,15 @@ class MessageBroker {
         }
 
         const index = this.extractIndex(name);
-        const objectType = type || this.extractType(name);
+        
+        // Se type non è specificato, cerca l'oggetto nella scena
+        let objectType = type;
+        if (!objectType && window.scene) {
+            const sceneObject = window.scene.children.find(obj => obj.name === name);
+            objectType = sceneObject ? this.extractType(sceneObject) : this.extractType(name);
+        } else if (!objectType) {
+            objectType = this.extractType(name);
+        }
 
         // OSC: Messaggio tags separato con nID come primo argomento
         if (oscManager.isEnabled) {
@@ -243,7 +288,15 @@ class MessageBroker {
         }
 
         const index = this.extractIndex(name);
-        const objectType = type || this.extractType(name);
+        
+        // Se type non è specificato, cerca l'oggetto nella scena (prima che venga eliminato)
+        let objectType = type;
+        if (!objectType && window.scene) {
+            const sceneObject = window.scene.children.find(obj => obj.name === name);
+            objectType = sceneObject ? this.extractType(sceneObject) : this.extractType(name);
+        } else if (!objectType) {
+            objectType = this.extractType(name);
+        }
 
         // OSC: Messaggio flat contestuale con nID come primo argomento
         if (oscManager.isEnabled) {
@@ -277,7 +330,15 @@ class MessageBroker {
         }
 
         const index = this.extractIndex(name);
-        const objectType = type || this.extractType(name);
+        
+        // Se type non è specificato, cerca l'oggetto nella scena
+        let objectType = type;
+        if (!objectType && window.scene) {
+            const sceneObject = window.scene.children.find(obj => obj.name === name);
+            objectType = sceneObject ? this.extractType(sceneObject) : this.extractType(name);
+        } else if (!objectType) {
+            objectType = this.extractType(name);
+        }
 
         // OSC
         if (oscManager.isEnabled) {
@@ -326,7 +387,7 @@ class MessageBroker {
         if (!window.scene) return false;
 
         return window.scene.children.some(obj => {
-            const type = this.extractType(obj.name);
+            const type = this.extractType(obj);
             if (type !== objectType) return false;
             
             return obj.userData?.menuState?.solo === true;
@@ -343,7 +404,7 @@ class MessageBroker {
         let altoparlanteiCount = 0;
 
         window.scene.children.forEach(obj => {
-            const objectType = this.extractType(obj.name);
+            const objectType = this.extractType(obj);
             if (objectType === 'omnifonte') omnifontiCount++;
             if (objectType === 'altoparlante') altoparlanteiCount++;
         });
@@ -361,7 +422,7 @@ class MessageBroker {
      * Inizializza menuState con valori di default dal config se non esiste
      */
     initializeMenuStateIfNeeded(object) {
-        const objectType = this.extractType(object.name);
+        const objectType = this.extractType(object);
         
         // Se il menuState esiste già, non fare nulla
         if (object.userData?.menuState && Object.keys(object.userData.menuState).length > 0) {
@@ -413,7 +474,7 @@ class MessageBroker {
 
         // 1. INVIA CONTEGGI ALL'INIZIO
         window.scene.children.forEach(obj => {
-            const objectType = this.extractType(obj.name);
+            const objectType = this.extractType(obj);
             if (objectType === 'omnifonte') omnifontiCount++;
             if (objectType === 'altoparlante') altoparlanteiCount++;
         });
@@ -439,7 +500,7 @@ class MessageBroker {
 
         // Itera su tutti gli oggetti della scena
         window.scene.children.forEach(obj => {
-            const objectType = this.extractType(obj.name);
+            const objectType = this.extractType(obj);
             
             // Solo omnifonti e altoparlanti
             if (objectType !== 'omnifonte' && objectType !== 'altoparlante') {

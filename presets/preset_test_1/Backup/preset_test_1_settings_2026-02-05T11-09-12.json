@@ -1,0 +1,15 @@
+{
+  "metadata": {
+    "name": "preset_test_1",
+    "created": "2026-02-05T11:09:12.280Z",
+    "version": "2.0",
+    "backup": true,
+    "timestamp": "2026-02-05T11-09-12"
+  },
+  "settings": {
+    "osc": {
+      "host": "127.0.0.1",
+      "port": 5000
+    }
+  }
+}

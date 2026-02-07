@@ -1,0 +1,83 @@
+{
+  "metadata": {
+    "name": "Sources Preset",
+    "created": "2026-02-04T11:43:31.498Z",
+    "version": "2.0"
+  },
+  "sources": {
+    "Voce_#1": {
+      "position": {
+        "x": -0.8500000000000001,
+        "y": -2.35,
+        "z": 1.2
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 0.25,
+        "y": 0.25,
+        "z": 0.24
+      },
+      "objectType": "omnifonte",
+      "tags": [
+        0
+      ],
+      "menuState": {
+        "trim": 0,
+        "channelstate": true,
+        "solo": 0,
+        "delaymode": 2,
+        "delaysmooth": 100,
+        "spread": 19,
+        "depth": 100,
+        "range": 10,
+        "dry": 0,
+        "convolution": false,
+        "convsend": -6,
+        "matrix": false,
+        "matrixchannel": 63,
+        "matrixsend": -12
+      }
+    },
+    "Chitarra_#2": {
+      "position": {
+        "x": 0.8500000000000001,
+        "y": -2.35,
+        "z": 1.2
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 0.25,
+        "y": 0.25,
+        "z": 0.24
+      },
+      "objectType": "omnifonte",
+      "tags": [
+        0
+      ],
+      "menuState": {
+        "trim": 0,
+        "channelstate": true,
+        "solo": 0,
+        "delaymode": 2,
+        "delaysmooth": 100,
+        "spread": 0,
+        "depth": 100,
+        "range": 10,
+        "dry": 0,
+        "convolution": false,
+        "convsend": -6,
+        "matrix": false,
+        "matrixchannel": 63,
+        "matrixsend": -12
+      }
+    }
+  }
+}

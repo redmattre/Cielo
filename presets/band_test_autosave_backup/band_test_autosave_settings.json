@@ -1,0 +1,15 @@
+{
+  "metadata": {
+    "name": "band_test_autosave",
+    "created": "2026-02-05T10:48:04.687Z",
+    "version": "2.0",
+    "backup": true,
+    "timestamp": "2026-02-05T10-48-04"
+  },
+  "settings": {
+    "osc": {
+      "host": "127.0.0.1",
+      "port": 5000
+    }
+  }
+}

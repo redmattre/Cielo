@@ -1,0 +1,13 @@
+{
+  "metadata": {
+    "name": "band_test_names_2",
+    "created": "2026-02-07T14:31:03.331Z",
+    "version": "2.0"
+  },
+  "settings": {
+    "osc": {
+      "host": "127.0.0.1",
+      "port": 5000
+    }
+  }
+}

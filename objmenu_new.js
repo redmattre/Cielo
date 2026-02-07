@@ -2,6 +2,9 @@ import { scene, objToBeDetected } from './setup.js';
 import { TAG_COLORS, hasTag, toggleTag, initializeTags } from './tagColors.js';
 import * as THREE from 'three';
 import { undoManager, TransformCommand } from './undoRedo.js';
+import { extractChannelNumber } from './nameUtils.js';
+import { getObjectTypeFromObject } from './addgeometries.js';
+import { triggerAutosaveFromAction } from './projectManager.js';
 
 // Stili CSS minimali per i controlli del menu
 const existingStyle = document.getElementById('objmenu-styles');
@@ -392,9 +395,26 @@ loadMenuConfigs().then(() => {
     console.log('📋 Menu configurations loaded');
 });
 
-// Funzione per determinare il tipo di oggetto dal nome
-function getObjectType(objectName) {
-    const name = objectName.toLowerCase();
+// Funzione per determinare il tipo di oggetto dal nome o dall'oggetto Three.js
+function getObjectType(objectOrName) {
+    // Se è un oggetto Three.js, usa la funzione che analizza la geometria
+    if (objectOrName && typeof objectOrName === 'object' && objectOrName.type) {
+        const type = getObjectTypeFromObject(objectOrName);
+        
+        // Mappa i tipi al formato usato nei config
+        const typeMap = {
+            'altoparlante': 'altoparlante',
+            'omnifonte': 'omnifonte',
+            'orifonte': 'orifonte',
+            'aureola': 'aureola',
+            'zona': 'zona'
+        };
+        
+        return typeMap[type] || 'default';
+    }
+    
+    // Altrimenti è una stringa, fa parsing del nome (fallback per compatibilità)
+    const name = objectOrName.toLowerCase();
     if (name.includes('omnifonte')) return 'omnifonte';
     if (name.includes('orifonte')) return 'orifonte'; 
     if (name.includes('altoparlante')) return 'altoparlante';
@@ -447,8 +467,9 @@ function orientSpeakerToCenter(object, enable = true) {
 function applyAutoRotationIfEnabled(object) {
     if (!object || !object.userData || !object.userData.autoRotateToCenter) return;
     
-    // Controlla se è un altoparlante
-    if (!object.name || !(/Altoparlante/i).test(object.name)) return;
+    // Controlla se è un altoparlante usando il tipo salvato in userData
+    const objectType = getObjectType(object);
+    if (objectType !== 'altoparlante') return;
     
     // Applica la rotazione verso il centro rialzato
     const target = { x: 0, y: 1.2, z: 0 };
@@ -463,8 +484,9 @@ function initializeAutoRotationForExistingSpeakers() {
     const allObjects = objToBeDetected || [];
     
     allObjects.forEach(object => {
-        // Controlla se è un altoparlante
-        if (object.name && (/Altoparlante/i).test(object.name)) {
+        // Controlla se è un altoparlante usando il tipo salvato in userData
+        const objectType = getObjectType(object);
+        if (objectType === 'altoparlante') {
             // Se non ha ancora userData o il flag, imposta il comportamento di default
             object.userData = object.userData || {};
             if (object.userData.autoRotateToCenter === undefined) {
@@ -644,8 +666,6 @@ window.updateMenuForObject = updateMenuForObject;
 
 // Funzioni per creare i controlli del sottomenu
 function createSlider(config, object) {
-    console.log('[CREATE SLIDER] config ricevuto:', JSON.stringify(config, null, 2));
-    
     const container = document.createElement('div');
     container.className = 'menu-control-row';
     
@@ -750,6 +770,9 @@ function createSlider(config, object) {
             undoManager.execute(command);
         }
         initialMenuState = null;
+        
+        // Trigger autosave dopo modifica slider
+        triggerAutosaveFromAction();
     });
     
     slider.addEventListener('input', (e) => {
@@ -766,9 +789,9 @@ function createSlider(config, object) {
         
         // Invia messaggio OSC
         if (window.messageBroker && config.oscName) {
-            const objectType = getObjectType(object.name);
-            const match = object.name.match(/(\d+)$/);
-            const index = match ? parseInt(match[1], 10) : 1;
+            const objectType = getObjectType(object);
+            const index = extractChannelNumber(object.name);
+            
             
             window.messageBroker.sendCustomParameter({
                 type: objectType,
@@ -793,9 +816,9 @@ function createSlider(config, object) {
         object.userData.menuState[config.oscName] = defaultValue;
         
         if (window.messageBroker && config.oscName) {
-            const objectType = getObjectType(object.name);
-            const match = object.name.match(/(\d+)$/);
-            const index = match ? parseInt(match[1], 10) : 1;
+            const objectType = getObjectType(object);
+            const index = extractChannelNumber(object.name);
+            
             
             window.messageBroker.sendCustomParameter({
                 type: objectType,
@@ -835,7 +858,7 @@ function createToggle(config, object) {
     
     // Per il toggle "Guarda origine" / "Look at Origin", leggi il valore dall'oggetto
     const isLookAtOrigin = (config.label === 'Guarda origine' || config.label === 'Look at Origin') && 
-                           getObjectType(object.name) === 'altoparlante';
+                           getObjectType(object) === 'altoparlante';
     
     if (isLookAtOrigin) {
         object.userData = object.userData || {};
@@ -869,21 +892,20 @@ function createToggle(config, object) {
         
         // Gestione speciale per SOLO esclusivo
         if (config.oscName === 'solo') {
-            const currentObjectType = getObjectType(object.name);
+            const currentObjectType = getObjectType(object);
             
             if (value) {
                 // ATTIVAZIONE SOLO - disattiva tutti gli altri solo dello stesso tipo
                 scene.children.forEach(obj => {
                     if (obj !== object && obj.userData?.menuState?.solo !== undefined) {
-                        const objType = getObjectType(obj.name);
+                        const objType = getObjectType(obj);
                         
                         // Invia OSC solo 0 a tutti dello stesso tipo (eccetto quello corrente)
                         if (objType === currentObjectType && window.messageBroker) {
-                            const match = obj.name.match(/(\d+)$/);
-                            const idx = match ? parseInt(match[1], 10) : 1;
+                            const index = extractChannelNumber(obj.name);
                             window.messageBroker.sendCustomParameter({
                                 type: objType,
-                                index: idx,
+                                index: index,
                                 paramName: 'solo',
                                 value: 0
                             });
@@ -904,13 +926,12 @@ function createToggle(config, object) {
                 // DISATTIVAZIONE SOLO - tutti dello stesso tipo mandano solo 1
                 scene.children.forEach(obj => {
                     if (obj.userData?.menuState?.solo !== undefined) {
-                        const objType = getObjectType(obj.name);
+                        const objType = getObjectType(obj);
                         if (objType === currentObjectType && window.messageBroker) {
-                            const match = obj.name.match(/(\d+)$/);
-                            const idx = match ? parseInt(match[1], 10) : 1;
+                            const index = extractChannelNumber(obj.name);
                             window.messageBroker.sendCustomParameter({
                                 type: objType,
-                                index: idx,
+                                index: index,
                                 paramName: 'solo',
                                 value: 1
                             });
@@ -937,10 +958,10 @@ function createToggle(config, object) {
         
         // Invia messaggio OSC solo se c'è oscName definito E non è già stato mandato
         if (window.messageBroker && config.oscName && !oscAlreadySent) {
-            const objectType = getObjectType(object.name);
+            const objectType = getObjectType(object);
             // Estrai index dal nome (es: "Omnifonte 3" -> 3)
-            const match = object.name.match(/(\d+)$/);
-            const index = match ? parseInt(match[1], 10) : 1;
+            const index = extractChannelNumber(object.name);
+            
             
             // Invia: /cielo/{type}/{index}/{oscName} 0|1
             window.messageBroker.sendCustomParameter({
@@ -953,6 +974,9 @@ function createToggle(config, object) {
         
         // Sincronizza via multi-client
         syncMenuStateToSlaves(object);
+        
+        // Trigger autosave dopo modifica toggle
+        triggerAutosaveFromAction();
     });
     
     container.appendChild(label);
@@ -972,9 +996,9 @@ function createButton(config, object) {
     button.addEventListener('mousedown', (e) => {
         e.preventDefault();
         if (window.messageBroker && config.oscName) {
-            const objectType = getObjectType(object.name);
-            const match = object.name.match(/(\d+)$/);
-            const index = match ? parseInt(match[1], 10) : 1;
+            const objectType = getObjectType(object);
+            const index = extractChannelNumber(object.name);
+            
             
             window.messageBroker.sendCustomParameter({
                 type: objectType,
@@ -988,9 +1012,9 @@ function createButton(config, object) {
     // Mouse up: invia 0
     button.addEventListener('mouseup', (e) => {
         if (window.messageBroker && config.oscName) {
-            const objectType = getObjectType(object.name);
-            const match = object.name.match(/(\d+)$/);
-            const index = match ? parseInt(match[1], 10) : 1;
+            const objectType = getObjectType(object);
+            const index = extractChannelNumber(object.name);
+            
             
             window.messageBroker.sendCustomParameter({
                 type: objectType,
@@ -1004,9 +1028,9 @@ function createButton(config, object) {
     // Mouse leave mentre premuto: invia 0
     button.addEventListener('mouseleave', (e) => {
         if (window.messageBroker && config.oscName) {
-            const objectType = getObjectType(object.name);
-            const match = object.name.match(/(\d+)$/);
-            const index = match ? parseInt(match[1], 10) : 1;
+            const objectType = getObjectType(object);
+            const index = extractChannelNumber(object.name);
+            
             
             window.messageBroker.sendCustomParameter({
                 type: objectType,
@@ -1076,9 +1100,9 @@ function createNumbox(config, object) {
         
         // Invia messaggio OSC
         if (window.messageBroker && config.oscName) {
-            const objectType = getObjectType(object.name);
-            const match = object.name.match(/(\d+)$/);
-            const index = match ? parseInt(match[1], 10) : 1;
+            const objectType = getObjectType(object);
+            const index = extractChannelNumber(object.name);
+            
             
             window.messageBroker.sendCustomParameter({
                 type: objectType,
@@ -1090,6 +1114,9 @@ function createNumbox(config, object) {
         
         // Sincronizza via multi-client
         syncMenuStateToSlaves(object);
+        
+        // Trigger autosave dopo modifica numbox
+        triggerAutosaveFromAction();
     });
     
     container.appendChild(label);
@@ -1158,9 +1185,9 @@ function createMultitoggle(config, object) {
             
             // Invia messaggio OSC
             if (window.messageBroker && config.oscName) {
-                const objectType = getObjectType(object.name);
-                const match = object.name.match(/(\d+)$/);
-                const index = match ? parseInt(match[1], 10) : 1;
+                const objectType = getObjectType(object);
+                const index = extractChannelNumber(object.name);
+                
                 
                 window.messageBroker.sendCustomParameter({
                     type: objectType,
@@ -1197,9 +1224,9 @@ function createMultitoggle(config, object) {
         object.userData.menuState[config.oscName] = defaultValue;
         
         if (window.messageBroker && config.oscName) {
-            const objectType = getObjectType(object.name);
-            const match = object.name.match(/(\d+)$/);
-            const index = match ? parseInt(match[1], 10) : 1;
+            const objectType = getObjectType(object);
+            const index = extractChannelNumber(object.name);
+            
             
             window.messageBroker.sendCustomParameter({
                 type: objectType,
@@ -1328,6 +1355,9 @@ function updateTagsGrid(wrapper) {
             if (window.updateTagsChipsExternal) {
                 window.updateTagsChipsExternal(object);
             }
+            
+            // Trigger autosave dopo modifica tag
+            triggerAutosaveFromAction();
         });
         
         container.appendChild(chip);
@@ -1335,7 +1365,7 @@ function updateTagsGrid(wrapper) {
 }
 
 function createSubmenu(object) {
-    const objectType = getObjectType(object.name);
+    const objectType = getObjectType(object);
     const config = submenuConfigs[objectType];
     
     if (!config) return null;
@@ -1361,7 +1391,7 @@ function createSubmenu(object) {
                 control = createToggle(controlConfig, object);
                 // Applica automaticamente la rotazione per "Guarda origine" se attivo di default
                 if (controlConfig.label === 'Guarda origine' && controlConfig.value === true && 
-                    getObjectType(object.name) === 'altoparlante') {
+                    getObjectType(object) === 'altoparlante') {
                     orientSpeakerToCenter(object, true);
                 }
                 break;
@@ -1449,15 +1479,27 @@ export function createMenu() {
     // --- Filtra oggetti in base alla categoria selezionata ---
     let filterFn;
     if (selectedCategory === 'fonti') {
-        filterFn = obj => obj.name && (/Omnifonte|Orifonte/i).test(obj.name);
+        filterFn = obj => {
+            const type = getObjectType(obj);
+            return type === 'omnifonte' || type === 'orifonte';
+        };
     } else if (selectedCategory === 'halo') {
-        filterFn = obj => obj.name && (/Aureola|Cloud/i).test(obj.name);
+        filterFn = obj => {
+            const type = getObjectType(obj);
+            return type === 'aureola';
+        };
     } else if (selectedCategory === 'altoparlanti') {
-        filterFn = obj => obj.name && (/Altoparlante/i).test(obj.name);
+        filterFn = obj => {
+            const type = getObjectType(obj);
+            return type === 'altoparlante';
+        };
         // Inizializza il comportamento auto-rotazione per tutti gli altoparlanti esistenti
         initializeAutoRotationForExistingSpeakers();
     } else if (selectedCategory === 'zone') {
-        filterFn = obj => obj.name && (/Zona|Zone/i).test(obj.name);
+        filterFn = obj => {
+            const type = getObjectType(obj);
+            return type === 'zona';
+        };
     } else if (selectedCategory === 'povcursor') {
         filterFn = obj => obj.name && (/POV Cursor/i).test(obj.name);
     } else {
@@ -1554,6 +1596,11 @@ export function createMenu() {
             if (window.setMenuOutline) {
                 window.setMenuOutline(object, true);
             }
+            
+            // Aggiorna infoDivTopLeft e currentHoveredObject come se stessi hovering nella scena
+            if (window.updateInfoText) {
+                window.updateInfoText(object.name, object);
+            }
         });
 
         itemList.addEventListener('mouseleave', () => {
@@ -1563,7 +1610,38 @@ export function createMenu() {
             if (window.setMenuOutline) {
                 window.setMenuOutline(object, false);
             }
+            
+            // NON ripristinare infoDivTopLeft - mantieni l'ultimo oggetto hoverato
+            // (stesso comportamento del raycaster nella scena 3D)
         });
+        
+        // Mantieni hover anche quando sei sul submenu
+        if (submenu) {
+            submenu.addEventListener('mouseenter', () => {
+                itemList.classList.add('itemList-hover');
+                
+                // Riattiva outline
+                if (window.setMenuOutline) {
+                    window.setMenuOutline(object, true);
+                }
+                
+                // Aggiorna info
+                if (window.updateInfoText) {
+                    window.updateInfoText(object.name, object);
+                }
+            });
+            
+            submenu.addEventListener('mouseleave', () => {
+                itemList.classList.remove('itemList-hover');
+                
+                // Disattiva outline
+                if (window.setMenuOutline) {
+                    window.setMenuOutline(object, false);
+                }
+                
+                // NON ripristinare infoDivTopLeft - mantieni l'ultimo oggetto hoverato
+            });
+        }
     });
 }
 

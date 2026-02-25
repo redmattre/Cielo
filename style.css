@@ -667,8 +667,8 @@ input[type='number'] {
   opacity: 0;
   pointer-events: none;
   transition: all 0.3s ease;
-  width: 480px;
-  height: 350px;
+  width: 40rem;
+  height: 25rem;
   display: flex;
   flex-direction: column;
 }

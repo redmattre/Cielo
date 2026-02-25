@@ -77,16 +77,9 @@ export function oscPlugin(options = {}) {
     });
 
     oscInPortListener.on('message', (oscMsg) => {
-      console.log(`\n[OSC IN] ========================================`);
-      console.log(`[OSC IN] MESSAGGIO RICEVUTO!`);
-      console.log(`[OSC IN] Address: ${oscMsg.address}`);
-      console.log(`[OSC IN] Args:`, oscMsg.args);
-      console.log(`[OSC IN] ========================================\n`);
-      
       // Gestisci comando /cielo/dump
       if (oscMsg.address === '/cielo/dump') {
-        console.log('[OSC IN] ✓✓✓ Comando DUMP riconosciuto!');
-        console.log('[OSC IN] Inoltrando richiesta a', connectedClients.size, 'client(i) WebSocket');
+        console.log('[OSC IN] Comando DUMP ricevuto - inoltrando ai client');
         
         // Invia richiesta dump a tutti i client WebSocket connessi
         let sentCount = 0;
@@ -98,10 +91,49 @@ export function oscPlugin(options = {}) {
             sentCount++;
           }
         });
-        console.log(`[OSC IN] Richiesta dump inviata a ${sentCount} client(i)`);
-      } else {
-        console.log(`[OSC IN] Comando non riconosciuto: ${oscMsg.address}`);
+        console.log(`[OSC IN] Dump inviato a ${sentCount} client(i)`);
+        return;
       }
+      
+      // Gestisci comandi di posizione: /cielo/{type}/position {index} {x} {y} {z}
+      const positionMatch = oscMsg.address.match(/^\/cielo\/(omnifonte|altoparlante|orifonte|aureola|zona)\/position$/i);
+      if (positionMatch) {
+        const objectType = positionMatch[1].toLowerCase();
+        
+        // Estrai argomenti: index, x, y, z
+        // Gli argomenti OSC arrivano con metadata: { type: 'f', value: 1.0 }
+        if (oscMsg.args && oscMsg.args.length >= 4) {
+          const index = oscMsg.args[0].value !== undefined ? oscMsg.args[0].value : oscMsg.args[0];
+          const x = oscMsg.args[1].value !== undefined ? oscMsg.args[1].value : oscMsg.args[1];
+          const y = oscMsg.args[2].value !== undefined ? oscMsg.args[2].value : oscMsg.args[2];
+          const z = oscMsg.args[3].value !== undefined ? oscMsg.args[3].value : oscMsg.args[3];
+          
+          console.log(`[OSC IN] Position: ${objectType} #${index} -> (${x}, ${y}, ${z})`);
+          
+          // Inoltra comando ai client WebSocket
+          let sentCount = 0;
+          connectedClients.forEach(client => {
+            if (client.ws.readyState === 1) {
+              client.ws.send(JSON.stringify({
+                type: 'set_position',
+                objectType: objectType,
+                index: index,
+                x: x,
+                y: y,
+                z: z
+              }));
+              sentCount++;
+            }
+          });
+          console.log(`[OSC IN] Comando inviato a ${sentCount} client(i)`);
+        } else {
+          console.warn(`[OSC IN] Argomenti insufficienti per ${oscMsg.address}`);
+        }
+        return;
+      }
+      
+      // Comando non riconosciuto
+      console.warn(`[OSC IN] Comando non riconosciuto: ${oscMsg.address}`);
     });
 
     oscInPortListener.on('error', (error) => {

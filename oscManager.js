@@ -139,6 +139,12 @@ class OSCManager {
                     window.messageBroker.sendDump();
                 }
                 break;
+            
+            case 'set_position':
+                console.log('[OSC] Comando SET_POSITION ricevuto:', message);
+                // Trigger movimento oggetto
+                this.handleSetPosition(message);
+                break;
 
             case 'pong':
                 // Risposta al ping
@@ -147,6 +153,64 @@ class OSCManager {
             default:
                 console.log('Messaggio OSC sconosciuto:', message);
         }
+    }
+
+    /**
+     * Gestisce comando di set position da OSC remoto
+     */
+    handleSetPosition(message) {
+        let { objectType, index, x, y, z } = message;
+        
+        // Inverti il segno di Y prima di trasformare
+        y = -y;
+        
+        // Importa dinamicamente scene e utility functions
+        Promise.all([
+            import('./setup.js'),
+            import('./nameUtils.js'),
+            import('./addgeometries.js')
+        ]).then(([{ scene }, { extractChannelNumber }, { getObjectTypeFromObject }]) => {
+            // Cerca l'oggetto nella scena per tipo e indice (non per nome esatto)
+            let targetObject = null;
+            
+            // Itera su tutti gli oggetti nella scena
+            for (const obj of scene.children) {
+                if (!obj.name) continue;
+                
+                // Estrai il tipo e l'indice dall'oggetto
+                const objType = getObjectTypeFromObject(obj);
+                const objIndex = extractChannelNumber(obj.name);
+                
+                // Confronta tipo e indice
+                if (objType === objectType && objIndex === index) {
+                    targetObject = obj;
+                    break;
+                }
+            }
+            
+            if (targetObject) {
+                // Imposta posizione (ricorda: y e z sono invertiti in Three.js rispetto al sistema OSC)
+                targetObject.position.set(x, z, y);
+                
+                // Notifica al messageBroker per sincronizzare con altri client e Max
+                if (window.messageBroker) {
+                    window.messageBroker.sendObjectTransform({
+                        name: targetObject.name,
+                        type: objectType,
+                        position: { x: targetObject.position.x, y: targetObject.position.y, z: targetObject.position.z }
+                    });
+                }
+                
+                // Sincronizza con Max
+                import('./maxSync.js').then(({ syncMaxDictionaries }) => {
+                    syncMaxDictionaries();
+                });
+            } else {
+                console.warn(`[OSC] Oggetto non trovato: tipo=${objectType}, indice=${index}`);
+            }
+        }).catch(error => {
+            console.error('[OSC] Errore nel caricamento moduli:', error);
+        });
     }
 
     /**

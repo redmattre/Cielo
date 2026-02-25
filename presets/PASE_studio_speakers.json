@@ -1,0 +1,585 @@
+{
+  "metadata": {
+    "name": "PASE Studio - Speakers",
+    "created": "2026-02-22T13:00:00.000Z",
+    "version": "2.0"
+  },
+  "speakers": {
+    "Altoparlante_#1": {
+      "position": {
+        "x": -1.19,
+        "y": -3.1,
+        "z": 2.1
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 0.045,
+        "y": 0.045,
+        "z": 0.045
+      },
+      "objectType": "altoparlante",
+      "tags": [0],
+      "menuState": {
+        "trim": 0,
+        "channelstate": true,
+        "solo": 0
+      }
+    },
+    "Altoparlante_#2": {
+      "position": {
+        "x": 0,
+        "y": -3.1,
+        "z": 2.1
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 0.045,
+        "y": 0.045,
+        "z": 0.045
+      },
+      "objectType": "altoparlante",
+      "tags": [0],
+      "menuState": {
+        "trim": 0,
+        "channelstate": true,
+        "solo": 0
+      }
+    },
+    "Altoparlante_#3": {
+      "position": {
+        "x": 1.19,
+        "y": -3.1,
+        "z": 2.1
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 0.045,
+        "y": 0.045,
+        "z": 0.045
+      },
+      "objectType": "altoparlante",
+      "tags": [0],
+      "menuState": {
+        "trim": 0,
+        "channelstate": true,
+        "solo": 0
+      }
+    },
+    "Altoparlante_#4": {
+      "position": {
+        "x": 1.8,
+        "y": -2.21,
+        "z": 2.1
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": -1.5707963267948966
+      },
+      "scale": {
+        "x": 0.045,
+        "y": 0.045,
+        "z": 0.045
+      },
+      "objectType": "altoparlante",
+      "tags": [0],
+      "menuState": {
+        "trim": 0,
+        "channelstate": true,
+        "solo": 0
+      }
+    },
+    "Altoparlante_#5": {
+      "position": {
+        "x": 1.8,
+        "y": -1.13,
+        "z": 2.1
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": -1.5707963267948966
+      },
+      "scale": {
+        "x": 0.045,
+        "y": 0.045,
+        "z": 0.045
+      },
+      "objectType": "altoparlante",
+      "tags": [0],
+      "menuState": {
+        "trim": 0,
+        "channelstate": true,
+        "solo": 0
+      }
+    },
+    "Altoparlante_#6": {
+      "position": {
+        "x": 1.8,
+        "y": 0,
+        "z": 2.1
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": -1.5707963267948966
+      },
+      "scale": {
+        "x": 0.045,
+        "y": 0.045,
+        "z": 0.045
+      },
+      "objectType": "altoparlante",
+      "tags": [0],
+      "menuState": {
+        "trim": 0,
+        "channelstate": true,
+        "solo": 0
+      }
+    },
+    "Altoparlante_#7": {
+      "position": {
+        "x": 1.8,
+        "y": 1.13,
+        "z": 2.1
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": -1.5707963267948966
+      },
+      "scale": {
+        "x": 0.045,
+        "y": 0.045,
+        "z": 0.045
+      },
+      "objectType": "altoparlante",
+      "tags": [0],
+      "menuState": {
+        "trim": 0,
+        "channelstate": true,
+        "solo": 0
+      }
+    },
+    "Altoparlante_#8": {
+      "position": {
+        "x": 1.8,
+        "y": 2.21,
+        "z": 2.1
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": -1.5707963267948966
+      },
+      "scale": {
+        "x": 0.045,
+        "y": 0.045,
+        "z": 0.045
+      },
+      "objectType": "altoparlante",
+      "tags": [0],
+      "menuState": {
+        "trim": 0,
+        "channelstate": true,
+        "solo": 0
+      }
+    },
+    "Altoparlante_#9": {
+      "position": {
+        "x": 1.19,
+        "y": 3.1,
+        "z": 2.1
+      },
+      "rotation": {
+        "x": -3.141592653589793,
+        "y": -3.141592653589793,
+        "z": 1.2246467991473532e-16
+      },
+      "scale": {
+        "x": 0.045,
+        "y": 0.045,
+        "z": 0.045
+      },
+      "objectType": "altoparlante",
+      "tags": [0],
+      "menuState": {
+        "trim": 0,
+        "channelstate": true,
+        "solo": 0
+      }
+    },
+    "Altoparlante_#10": {
+      "position": {
+        "x": 0,
+        "y": 3.1,
+        "z": 2.1
+      },
+      "rotation": {
+        "x": -3.141592653589793,
+        "y": -3.141592653589793,
+        "z": 1.2246467991473532e-16
+      },
+      "scale": {
+        "x": 0.045,
+        "y": 0.045,
+        "z": 0.045
+      },
+      "objectType": "altoparlante",
+      "tags": [0],
+      "menuState": {
+        "trim": 0,
+        "channelstate": true,
+        "solo": 0
+      }
+    },
+    "Altoparlante_#11": {
+      "position": {
+        "x": -1.19,
+        "y": 3.1,
+        "z": 2.1
+      },
+      "rotation": {
+        "x": -3.141592653589793,
+        "y": -3.141592653589793,
+        "z": 1.2246467991473532e-16
+      },
+      "scale": {
+        "x": 0.045,
+        "y": 0.045,
+        "z": 0.045
+      },
+      "objectType": "altoparlante",
+      "tags": [0],
+      "menuState": {
+        "trim": 0,
+        "channelstate": true,
+        "solo": 0
+      }
+    },
+    "Altoparlante_#12": {
+      "position": {
+        "x": -1.8,
+        "y": 2.21,
+        "z": 2.1
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 1.5707963267948966
+      },
+      "scale": {
+        "x": 0.045,
+        "y": 0.045,
+        "z": 0.045
+      },
+      "objectType": "altoparlante",
+      "tags": [0],
+      "menuState": {
+        "trim": 0,
+        "channelstate": true,
+        "solo": 0
+      }
+    },
+    "Altoparlante_#13": {
+      "position": {
+        "x": -1.8,
+        "y": 1.13,
+        "z": 2.1
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 1.5707963267948966
+      },
+      "scale": {
+        "x": 0.045,
+        "y": 0.045,
+        "z": 0.045
+      },
+      "objectType": "altoparlante",
+      "tags": [0],
+      "menuState": {
+        "trim": 0,
+        "channelstate": true,
+        "solo": 0
+      }
+    },
+    "Altoparlante_#14": {
+      "position": {
+        "x": -1.8,
+        "y": 0,
+        "z": 2.1
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 1.5707963267948966
+      },
+      "scale": {
+        "x": 0.045,
+        "y": 0.045,
+        "z": 0.045
+      },
+      "objectType": "altoparlante",
+      "tags": [0],
+      "menuState": {
+        "trim": 0,
+        "channelstate": true,
+        "solo": 0
+      }
+    },
+    "Altoparlante_#15": {
+      "position": {
+        "x": -1.8,
+        "y": -1.13,
+        "z": 2.1
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 1.5707963267948966
+      },
+      "scale": {
+        "x": 0.045,
+        "y": 0.045,
+        "z": 0.045
+      },
+      "objectType": "altoparlante",
+      "tags": [0],
+      "menuState": {
+        "trim": 0,
+        "channelstate": true,
+        "solo": 0
+      }
+    },
+    "Altoparlante_#16": {
+      "position": {
+        "x": -1.8,
+        "y": -2.21,
+        "z": 2.1
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 1.5707963267948966
+      },
+      "scale": {
+        "x": 0.045,
+        "y": 0.045,
+        "z": 0.045
+      },
+      "objectType": "altoparlante",
+      "tags": [0],
+      "menuState": {
+        "trim": 0,
+        "channelstate": true,
+        "solo": 0
+      }
+    },
+    "Altoparlante_#17": {
+      "position": {
+        "x": -2,
+        "y": -3.1,
+        "z": 1.2
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 0.045,
+        "y": 0.045,
+        "z": 0.045
+      },
+      "objectType": "altoparlante",
+      "tags": [0],
+      "menuState": {
+        "trim": 0,
+        "channelstate": true,
+        "solo": 0
+      }
+    },
+    "Altoparlante_#18": {
+      "position": {
+        "x": -0.85,
+        "y": -3.1,
+        "z": 1.2
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 0.045,
+        "y": 0.045,
+        "z": 0.045
+      },
+      "objectType": "altoparlante",
+      "tags": [0],
+      "menuState": {
+        "trim": 0,
+        "channelstate": true,
+        "solo": 0
+      }
+    },
+    "Altoparlante_#19": {
+      "position": {
+        "x": 0.85,
+        "y": -3.1,
+        "z": 1.2
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 0.045,
+        "y": 0.045,
+        "z": 0.045
+      },
+      "objectType": "altoparlante",
+      "tags": [0],
+      "menuState": {
+        "trim": 0,
+        "channelstate": true,
+        "solo": 0
+      }
+    },
+    "Altoparlante_#20": {
+      "position": {
+        "x": 2,
+        "y": -3.1,
+        "z": 1.2
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 0.045,
+        "y": 0.045,
+        "z": 0.045
+      },
+      "objectType": "altoparlante",
+      "tags": [0],
+      "menuState": {
+        "trim": 0,
+        "channelstate": true,
+        "solo": 0
+      }
+    },
+    "Altoparlante_#21": {
+      "position": {
+        "x": 0,
+        "y": 1.92,
+        "z": 2.7
+      },
+      "rotation": {
+        "x": 1.5707963267948963,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 0.045,
+        "y": 0.045,
+        "z": 0.045
+      },
+      "objectType": "altoparlante",
+      "tags": [0],
+      "menuState": {
+        "trim": 0,
+        "channelstate": true,
+        "solo": 0
+      }
+    },
+    "Altoparlante_#22": {
+      "position": {
+        "x": 0,
+        "y": 0.64,
+        "z": 2.7
+      },
+      "rotation": {
+        "x": 1.5707963267948963,
+        "y": 1.0471975511965974,
+        "z": 0
+      },
+      "scale": {
+        "x": 0.045,
+        "y": 0.045,
+        "z": 0.045
+      },
+      "objectType": "altoparlante",
+      "tags": [0],
+      "menuState": {
+        "trim": 0,
+        "channelstate": true,
+        "solo": 0
+      }
+    },
+    "Altoparlante_#23": {
+      "position": {
+        "x": 0,
+        "y": -0.65,
+        "z": 2.7
+      },
+      "rotation": {
+        "x": 1.5707963267948963,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 0.045,
+        "y": 0.045,
+        "z": 0.045
+      },
+      "objectType": "altoparlante",
+      "tags": [0],
+      "menuState": {
+        "trim": 0,
+        "channelstate": true,
+        "solo": 0
+      }
+    },
+    "Altoparlante_#24": {
+      "position": {
+        "x": 0,
+        "y": -1.9,
+        "z": 2.7
+      },
+      "rotation": {
+        "x": 1.5707963267948963,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 0.045,
+        "y": 0.045,
+        "z": 0.045
+      },
+      "objectType": "altoparlante",
+      "tags": [0],
+      "menuState": {
+        "trim": 0,
+        "channelstate": true,
+        "solo": 0
+      }
+    }
+  }
+}

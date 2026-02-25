@@ -83,7 +83,46 @@ oscInPort.on('message', (oscMsg) => {
         }));
       }
     });
+    return;
   }
+  
+  // Gestisci comandi di posizione: /cielo/{type}/position {index} {x} {y} {z}
+  // Esempio: /cielo/omnifonte/position 1 0.45 1.0 1.2
+  const positionMatch = oscMsg.address.match(/^\/cielo\/(omnifonte|altoparlante|orifonte|aureola|zona)\/position$/i);
+  if (positionMatch) {
+    const objectType = positionMatch[1].toLowerCase();
+    
+    // Estrai argomenti: index, x, y, z
+    // Gli argomenti OSC arrivano con metadata: { type: 'f', value: 1.0 }
+    if (oscMsg.args && oscMsg.args.length >= 4) {
+      const index = oscMsg.args[0].value !== undefined ? oscMsg.args[0].value : oscMsg.args[0];
+      const x = oscMsg.args[1].value !== undefined ? oscMsg.args[1].value : oscMsg.args[1];
+      const y = oscMsg.args[2].value !== undefined ? oscMsg.args[2].value : oscMsg.args[2];
+      const z = oscMsg.args[3].value !== undefined ? oscMsg.args[3].value : oscMsg.args[3];
+      
+      console.log(`[OSC IN] Comando POSITION ricevuto - ${objectType} #${index} -> (${x}, ${y}, ${z})`);
+      
+      // Inoltra comando ai client WebSocket
+      oscWss.clients.forEach((client) => {
+        if (client.readyState === 1) { // WebSocket.OPEN
+          client.send(JSON.stringify({
+            type: 'set_position',
+            objectType: objectType,
+            index: index,
+            x: x,
+            y: y,
+            z: z
+          }));
+        }
+      });
+    } else {
+      console.warn(`[OSC IN] Argomenti insufficienti per ${oscMsg.address}. Richiesti: index x y z`);
+    }
+    return;
+  }
+  
+  // Comando non riconosciuto
+  console.warn(`[OSC IN] Comando non riconosciuto: ${oscMsg.address}`);
 });
 
 oscInPort.on('error', (error) => {

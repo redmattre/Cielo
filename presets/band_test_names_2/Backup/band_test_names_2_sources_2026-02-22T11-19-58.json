@@ -1,8 +1,10 @@
 {
   "metadata": {
     "name": "band_test_names_2 - Sources",
-    "created": "2026-02-16T16:32:24.472Z",
-    "version": "2.0"
+    "created": "2026-02-22T11:19:58.963Z",
+    "version": "2.0",
+    "backup": true,
+    "timestamp": "2026-02-22T11-19-58"
   },
   "sources": {
     "Chitarra_#2": {
@@ -272,9 +274,9 @@
     },
     "Mic_Ensemble_L_#9": {
       "position": {
-        "x": 4.3,
-        "y": -0.25,
-        "z": 1.2
+        "x": 0,
+        "y": 0,
+        "z": 0
       },
       "rotation": {
         "x": 0,
@@ -282,9 +284,9 @@
         "z": 0
       },
       "scale": {
-        "x": 0.25,
-        "y": 0.25,
-        "z": 0.24
+        "x": 1,
+        "y": 1,
+        "z": 1
       },
       "objectType": "omnifonte",
       "tags": [
@@ -309,9 +311,9 @@
     },
     "Mic_Ensemble_C_#10": {
       "position": {
-        "x": 3.5015138736004263,
-        "y": 0.8728032514194699,
-        "z": 1.9000000000000001
+        "x": 0,
+        "y": 0,
+        "z": 0
       },
       "rotation": {
         "x": 0,
@@ -319,9 +321,9 @@
         "z": 0
       },
       "scale": {
-        "x": 0.25,
-        "y": 0.25,
-        "z": 0.24
+        "x": 1,
+        "y": 1,
+        "z": 1
       },
       "objectType": "omnifonte",
       "tags": [
@@ -384,8 +386,8 @@
     "Mic_Ensemble_R_#11": {
       "position": {
         "x": 0,
-        "y": 4.2,
-        "z": 1.2
+        "y": 0,
+        "z": 0
       },
       "rotation": {
         "x": 0,
@@ -393,9 +395,9 @@
         "z": 0
       },
       "scale": {
-        "x": 0.25,
-        "y": 0.25,
-        "z": 0.24
+        "x": 1,
+        "y": 1,
+        "z": 1
       },
       "objectType": "omnifonte",
       "tags": [

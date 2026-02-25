@@ -1,10 +1,10 @@
 {
   "metadata": {
     "name": "band_test_names_2 - Speakers",
-    "created": "2026-02-07T14:31:02.631Z",
+    "created": "2026-02-22T11:19:58.936Z",
     "version": "2.0",
     "backup": true,
-    "timestamp": "2026-02-07T14-31-02"
+    "timestamp": "2026-02-22T11-19-58"
   },
   "speakers": {
     "Front_#1": {
@@ -175,14 +175,14 @@
     },
     "Front_High_#7": {
       "position": {
-        "x": -1,
+        "x": 0,
         "y": -1,
-        "z": 2.15
+        "z": 2.45
       },
       "rotation": {
-        "x": 0.7597627548757709,
-        "y": -0.5086738353872303,
-        "z": 0.6273078210143195
+        "x": 0.8960553845713439,
+        "y": 0,
+        "z": 0
       },
       "scale": {
         "x": 0.045,
@@ -196,7 +196,35 @@
       "menuState": {
         "trim": 0,
         "channelstate": true,
-        "solo": 0
+        "solo": 0,
+        "undefined": true
+      }
+    },
+    "Back_High_#8": {
+      "position": {
+        "x": 0,
+        "y": 1,
+        "z": 2.45
+      },
+      "rotation": {
+        "x": 2.2455372690184494,
+        "y": -3.141592653589793,
+        "z": 0
+      },
+      "scale": {
+        "x": 0.045,
+        "y": 0.045,
+        "z": 0.045
+      },
+      "objectType": "altoparlante",
+      "tags": [
+        0
+      ],
+      "menuState": {
+        "trim": 0,
+        "channelstate": true,
+        "solo": 0,
+        "undefined": true
       }
     }
   }

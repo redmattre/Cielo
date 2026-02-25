@@ -137,7 +137,7 @@ class GroupScaleUIDiv {
             const orig = child.userData._originalPos;
             if (orig) {
                 child.position.x = orig.x * scaleX;
-                child.position.y = orig.y; // Mantieni Y invariato
+                child.position.y = orig.y * scaleY; // Scala anche Y (elevazione)
                 child.position.z = orig.z * scaleY;
             }
         });

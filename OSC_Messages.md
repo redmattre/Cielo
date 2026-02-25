@@ -1,11 +1,102 @@
 # Documentazione Messaggi OSC - Cielo
 
-Questa applicazione invia messaggi OSC (Open Sound Control) via UDP sulla porta **8000** (configurabile).
+Questa applicazione supporta comunicazione OSC bidirezionale via UDP.
 
-## Configurazione
+## Porte OSC
 
-- **Host di default**: `127.0.0.1` (localhost)
-- **Porta di default**: `8000`
+### Porta OUTPUT (Cielo → Esterno)
+- **Porta di default**: `5000` (configurabile dall'interfaccia)
+- **Host di default**: `192.168.0.255` (broadcast, configurabile)
+- **Protocollo**: UDP
+- **Formato**: OSC standard (no metadata)
+
+Puoi modificare host e porta dal menu laterale destro nella sezione "OSC Output".
+
+### Porta INPUT (Esterno → Cielo)
+- **Porta fissa**: `7777`
+- **Host**: `0.0.0.0` (ascolta su tutte le interfacce di rete)
+- **Protocollo**: UDP OSC
+- **Formato**: OSC standard con metadata
+
+---
+
+## 📥 COMANDI OSC IN INGRESSO (Controllo Remoto)
+
+### 1. Richiesta Dump Stato Applicazione
+
+Richiede un dump completo dello stato corrente dell'applicazione.
+
+**Address:**
+```
+/cielo/dump
+```
+
+**Argomenti:** Nessuno
+
+**Risposta:** L'applicazione invierà una serie di messaggi OSC in output contenenti lo stato completo di tutti gli oggetti.
+
+**Esempio (Max/MSP):**
+```
+udpsend 7777 localhost
+send /cielo/dump
+```
+
+---
+
+### 2. Spostamento Oggetti
+
+Sposta un oggetto 3D a una nuova posizione nello spazio.
+
+**Address Pattern:**
+```
+/cielo/{tipo}/position
+```
+
+**Argomenti:**
+```
+{indice} {x} {y} {z}
+```
+
+**Tipi supportati:**
+- `omnifonte` - Sorgente omnidirezionale
+- `altoparlante` - Speaker/Altoparlante
+- `orifonte` - Sorgente direzionale
+- `aureola` - Oggetto aureola
+- `zona` - Area/Zona
+
+**Coordinate:**
+- `x` - Coordinata X (sinistra/destra)
+- `y` - Coordinata Y (avanti/indietro nel piano orizzontale)
+- `z` - Coordinata Z (elevazione verticale)
+
+**Esempi:**
+```
+# Sposta Omnifonte #1 alla posizione (0.45, 1.0, 1.2)
+/cielo/omnifonte/position 1 0.45 1.0 1.2
+
+# Sposta Altoparlante #3 alla posizione (-2.0, 0.5, 2.5)
+/cielo/altoparlante/position 3 -2.0 0.5 2.5
+
+# Sposta Orifonte #2 alla posizione (1.5, -1.0, 0.8)
+/cielo/orifonte/position 2 1.5 -1.0 0.8
+```
+
+**Note:**
+- L'indice deve corrispondere a un oggetto esistente nella scena (es. "Omnifonte #1", "Altoparlante #2")
+- Gli oggetti nella scena hanno il formato: `{Tipo} #{Numero}` (es. "Omnifonte #1")
+- L'indice nel messaggio OSC è solo il numero (senza il #)
+- Le coordinate sono in metri
+- Il movimento viene automaticamente sincronizzato con tutti i client connessi
+- Max/MSP riceverà la conferma del movimento tramite i messaggi di position output
+
+---
+
+## 📤 MESSAGGI OSC IN USCITA (Output)
+
+## Configurazione Output
+
+- **Host di default**: `192.168.0.255` (broadcast)
+- **Porta di default**: `5000`
 - **Protocollo**: UDP
 - **Formato**: OSC standard (no metadata)
 
@@ -228,6 +319,101 @@ Esempio di patch PD:
 [route 1 2 3 ...]
 |
 [route added tags position rotation]
+```
+
+---
+
+## 🎯 Esempi Pratici di Utilizzo
+
+### Esempio 1: Controllo da Max/MSP
+
+```maxpat
+# Patch Max per inviare comandi a Cielo
+
+# Oggetto udpsend per porta INPUT (7777)
+[udpsend 7777 localhost]
+
+# Muovi Omnifonte 1
+[prepend /cielo/omnifonte/position]
+|
+[pak 1 0.45 1.0 1.2]
+|
+[udpsend]
+
+# Richiedi dump
+[bang]
+|
+[/cielo/dump(
+|
+[udpsend]
+```
+
+### Esempio 2: Controllo da Pure Data
+
+```pd
+# Invia posizione Altoparlante 2
+[send /cielo/altoparlante/position 2 -1.5 0.8 2.0(
+|
+[netsend -u -b]  # UDP broadcast su porta 7777
+```
+
+### Esempio 3: Controllo da Python (python-osc)
+
+```python
+from pythonosc import udp_client
+
+# Crea client OSC per porta INPUT
+client = udp_client.SimpleUDPClient("127.0.0.1", 7777)
+
+# Muovi Omnifonte 1
+client.send_message("/cielo/omnifonte/position", [1, 0.45, 1.0, 1.2])
+
+# Muovi Altoparlante 3
+client.send_message("/cielo/altoparlante/position", [3, -2.0, 0.5, 2.5])
+
+# Richiedi dump
+client.send_message("/cielo/dump", [])
+```
+
+### Esempio 4: Animazione Continua (Python)
+
+```python
+import time
+import math
+from pythonosc import udp_client
+
+client = udp_client.SimpleUDPClient("127.0.0.1", 7777)
+
+# Anima Omnifonte 1 in cerchio
+radius = 2.0
+height = 1.2
+for i in range(360):
+    angle = math.radians(i)
+    x = radius * math.cos(angle)
+    y = radius * math.sin(angle)
+    z = height
+    
+    client.send_message("/cielo/omnifonte/position", [1, x, y, z])
+    time.sleep(0.05)  # 20 fps
+```
+
+### Esempio 5: Sequenza di Movimenti (Max/MSP)
+
+```maxpat
+# Metro per sequenza temporizzata
+[metro 500]  # Ogni 500ms
+|
+[counter 0 4]
+|
+[select 0 1 2 3 4]
+|    |    |    |    |
+|    |    |    |    [/cielo/omnifonte/position 1 0 0 1.2(
+|    |    |    [/cielo/omnifonte/position 1 1 0 1.2(
+|    |    [/cielo/omnifonte/position 1 1 1 1.2(
+|    [/cielo/omnifonte/position 1 0 1 1.2(
+[/cielo/omnifonte/position 1 0 0 1.2(
+|
+[udpsend 7777 localhost]
 ```
 
 ---

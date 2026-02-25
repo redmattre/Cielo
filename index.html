@@ -2,28 +2,29 @@
 <html lang="it">
   <head>
     <meta charset="UTF-8" />
+    <link rel="icon" href="/Cielo/logo_onda.svg" type="image/svg+xml">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Cielo</title>
-    <script type="module" crossorigin src="/Cielo/assets/index-DOpuGtG6.js"></script>
-    <link rel="stylesheet" crossorigin href="/Cielo/assets/index-CN3FpiHH.css">
+    <script type="module" crossorigin src="/Cielo/assets/index-D8o20SJf.js"></script>
+    <link rel="stylesheet" crossorigin href="/Cielo/assets/index-BMnWpbeN.css">
   </head>
   <body>
 
     <div class="bottonieraSotto" id="bottonieraSotto">
-      <div class="visualizzazione" id="visualizzazione">
+      <div class="visualizzazione" id="visualizzazione" title="Toggle camera (1, 2, 3, 4)">
         Prospettiva
       </div>
     </div>
 
     <div class="dockTasti">
       <button title="chiudi trasformazione" id="toggleTransButton" class="topButtons" style="display: none;">⏚</button>
-      <button title="aggiungi elemento 3D" id="addElementMenu">
+      <button title="Add scene item" id="addElementMenu">
         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M4 12H20M12 4V20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </button>
       <button id="addCloudElement" style="display: none;">☁</button>
-      <button title="toggle cursore POV" id="addPovCursor">
+      <button title="Binaural cursor" id="addPovCursor">
         <svg fill="currentColor" viewBox="-7 0 32 32" version="1.1" xmlns="http://www.w3.org/2000/svg">
           <path d="M13.88 24.16c-0.48 0-0.84-0.36-0.84-0.84v-4.76c0-0.48 0.36-0.84 0.84-0.84s0.84 0.36 0.84 0.84v4.76c0 0.48-0.36 0.84-0.84 0.84zM3.84 24.16c-0.48 0-0.84-0.36-0.84-0.84v-4.76c0-0.48 0.36-0.84 0.84-0.84s0.84 0.36 0.84 0.84v4.76c-0.040 0.48-0.44 0.84-0.84 0.84zM16.76 21.8c-0.040 0-0.080 0-0.12 0-0.44-0.080-0.76-0.48-0.72-0.96 0-0.040 0.84-6-1.92-9.24-1.2-1.36-2.92-2.080-5.12-2.080s-3.92 0.68-5.12 2.080c-2.8 3.24-1.92 9.16-1.92 9.24 0.080 0.44-0.24 0.88-0.72 0.96-0.44 0.080-0.88-0.24-0.96-0.72-0.080-0.28-0.96-6.76 2.28-10.6 1.52-1.76 3.68-2.68 6.4-2.68s4.88 0.88 6.4 2.68c3.28 3.8 2.36 10.32 2.32 10.56-0.040 0.44-0.4 0.76-0.8 0.76z"></path>
         </svg>
@@ -31,7 +32,7 @@
       
       <!-- Il bottone metro verrà inserito qui dinamicamente -->
       
-      <button title="menu di oggetti nella scena" id="seeItemsList">
+      <button title="Inspector (w)" id="seeItemsList">
         <svg viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg">
           <g transform="matrix(0.95173205,0,0,0.95115787,13.901174,12.168794)" style="stroke-width:1.05103">
             <path style="color:#000000;fill:currentColor;stroke-linecap:round;-inkscape-stroke:none" d="M 447.70881 -12.781343 A 42.041451 42.041451 0 0 0 405.66786 29.260344 L 405.66786 50.301721 L 27.434765 50.301721 A 42.041302 42.041302 0 0 0 -14.606185 92.341354 A 42.041302 42.041302 0 0 0 27.434765 134.38304 L 405.66786 134.38304 L 405.66786 155.44906 A 42.041451 42.041451 0 0 0 447.70881 197.49075 A 42.041451 42.041451 0 0 0 489.74976 155.44906 L 489.74976 134.38304 L 573.78036 134.38304 A 42.041302 42.041302 0 0 0 615.82336 92.341354 A 42.041302 42.041302 0 0 0 573.78036 50.301721 L 489.74976 50.301721 L 489.74976 29.260344 A 42.041451 42.041451 0 0 0 447.70881 -12.781343 z M 143.0012 197.48869 A 42.041451 42.041451 0 0 0 100.9582 239.53038 L 100.9582 260.5697 L 27.447078 260.5697 A 42.041302 42.041302 0 0 0 -14.593872 302.61139 A 42.041302 42.041302 0 0 0 27.447078 344.65308 L 100.9582 344.65308 L 100.9582 365.7191 A 42.041451 42.041451 0 0 0 143.0012 407.76078 A 42.041451 42.041451 0 0 0 185.04215 365.7191 L 185.04215 344.65308 L 573.79472 344.65308 A 42.041302 42.041302 0 0 0 615.83567 302.61139 A 42.041302 42.041302 0 0 0 573.79472 260.5697 L 185.04215 260.5697 L 185.04215 239.53038 A 42.041451 42.041451 0 0 0 143.0012 197.48869 z M 279.59427 407.76078 A 42.041451 42.041451 0 0 0 237.55332 449.80042 L 237.55332 470.83974 L 27.447078 470.83974 A 42.041302 42.041302 0 0 0 -14.593872 512.88143 A 42.041302 42.041302 0 0 0 27.447078 554.92106 L 237.55332 554.92106 L 237.55332 575.98913 A 42.041451 42.041451 0 0 0 279.59427 618.02877 A 42.041451 42.041451 0 0 0 321.63522 575.98913 L 321.63522 554.92106 L 573.79472 554.92106 A 42.041302 42.041302 0 0 0 615.83567 512.88143 A 42.041302 42.041302 0 0 0 573.79472 470.83974 L 321.63522 470.83974 L 321.63522 449.80042 A 42.041451 42.041451 0 0 0 279.59427 407.76078 z " />
@@ -228,7 +229,7 @@
       </div>
     </div>
 
-    <div id="infoDivTopLeft">---</div>
+    <div id="infoDivTopLeft" title="Double click to rename">---</div>
     
     <!-- Save icon in alto a destra -->
     <button id="quickSaveBtn" class="quick-save-btn" title="Save Project (Cmd+S)">
@@ -242,13 +243,13 @@
       <div class="add-menu-grid">
         <button class="add-menu-item" data-element="sphere">
           <span class="add-menu-icon">⬤</span>
-          <span class="add-menu-label">Omnifonte</span>
+          <span class="add-menu-label">Sorgenti</span>
         </button>
         <button class="add-menu-item" data-element="cone">
           <span class="add-menu-icon">⊚</span>
-          <span class="add-menu-label">Altoparlante</span>
+          <span class="add-menu-label">Diffusori</span>
         </button>
-        <button class="add-menu-item" data-element="arrow">
+        <!-- <button class="add-menu-item" data-element="arrow">
           <span class="add-menu-icon">➞</span>
           <span class="add-menu-label">Orifonte</span>
         </button>
@@ -259,7 +260,7 @@
         <button class="add-menu-item" data-element="zone">
           <span class="add-menu-icon">⛶</span>
           <span class="add-menu-label">Zona</span>
-        </button>
+        </button> -->
         <button class="add-menu-item" data-element="plastico">
           <span class="add-menu-icon">⌘</span>
           <span class="add-menu-label">Plastico</span>
@@ -331,7 +332,7 @@
     <div id="menuList"></div>
 
     <!-- Bottone settings per aprire il menu laterale -->
-    <button id="openSideMenu" title="Settings">
+    <button id="openSideMenu" title="Settings (e)">
       <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M11 3H13C13.5523 3 14 3.44772 14 4V4.56879C14 4.99659 14.2871 5.36825 14.6822 5.53228C15.0775 5.69638 15.5377 5.63384 15.8403 5.33123L16.2426 4.92891C16.6331 4.53838 17.2663 4.53838 17.6568 4.92891L19.071 6.34312C19.4616 6.73365 19.4615 7.36681 19.071 7.75734L18.6688 8.1596C18.3661 8.46223 18.3036 8.92247 18.4677 9.31774C18.6317 9.71287 19.0034 10 19.4313 10L20 10C20.5523 10 21 10.4477 21 11V13C21 13.5523 20.5523 14 20 14H19.4312C19.0034 14 18.6318 14.2871 18.4677 14.6822C18.3036 15.0775 18.3661 15.5377 18.6688 15.8403L19.071 16.2426C19.4616 16.6331 19.4616 17.2663 19.071 17.6568L17.6568 19.071C17.2663 19.4616 16.6331 19.4616 16.2426 19.071L15.8403 18.6688C15.5377 18.3661 15.0775 18.3036 14.6822 18.4677C14.2871 18.6318 14 19.0034 14 19.4312V20C14 20.5523 13.5523 21 13 21H11C10.4477 21 10 20.5523 10 20V19.4313C10 19.0034 9.71287 18.6317 9.31774 18.4677C8.92247 18.3036 8.46223 18.3661 8.1596 18.6688L7.75732 19.071C7.36679 19.4616 6.73363 19.4616 6.34311 19.071L4.92889 17.6568C4.53837 17.2663 4.53837 16.6331 4.92889 16.2426L5.33123 15.8403C5.63384 15.5377 5.69638 15.0775 5.53228 14.6822C5.36825 14.2871 4.99659 14 4.56879 14H4C3.44772 14 3 13.5523 3 13V11C3 10.4477 3.44772 10 4 10L4.56877 10C4.99658 10 5.36825 9.71288 5.53229 9.31776C5.6964 8.9225 5.63386 8.46229 5.33123 8.15966L4.92891 7.75734C4.53838 7.36681 4.53838 6.73365 4.92891 6.34313L6.34312 4.92891C6.73365 4.53839 7.36681 4.53839 7.75734 4.92891L8.15966 5.33123C8.46228 5.63386 8.9225 5.6964 9.31776 5.53229C9.71288 5.36825 10 4.99658 10 4.56876V4C10 3.44772 10.4477 3 11 3Z" stroke="currentColor" stroke-width="1.248"/>
         <path d="M14 12C14 13.1046 13.1046 14 12 14C10.8954 14 10 13.1046 10 12C10 10.8954 10.8954 10 12 10C13.1046 10 14 10.8954 14 12Z" stroke="currentColor" stroke-width="1.248"/>
